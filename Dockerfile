@@ -5,19 +5,23 @@ FROM node:20-slim
 WORKDIR /app
 
 # ---- Copy package files first (better caching) ----
-COPY package.json package-lock.json ./
+COPY package.json ./
 
-# ---- Install production dependencies only ----
-RUN npm ci --omit=dev
+# Copy lockfile if it exists (won't fail if missing)
+COPY package-lock.json ./
+
+# ---- Install dependencies ----
+# If package-lock.json exists -> npm ci
+# If not -> npm install
+RUN if [ -f package-lock.json ]; then npm ci --omit=dev; else npm install --omit=dev; fi
 
 # ---- Copy rest of the app ----
 COPY . .
 
 # ---- Cloud Run uses PORT env var ----
 ENV PORT=8080
-ENV NODE_ENV=production
 
-# ---- Expose port (informational) ----
+# ---- Expose port ----
 EXPOSE 8080
 
 # ---- Start server ----
