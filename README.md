@@ -65,6 +65,29 @@ Internal admin dashboard.
 
 ## Repository Structure
 
+/
+├── server.js
+├── package.json
+├── .env.example
+├── .gitignore
+├── README.md
+│
+├── apps/
+│ ├── storefront/index.html
+│ ├── dealer/index.html
+│ └── admin/index.html
+│
+├── services/
+│ ├── airtable.js
+│ ├── auth.js
+│ ├── cloudinary.js
+│ └── analytics.js
+│
+└── public/assets/
+
+yaml
+Copy code
+
 
 ---
 
@@ -133,3 +156,7 @@ At this point:
 ### Next logical step
 Say **“Start with `services/airtable.js`”**  
 and we’ll implement the Airtable client + field mapping cleanly and fast.
+
+npm run dev
+npm start
+
