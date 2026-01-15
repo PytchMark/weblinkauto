@@ -1,0 +1,17 @@
+# Environment secrets
+.env
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# OS / Editor
+.DS_Store
+.idea/
+.vscode/
+
+# Runtime / build artifacts
+coverage/
+dist/
+.tmp/
