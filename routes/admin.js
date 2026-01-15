@@ -19,6 +19,20 @@ if (!AIRTABLE_BASE_ID || !T_DEALERS || !T_VEHICLES || !T_REQUESTS) {
     "Missing Airtable env vars: AIRTABLE_BASE_ID and/or AIRTABLE_TABLE_ID_DEALERS/VEHICLES/VIEWING_REQUESTS"
   );
 }
+/**
+ * GET /api/admin/dealers/summary?month=YYYY-MM
+ * Returns all dealers + KPI bundles in one call (snappy admin dashboard).
+ */
+router.get("/dealers/summary", requireAdmin, async (req, res) => {
+  try {
+    const month = cleanStr(req.query.month, 20); // YYYY-MM
+    const summary = await getDealersSummary({ month: month || null });
+    return res.json({ ok: true, summary });
+  } catch (err) {
+    console.error("GET /api/admin/dealers/summary error:", err);
+    return res.status(500).json({ ok: false, error: "Internal Server Error" });
+  }
+});
 
 /** -----------------------
  * Helpers
