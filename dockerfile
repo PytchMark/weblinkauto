@@ -1,30 +1,24 @@
 # ---- Base image ----
 FROM node:20-slim
 
-# ---- Create app directory ----
+# ---- Set working directory ----
 WORKDIR /app
 
-# ---- Install deps (better caching + reproducible) ----
-# Copy both package.json and lockfile first
+# ---- Copy package files first (better caching) ----
 COPY package.json package-lock.json ./
 
-# Use npm ci for consistent installs; omit dev deps for production
+# ---- Install production dependencies only ----
 RUN npm ci --omit=dev
 
 # ---- Copy rest of the app ----
 COPY . .
 
-# ---- Environment ----
-ENV NODE_ENV=production
+# ---- Cloud Run uses PORT env var ----
 ENV PORT=8080
+ENV NODE_ENV=production
 
-# ---- Security: run as non-root ----
-RUN useradd --user-group --create-home --shell /bin/false appuser \
-  && chown -R appuser:appuser /app
-USER appuser
-
-# ---- Expose port (Cloud Run uses PORT env var) ----
+# ---- Expose port (informational) ----
 EXPOSE 8080
 
 # ---- Start server ----
-CMD ["node", "server.js"]
+CMD ["npm", "start"]
