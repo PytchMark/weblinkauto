@@ -7,13 +7,8 @@ WORKDIR /app
 # ---- Copy package files first (better caching) ----
 COPY package.json ./
 
-# Copy lockfile if it exists (won't fail if missing)
-COPY package-lock.json ./
-
 # ---- Install dependencies ----
-# If package-lock.json exists -> npm ci
-# If not -> npm install
-RUN if [ -f package-lock.json ]; then npm ci --omit=dev; else npm install --omit=dev; fi
+RUN npm install --omit=dev
 
 # ---- Copy rest of the app ----
 COPY . .
@@ -21,7 +16,7 @@ COPY . .
 # ---- Cloud Run uses PORT env var ----
 ENV PORT=8080
 
-# ---- Expose port ----
+# ---- Expose port (documentation only; Cloud Run ignores EXPOSE but it’s good practice) ----
 EXPOSE 8080
 
 # ---- Start server ----
