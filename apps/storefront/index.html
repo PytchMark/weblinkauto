@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Dealer Storefront · Live Inventory</title>
+  <meta name="description" content="Live car inventory. Only available vehicles. Book serious viewings." />
+
+  <style>
+    /* ==============================
+       DESIGN TOKENS (LOCKED)
+       White / Red / Black system
+       ============================== */
+    :root{
+      --bg:#f7f7f8;
+      --surface:#ffffff;
+      --surface-soft:#fafafa;
+      --ink:#0b0b0b;
+      --muted:#6b7280;
+      --muted-2:#9ca3af;
+
+      --brand:#dc2626;          /* red emphasis */
+      --brand-2:#ef4444;
+      --brand-soft:#fee2e2;
+
+      --line:#e5e7eb;
+      --shadow:0 18px 40px rgba(15,23,42,.10);
+      --shadow-soft:0 10px 24px rgba(15,23,42,.08);
+
+      --radius:18px;
+      --radius-lg:26px;
+
+      --section:clamp(38px,5vw,64px);
+      --gutter:clamp(16px,4vw,22px);
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: system-ui,-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,sans-serif;
+      color:var(--ink);
+      background:
+        radial-gradient(circle at 0% 0%, rgba(220,38,38,.06), transparent 45%),
+        radial-gradient(circle at 80% 20%, rgba(239,68,68,.05), transparent 55%),
+        var(--bg);
+      -webkit-font-smoothing:antialiased;
+    }
+
+    img{max-width:100%;display:block}
+    a{color:inherit;text-decoration:none}
+
+    .wrap{max-width:1180px;margin:0 auto;padding:0 var(--gutter)}
+
+    /* ==============================
+       HEADER
+       ============================== */
+    header{
+      position:sticky;top:0;z-index:20;
+      background:rgba(255,255,255,.86);
+      backdrop-filter:blur(10px);
+      border-bottom:1px solid var(--line);
+    }
+    .head-row{
+      display:flex;align-items:center;justify-content:space-between;gap:14px;
+      padding:14px 0;
+    }
+    .brand{
+      display:flex;align-items:center;gap:12px;min-width:0;
+    }
+    .logo{
+      width:42px;height:42px;border-radius:14px;
+      background:var(--brand-soft);
+      border:1px solid rgba(220,38,38,.25);
+      display:flex;align-items:center;justify-content:center;
+      font-weight:900;color:var(--brand);
+      overflow:hidden;
+    }
+    .logo img{width:100%;height:100%;object-fit:cover}
+
+    .brand-meta{display:flex;flex-direction:column;min-width:0}
+    .brand-meta .name{
+      font-size:15px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+    .brand-meta .sub{
+      font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+
+    .head-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+    .chip{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:8px 12px;border-radius:999px;
+      border:1px solid var(--line);
+      background:var(--surface);
+      font-size:12px;
+      box-shadow:var(--shadow-soft);
+    }
+    .chip input{
+      border:none;outline:none;background:transparent;
+      font-weight:800;font-size:12px;color:var(--ink);
+      width:140px;max-width:40vw;
+    }
+    .chip input::placeholder{color:var(--muted-2)}
+
+    .btn{
+      appearance:none;border:none;cursor:pointer;
+      display:inline-flex;align-items:center;justify-content:center;gap:8px;
+      height:38px;padding:0 14px;border-radius:999px;
+      font-size:12px;font-weight:900;
+      transition:transform .12s ease, box-shadow .12s ease, background .12s ease;
+      user-select:none;
+    }
+    .btn-primary{
+      background:linear-gradient(135deg,var(--brand-2),var(--brand));
+      color:#fff;box-shadow:0 14px 30px rgba(220,38,38,.22);
+    }
+    .btn-primary:hover{transform:translateY(-1px)}
+    .btn-ghost{
+      background:var(--surface);
+      border:1px solid var(--line);
+      color:var(--ink);
+      box-shadow:var(--shadow-soft);
+    }
+
+    /* ==============================
+       HERO
+       ============================== */
+    .hero{padding:var(--section) 0 24px}
+    .hero-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:18px}
+
+    .hero-card{
+      background:var(--surface);
+      border:1px solid var(--line);
+      border-radius:var(--radius-lg);
+      padding:24px;
+      box-shadow:var(--shadow);
+    }
+    .eyebrow{
+      display:inline-flex;align-items:center;gap:8px;
+      font-size:12px;color:var(--muted);
+      margin-bottom:10px
+    }
+    .dot{width:8px;height:8px;border-radius:999px;background:var(--brand)}
+
+    h1{margin:0 0 10px;font-size:clamp(22px,3vw,34px);line-height:1.08}
+    .lead{margin:0;color:var(--muted);max-width:60ch}
+
+    .hero-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+
+    .hero-side{
+      background:var(--surface);
+      border:1px solid var(--line);
+      border-radius:var(--radius-lg);
+      padding:18px;
+      box-shadow:var(--shadow-soft);
+      display:flex;flex-direction:column;gap:12px;
+    }
+    .stat{
+      border:1px solid var(--line);
+      border-radius:16px;padding:12px;background:var(--surface-soft)
+    }
+    .stat .t{font-size:11px;color:var(--muted)}
+    .stat .v{font-size:18px;font-weight:900}
+
+    .tip{
+      border:1px dashed rgba(220,38,38,.25);
+      background:var(--brand-soft);
+      border-radius:14px;padding:12px;font-size:12px
+    }
+
+    /* ==============================
+       INVENTORY
+       ============================== */
+    .section{padding:24px 0 var(--section)}
+    .section-head{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
+    .section-head h2{margin:0;font-size:14px;letter-spacing:.14em;text-transform:uppercase}
+
+    .search{
+      display:flex;align-items:center;gap:8px;
+      border:1px solid var(--line);
+      border-radius:999px;padding:8px 12px;
+      background:var(--surface);box-shadow:var(--shadow-soft)
+    }
+    .search input{border:none;outline:none;background:transparent;font-size:13px}
+
+    .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px;margin-top:14px}
+
+    .card{
+      grid-column:span 4;
+      background:var(--surface);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow-soft);
+      overflow:hidden;
+      display:flex;flex-direction:column;
+      transition:transform .12s ease, box-shadow .12s ease
+    }
+    .card:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+
+    .media{aspect-ratio:16/10;background:#f1f1f1;position:relative}
+    .media img{width:100%;height:100%;object-fit:cover}
+
+    .badge{
+      position:absolute;top:10px;left:10px;
+      padding:6px 10px;border-radius:999px;
+      font-size:10px;font-weight:900;text-transform:uppercase;
+      background:#fff;border:1px solid var(--line)
+    }
+    .badge.available{color:#166534;background:#dcfce7;border-color:#bbf7d0}
+    .badge.pending{color:#92400e;background:#fef3c7;border-color:#fde68a}
+    .badge.sold{color:#374151;background:#e5e7eb;border-color:#d1d5db}
+
+    .card-body{padding:14px;display:flex;flex-direction:column;gap:10px;flex:1}
+    .veh-title{margin:0;font-size:15px;font-weight:900}
+    .veh-sub{font-size:12px;color:var(--muted)}
+    .price{font-size:16px;font-weight:950;color:var(--brand)}
+
+    .pills{display:flex;flex-wrap:wrap;gap:6px}
+    .pill{
+      font-size:11px;padding:5px 9px;border-radius:999px;
+      border:1px solid var(--line);background:var(--surface-soft)
+    }
+
+    .card-actions{margin-top:auto}
+
+    /* ==============================
+       MODAL
+       ============================== */
+    .overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;place-items:center;z-index:50}
+    .overlay.show{display:grid}
+
+    .modal{
+      width:min(720px,100%);
+      background:var(--surface);
+      border-radius:var(--radius-lg);
+      border:1px solid var(--line);
+      box-shadow:0 40px 90px rgba(0,0,0,.35)
+    }
+    .modal-head{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between}
+    .modal-body{padding:16px}
+
+    /* ==============================
+       FOOTER
+       ============================== */
+    footer{border-top:1px solid var(--line);padding:28px 0 40px;color:var(--muted);font-size:12px}
+
+    /* ==============================
+       RESPONSIVE
+       ============================== */
+    @media(max-width:980px){
+      .hero-grid{grid-template-columns:1fr}
+      .card{grid-column:span 6}
+    }
+    @media(max-width:640px){
+      .card{grid-column:span 12}
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="head-row">
+      <div class="brand">
+        <div class="logo" id="dealerLogo">C</div>
+        <div class="brand-meta">
+          <div class="name" id="dealerName">Dealer Storefront</div>
+          <div class="sub" id="dealerSub">Live inventory · Serious viewings only</div>
+        </div>
+      </div>
+      <div class="head-actions">
+        <div class="chip">
+          <span>ID</span>
+          <input id="dealerIdInput" placeholder="DEALER-0001" />
+        </div>
+        <button id="loadBtn" class="btn btn-primary">Load</button>
+        <button id="resetBtn" class="btn btn-ghost">Reset</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap">
+      <div class="hero-grid">
+        <div class="hero-card">
+          <div class="eyebrow"><span class="dot"></span> Real inventory · Real buyers</div>
+          <h1 id="heroTitle">Enter a dealer ID to view what’s actually available</h1>
+          <p class="lead" id="heroLead">
+            This storefront only shows vehicles that are available right now.
+            No ghost cars. No wasted viewings.
+          </p>
+          <div class="hero-actions">
+            <button class="btn btn-primary" id="scrollBtn">Browse inventory</button>
+            <button class="btn btn-ghost" id="howBtn">How it works</button>
+          </div>
+        </div>
+
+        <aside class="hero-side">
+          <div class="stat">
+            <div class="t">Vehicles available</div>
+            <div class="v" id="kpiLive">–</div>
+          </div>
+          <div class="stat">
+            <div class="t">Dealer ID</div>
+            <div class="v" id="kpiDealer">–</div>
+          </div>
+          <div class="tip" id="rotatingTip">
+            Tip: Use a live video viewing before visiting in person.
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="inventory">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Inventory</h2>
+        <div class="search">
+          <span>⌕</span>
+          <input id="searchInput" placeholder="Search make, model, year…" />
+        </div>
+      </div>
+      <div class="grid" id="grid"></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    Sell what you have. Only show cars to serious buyers. · Built by Pytch LLC © <span id="year"></span>
+  </div>
+</footer>
+
+<script>
+  document.getElementById('year').textContent = new Date().getFullYear();
+  /* JS LOGIC KEPT MINIMAL HERE.
+     We will wire API calls, filters, modal logic next step
+     so we can validate UI first without breaking data flow. */
+</script>
+
+</body>
+</html>
