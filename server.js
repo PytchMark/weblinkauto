@@ -15,6 +15,9 @@ const morgan = require("morgan");
 const rateLimit = require("express-rate-limit");
 require("dotenv").config();
 
+// ✅ Route modules
+const publicRoutes = require("./routes/public");
+
 const app = express();
 
 /** ========= Config ========= */
@@ -69,7 +72,7 @@ app.use("/storefront", express.static(path.join(APPS_DIR, "storefront")));
 app.use("/dealer", express.static(path.join(APPS_DIR, "dealer")));
 app.use("/admin", express.static(path.join(APPS_DIR, "admin")));
 
-/** Root: can redirect to storefront or show a health summary */
+/** Root: can redirect to storefront */
 app.get("/", (req, res) => {
   res.redirect("/storefront");
 });
@@ -84,12 +87,7 @@ app.get("/health", (req, res) => {
   });
 });
 
-/** ========= API Routes (placeholders for now) =========
- * We’ll implement these next:
- *  - /api/public: storefront reads + create request
- *  - /api/dealer: dealer login + vehicle CRUD + archive
- *  - /api/admin: full access + analytics
- */
+/** ========= API index ========= */
 app.get("/api", (req, res) => {
   res.json({
     ok: true,
@@ -98,10 +96,16 @@ app.get("/api", (req, res) => {
   });
 });
 
-// NOTE: We'll replace these stubs with real route handlers in the next step.
-app.use("/api/public", (req, res) => {
-  res.status(501).json({ ok: false, error: "Not implemented yet (public)" });
-});
+/** ========= API Routes =========
+ *  - /api/public: storefront reads + create request ✅ implemented
+ *  - /api/dealer: dealer login + vehicle CRUD + archive (next)
+ *  - /api/admin: full access + analytics (later)
+ */
+
+// ✅ Public routes are live now
+app.use("/api/public", publicRoutes);
+
+// Keep dealer/admin as stubs until we implement routes/dealer.js & routes/admin.js
 app.use("/api/dealer", (req, res) => {
   res.status(501).json({ ok: false, error: "Not implemented yet (dealer)" });
 });
