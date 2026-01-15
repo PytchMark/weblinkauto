@@ -109,6 +109,43 @@ async function patchRecordById(tableId, recordId, fields) {
 router.get("/me", requireAdmin, async (req, res) => {
   return res.json({ ok: true, admin: true });
 });
+ /**
+ * GET /api/admin/metrics
+ * Query:
+ *  - ?month=YYYY-MM (optional)
+ * Returns global KPIs (vehicles + requests + top dealers)
+ */
+router.get("/metrics", requireAdmin, async (req, res) => {
+  try {
+    const month = cleanStr(req.query.month, 20); // YYYY-MM
+    const metrics = await getGlobalMetrics({ month: month || null });
+    return res.json({ ok: true, metrics });
+  } catch (err) {
+    console.error("GET /api/admin/metrics error:", err);
+    return res.status(500).json({ ok: false, error: "Internal Server Error" });
+  }
+});
+
+/**
+ * GET /api/admin/dealers/:dealerId/metrics
+ * Query:
+ *  - ?month=YYYY-MM (optional)
+ * Returns dealer-scoped KPIs (inventory + requests + sales proxy)
+ */
+router.get("/dealers/:dealerId/metrics", requireAdmin, async (req, res) => {
+  try {
+    const dealerId = cleanStr(req.params.dealerId, 60);
+    const month = cleanStr(req.query.month, 20);
+
+    if (!dealerId) return res.status(400).json({ ok: false, error: "dealerId is required" });
+
+    const metrics = await getDealerMetrics(dealerId, { month: month || null });
+    return res.json({ ok: true, metrics });
+  } catch (err) {
+    console.error("GET /api/admin/dealers/:dealerId/metrics error:", err);
+    return res.status(500).json({ ok: false, error: "Internal Server Error" });
+  }
+});
 
 /** -----------------------
  * DEALERS
