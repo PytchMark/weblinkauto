@@ -260,6 +260,114 @@ async function getGlobalMetrics({ month } = {}) {
     },
   };
 }
+async function getDealersSummary({ month } = {}) {
+  const monthDate = parseMonth(month);
+
+  // Pull all dealers once
+  // NOTE: Dealers table ID isn't currently imported in analytics.js, so we fetch it here via env.
+  const T_DEALERS = process.env.AIRTABLE_TABLE_ID_DEALERS;
+  if (!T_DEALERS) {
+    throw new Error("Missing AIRTABLE_TABLE_ID_DEALERS for dealers summary");
+  }
+
+  const dealers = await listAllRecords(T_DEALERS);
+
+  // For speed: fetch vehicles + requests once, then group in-memory.
+  const [vehicles, requests] = await Promise.all([
+    listAllRecords(T_VEHICLES),
+    (async () => {
+      // Requests optionally filtered to month (reduces payload)
+      if (!monthDate) return listAllRecords(T_REQUESTS);
+
+      const start = startOfMonth(monthDate).toISOString();
+      const end = endOfMonth(monthDate).toISOString();
+      const requestFilter = formulaAnd(
+        `IS_AFTER({createdAt}, '${start}')`,
+        `IS_BEFORE({createdAt}, '${end}')`
+      );
+      return listAllRecords(T_REQUESTS, { filterByFormula: requestFilter });
+    })(),
+  ]);
+
+  // Group vehicles by dealerId
+  const vehiclesByDealer = new Map();
+  for (const v of vehicles) {
+    const d = String(v.dealerId || "");
+    if (!d) continue;
+    if (!vehiclesByDealer.has(d)) vehiclesByDealer.set(d, []);
+    vehiclesByDealer.get(d).push(v);
+  }
+
+  // Group requests by dealerId (month scoped if month provided)
+  const requestsByDealer = new Map();
+  for (const r of requests) {
+    const d = String(r.dealerId || "");
+    if (!d) continue;
+    if (!requestsByDealer.has(d)) requestsByDealer.set(d, []);
+    requestsByDealer.get(d).push(r);
+  }
+
+  // Build summary rows
+  const rows = dealers.map((d) => {
+    const dealerId = String(d.dealerId || "");
+    const dealerVehicles = vehiclesByDealer.get(dealerId) || [];
+    const dealerRequests = requestsByDealer.get(dealerId) || [];
+
+    // Inventory counts
+    const byStatus = { available: 0, pending: 0, sold: 0, archived: 0, other: 0 };
+    let liveAvailable = 0;
+    let archivedChecked = 0;
+
+    for (const v of dealerVehicles) {
+      const s = String(v.status || "other").toLowerCase();
+      if (byStatus[s] !== undefined) byStatus[s]++;
+      else byStatus.other++;
+
+      if (v.archived === true) archivedChecked++;
+      if (v.Availability === true && v.archived !== true) liveAvailable++;
+    }
+
+    // Requests counts
+    const reqByStatus = {};
+    const reqByType = {};
+    for (const r of dealerRequests) {
+      const rs = String(r.status || "unknown").toLowerCase();
+      const rt = String(r.type || "unknown").toLowerCase();
+      reqByStatus[rs] = (reqByStatus[rs] || 0) + 1;
+      reqByType[rt] = (reqByType[rt] || 0) + 1;
+    }
+
+    return {
+      dealerId,
+      name: d.name || "",
+      status: d.status || "",
+      whatsapp: d.whatsapp || "",
+      logoUrl: d.logoUrl || "",
+      inventory: {
+        total: dealerVehicles.length,
+        liveAvailable,
+        archivedChecked,
+        byStatus,
+      },
+      requests: {
+        month: month || null,
+        total: dealerRequests.length,
+        byStatus: reqByStatus,
+        byType: reqByType,
+      },
+    };
+  });
+
+  // Sort: active first, then by request volume desc (month scoped if month set)
+  rows.sort((a, b) => {
+    const aActive = String(a.status).toLowerCase() === "active" ? 0 : 1;
+    const bActive = String(b.status).toLowerCase() === "active" ? 0 : 1;
+    if (aActive !== bActive) return aActive - bActive;
+    return (b.requests.total || 0) - (a.requests.total || 0);
+  });
+
+  return { month: month || null, dealers: rows };
+}
 
 module.exports = {
   getDealerMetrics,
