@@ -1,3 +1,5 @@
+const { getDealerMetrics, getGlobalMetrics } = require("../services/analytics");
+
 "use strict";
 
 const express = require("express");
