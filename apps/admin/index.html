@@ -4,17 +4,17 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Carsales · Admin Console</title>
-  <meta name="description" content="Admin console for dealers, inventory, and viewing requests." />
+  <meta name="description" content="Admin console for dealers, inventory, and requests." />
 
   <style>
     :root{
-      --bg:#f7f7f8;
+      --bg:#f6f7fb;
       --surface:#ffffff;
       --surface2:#fbfbfd;
 
-      --ink:#0b0b0b;
-      --muted:#6b7280;
-      --muted2:#9ca3af;
+      --ink:#0f172a;
+      --muted:#64748b;
+      --muted2:#94a3b8;
 
       --brand:#dc2626;
       --brand2:#ef4444;
@@ -22,7 +22,7 @@
       --brandLine:rgba(220,38,38,.18);
 
       --line:#e5e7eb;
-      --shadow: 0 18px 40px rgba(15, 23, 42, 0.10);
+      --shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
       --shadow2: 0 10px 24px rgba(15, 23, 42, 0.08);
 
       --ok:#16a34a;
@@ -30,7 +30,7 @@
       --bad:#ef4444;
 
       --radius:18px;
-      --radius2:26px;
+      --radius2:24px;
 
       --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       --sans: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
@@ -42,78 +42,204 @@
       font-family:var(--sans);
       color:var(--ink);
       background:
-        radial-gradient(circle at top left, rgba(220,38,38,.06), transparent 45%),
-        radial-gradient(circle at bottom right, rgba(239,68,68,.05), transparent 55%),
+        radial-gradient(circle at top left, rgba(220,38,38,.08), transparent 45%),
+        radial-gradient(circle at bottom right, rgba(239,68,68,.06), transparent 55%),
         var(--bg);
       -webkit-font-smoothing:antialiased;
     }
     a{color:inherit;text-decoration:none}
     .hidden{display:none!important}
 
-    .wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:18px}
-    .shell{width:100%;max-width:1280px;background:rgba(255,255,255,.86);border-radius:var(--radius2);border:1px solid var(--line);box-shadow:var(--shadow);padding:18px;backdrop-filter: blur(12px)}
+    .wrap{
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:18px;
+    }
 
-    /* Top */
-    .top{display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
-    .brand{display:flex;align-items:center;gap:12px}
-    .badge{width:44px;height:44px;border-radius:16px;background: radial-gradient(circle at 20% 20%, #fff, var(--brandSoft) 55%, rgba(220,38,38,.22));display:flex;align-items:center;justify-content:center;font-weight:950;font-size:18px;color:var(--brand);box-shadow: 0 12px 24px rgba(220,38,38,.12)}
-    .title{font-size:18px;font-weight:950}
-    .sub{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.2}
+    .shell{
+      width:100%;
+      max-width:1260px;
+      background:rgba(255,255,255,.86);
+      border-radius:var(--radius2);
+      border:1px solid var(--line);
+      box-shadow:var(--shadow);
+      padding:18px;
+      backdrop-filter: blur(12px);
+    }
 
-    .actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end}
+    .top{
+      display:flex;
+      flex-wrap:wrap;
+      gap:14px;
+      justify-content:space-between;
+      align-items:flex-start;
+      margin-bottom:14px;
+    }
 
-    .btn{border-radius:999px;border:1px solid transparent;padding:9px 14px;font-size:12px;font-weight:900;display:inline-flex;align-items:center;gap:8px;cursor:pointer;background:transparent;color:var(--ink);transition:transform .12s ease, box-shadow .12s ease, background .12s ease;user-select:none;white-space:nowrap}
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+    }
+    .badge{
+      width:44px;height:44px;border-radius:16px;
+      background: radial-gradient(circle at 20% 20%, #fff, var(--brandSoft) 55%, rgba(220,38,38,.25));
+      display:flex;align-items:center;justify-content:center;
+      font-weight:900;font-size:18px;color:var(--brand);
+      box-shadow: 0 12px 24px rgba(220,38,38,.14);
+    }
+    .title{font-size:18px;font-weight:900}
+    .sub{font-size:12px;color:var(--muted);margin-top:3px}
+
+    .actions{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:flex-end;
+    }
+
+    .btn{
+      border-radius:999px;
+      border:1px solid transparent;
+      padding:9px 14px;
+      font-size:12px;
+      font-weight:750;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      cursor:pointer;
+      background:transparent;
+      color:var(--ink);
+      transition:transform .12s ease, box-shadow .12s ease, background .12s ease;
+      user-select:none;
+      white-space:nowrap;
+    }
     .btn:disabled{opacity:.55;cursor:not-allowed}
 
-    .btn-ghost{border:1px solid var(--line);background:rgba(255,255,255,.92);box-shadow:var(--shadow2)}
+    .btn-ghost{
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.90);
+      box-shadow:var(--shadow2);
+    }
     .btn-ghost:hover{transform:translateY(-1px)}
 
-    .btn-primary{background:linear-gradient(135deg, var(--brand2), var(--brand));color:#fff;box-shadow:0 16px 32px rgba(220,38,38,.22)}
+    .btn-primary{
+      background:linear-gradient(135deg, var(--brand2), var(--brand));
+      color:#fff;
+      box-shadow:0 16px 32px rgba(220,38,38,.28);
+    }
     .btn-primary:hover{transform:translateY(-1px)}
 
-    .btn-danger{border:1px solid rgba(239,68,68,.30);background:rgba(239,68,68,.08);color:#991b1b;box-shadow:var(--shadow2)}
+    .btn-danger{
+      border:1px solid rgba(239,68,68,.30);
+      background:rgba(239,68,68,.08);
+      color:#991b1b;
+      box-shadow:var(--shadow2);
+    }
     .btn-danger:hover{transform:translateY(-1px); background:rgba(239,68,68,.12)}
 
-    .pill{display:inline-flex;align-items:center;gap:8px;padding:7px 10px;border-radius:999px;background:rgba(255,255,255,.92);border:1px solid var(--line);font-size:12px;color:var(--muted);box-shadow:var(--shadow2)}
-    .dot{width:8px;height:8px;border-radius:999px;background:var(--warn);box-shadow:0 0 0 3px rgba(245,158,11,.18)}
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:7px 10px;
+      border-radius:999px;
+      background:rgba(255,255,255,.90);
+      border:1px solid var(--line);
+      font-size:12px;
+      color:var(--muted);
+      box-shadow:var(--shadow2);
+    }
+    .dot{
+      width:8px;height:8px;border-radius:999px;
+      background:var(--warn);
+      box-shadow:0 0 0 3px rgba(245,158,11,.18);
+    }
     .dot.on{background:var(--ok); box-shadow:0 0 0 3px rgba(22,163,74,.18)}
     .dot.err{background:var(--bad); box-shadow:0 0 0 3px rgba(239,68,68,.18)}
 
-    /* Layout */
     .grid{display:grid;grid-template-columns:1fr;gap:12px}
-    @media(min-width:1040px){.grid{grid-template-columns:0.34fr 0.66fr}}
+    @media(min-width:1020px){ .grid{grid-template-columns:0.36fr 0.64fr} }
 
-    .panel{background:rgba(255,255,255,.94);border:1px solid var(--line);border-radius:20px;padding:14px;box-shadow:var(--shadow2)}
-    .panel h3{margin:0 0 6px;font-size:13px;font-weight:950;letter-spacing:.02em}
+    .panel{
+      background:rgba(255,255,255,.92);
+      border:1px solid var(--line);
+      border-radius:20px;
+      padding:14px;
+      box-shadow:var(--shadow2);
+    }
+    .panel h3{margin:0 0 6px;font-size:13px;font-weight:900;letter-spacing:.02em}
     .hint{font-size:12px;color:var(--muted);line-height:1.35}
 
-    /* Inputs */
     .field{margin-top:10px}
     .label{display:flex;justify-content:space-between;gap:8px;font-size:11px;color:var(--muted);margin-bottom:5px}
-    .input,.select,.textarea{width:100%;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.94);padding:10px 12px;font-size:13px;color:var(--ink);outline:none;transition:box-shadow .12s ease, border-color .12s ease}
-    .input:focus,.select:focus,.textarea:focus{border-color:rgba(220,38,38,.45);box-shadow:0 0 0 4px rgba(220,38,38,.12)}
+    .input,.select,.textarea{
+      width:100%;
+      border-radius:14px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.92);
+      padding:10px 12px;
+      font-size:13px;
+      color:var(--ink);
+      outline:none;
+      transition:box-shadow .12s ease, border-color .12s ease;
+    }
+    .input:focus,.select:focus,.textarea:focus{
+      border-color:rgba(220,38,38,.45);
+      box-shadow:0 0 0 4px rgba(220,38,38,.12);
+    }
     .textarea{min-height:90px;resize:vertical}
     .row{display:grid;grid-template-columns:1fr;gap:8px}
     @media(min-width:560px){.row.two{grid-template-columns:1fr 1fr}}
 
-    /* KPI row */
-    .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-top:10px}
-    .kpi{border-radius:16px;border:1px solid var(--line);background:rgba(255,255,255,.98);padding:12px;box-shadow:var(--shadow2)}
+    .kpis{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+      gap:10px;
+      margin-bottom:10px;
+    }
+    .kpi{
+      border-radius:16px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.96);
+      padding:12px;
+      box-shadow:var(--shadow2);
+    }
     .kpi .t{font-size:11px;color:var(--muted)}
-    .kpi .v{font-size:18px;font-weight:950}
+    .kpi .v{font-size:18px;font-weight:900}
     .kpi .s{font-size:11px;color:var(--muted2)}
 
-    /* Tabs */
-    .tabs{display:flex;gap:6px;flex-wrap:wrap;border-radius:999px;padding:4px;border:1px solid var(--line);background:rgba(255,255,255,.94);box-shadow:var(--shadow2)}
-    .tab{border:none;cursor:pointer;padding:7px 12px;border-radius:999px;background:transparent;color:var(--muted);font-size:11px;font-weight:950;letter-spacing:.05em;transition: background .12s ease, color .12s ease, transform .08s ease}
+    .tabs{
+      display:flex;gap:6px;flex-wrap:wrap;
+      border-radius:999px;padding:4px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.92);
+      box-shadow:var(--shadow2);
+    }
+    .tab{
+      border:none;cursor:pointer;
+      padding:7px 12px;border-radius:999px;
+      background:transparent;color:var(--muted);
+      font-size:11px;font-weight:900;letter-spacing:.05em;
+      transition: background .12s ease, color .12s ease, transform .08s ease;
+    }
     .tab.active{background:rgba(220,38,38,.10);color:var(--brand);transform:translateY(-1px)}
 
-    /* Table */
-    .table-shell{overflow:hidden;border-radius:20px;border:1px solid var(--line);background:rgba(255,255,255,.98);box-shadow:var(--shadow2)}
-    .table-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);background:linear-gradient(to right, rgba(220,38,38,.05), rgba(255,255,255,.94))}
-    .table-title{font-size:13px;font-weight:950}
+    .table-shell{
+      overflow:hidden;border-radius:20px;border:1px solid var(--line);
+      background:rgba(255,255,255,.96);box-shadow:var(--shadow2);
+    }
+    .table-head{
+      display:flex;justify-content:space-between;align-items:center;gap:10px;
+      padding:12px 14px;border-bottom:1px solid var(--line);
+      background:linear-gradient(to right, rgba(220,38,38,.05), rgba(255,255,255,.92));
+    }
+    .table-title{font-size:13px;font-weight:900}
     .table-meta{font-size:11px;color:var(--muted)}
-    .scroll{max-height:640px;overflow:auto}
+    .scroll{max-height:620px;overflow:auto}
     table{width:100%;border-collapse:collapse;font-size:12px}
     thead{position:sticky;top:0;background:var(--surface2);z-index:1}
     th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line)}
@@ -121,39 +247,60 @@
     tbody tr:hover{background:rgba(220,38,38,.04)}
     .mono{font-family:var(--mono); font-size:11px}
 
-    .badgeMini{display:inline-flex;align-items:center;padding:3px 8px;border-radius:999px;font-size:10px;border:1px solid rgba(220,38,38,.22);background:rgba(220,38,38,.06);color:#991b1b}
+    .badgeMini{
+      display:inline-flex;align-items:center;
+      padding:3px 8px;border-radius:999px;
+      font-size:10px;border:1px solid rgba(220,38,38,.22);
+      background:rgba(220,38,38,.06);color:#991b1b;
+    }
 
-    .status{display:inline-flex;align-items:center;padding:3px 9px;border-radius:999px;font-size:10px;font-weight:950;letter-spacing:.08em;text-transform:uppercase;border:1px solid transparent}
-    .available{background:rgba(22,163,74,.10);color:#166534;border-color:rgba(22,163,74,.30)}
-    .pending{background:rgba(245,158,11,.12);color:#92400e;border-color:rgba(245,158,11,.35)}
-    .sold{background:rgba(15,23,42,.06);color:#0b0b0b;border-color:rgba(15,23,42,.12)}
-    .archived{background:rgba(15,23,42,.04);color:#374151;border-color:rgba(15,23,42,.10)}
-
+    .status{
+      display:inline-flex;align-items:center;
+      padding:3px 9px;border-radius:999px;
+      font-size:10px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;
+      border:1px solid transparent;
+    }
     .active{background:rgba(22,163,74,.10);color:#166534;border-color:rgba(22,163,74,.30)}
     .paused{background:rgba(245,158,11,.10);color:#92400e;border-color:rgba(245,158,11,.30)}
 
-    .reqNew{background:rgba(239,68,68,.10);color:#991b1b;border-color:rgba(239,68,68,.25)}
-    .reqBooked{background:rgba(22,163,74,.10);color:#166534;border-color:rgba(22,163,74,.25)}
-    .reqClosed{background:rgba(15,23,42,.06);color:#0b0b0b;border-color:rgba(15,23,42,.10)}
-
-    /* Mini charts */
-    .spark{width:100%;height:56px;border-radius:14px;border:1px solid var(--line);background:linear-gradient(180deg, rgba(220,38,38,.06), rgba(255,255,255,.94));display:flex;align-items:flex-end;gap:3px;padding:10px;box-shadow:var(--shadow2)}
-    .bar{flex:1;border-radius:10px 10px 0 0;background:rgba(220,38,38,.22)}
-
     /* Modal */
-    .backdrop{position:fixed;inset:0;z-index:50;background:rgba(15,23,42,.55);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;padding:16px}
+    .backdrop{
+      position:fixed;inset:0;z-index:50;
+      background:rgba(15,23,42,.55);
+      backdrop-filter:blur(10px);
+      display:none;align-items:center;justify-content:center;padding:16px;
+    }
     .backdrop.show{display:flex}
-    .modal{width:100%;max-width:840px;background:rgba(255,255,255,.98);border-radius:26px;border:1px solid var(--line);box-shadow:0 30px 70px rgba(15,23,42,.22);overflow:hidden}
-    .mhead{padding:14px 16px 10px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;border-bottom:1px solid var(--line);background:linear-gradient(to right, rgba(220,38,38,.06), rgba(255,255,255,.94))}
-    .mhead h3{margin:0;font-size:14px;font-weight:950}
-    .xbtn{border:none;background:rgba(15,23,42,.04);color:var(--ink);font-size:20px;cursor:pointer;width:34px;height:34px;border-radius:999px}
+    .modal{
+      width:100%;max-width:820px;background:rgba(255,255,255,.98);
+      border-radius:26px;border:1px solid var(--line);
+      box-shadow:0 30px 70px rgba(15,23,42,.22);overflow:hidden;
+    }
+    .mhead{
+      padding:14px 16px 10px;
+      display:flex;justify-content:space-between;align-items:flex-start;gap:10px;
+      border-bottom:1px solid var(--line);
+      background:linear-gradient(to right, rgba(220,38,38,.06), rgba(255,255,255,.94));
+    }
+    .mhead h3{margin:0;font-size:14px;font-weight:900}
+    .xbtn{
+      border:none;background:rgba(15,23,42,.04);
+      color:var(--ink);font-size:20px;cursor:pointer;
+      width:34px;height:34px;border-radius:999px;
+    }
     .xbtn:hover{background:rgba(220,38,38,.10);color:var(--brand)}
     .mbody{padding:14px 16px}
     .statusline{min-height:18px;font-size:12px;color:var(--muted);margin-top:8px}
     .statusline.error{color:var(--bad)}
 
-    /* Toast */
-    #toast{position:fixed;bottom:16px;right:16px;z-index:60;padding:10px 14px;border-radius:999px;font-size:12px;display:none;align-items:center;gap:8px;background:rgba(255,255,255,.92);border:1px solid var(--line);box-shadow:var(--shadow)}
+    #toast{
+      position:fixed;bottom:16px;right:16px;z-index:60;
+      padding:10px 14px;border-radius:999px;font-size:12px;
+      display:none;align-items:center;gap:8px;
+      background:rgba(255,255,255,.92);
+      border:1px solid var(--line);
+      box-shadow:var(--shadow);
+    }
     #toast.show{display:flex}
     #toast.success{border-color:rgba(22,163,74,.35);color:#166534}
     #toast.error{border-color:rgba(239,68,68,.35);color:#991b1b}
@@ -173,7 +320,7 @@
           <div class="badge">A</div>
           <div>
             <div class="title">Admin Console</div>
-            <div class="sub">Manage dealers, inventory, requests, and platform KPIs.</div>
+            <div class="sub">Manage dealers, inventory, and viewing requests.</div>
           </div>
         </div>
         <div class="actions">
@@ -185,7 +332,9 @@
       <div class="panel">
         <h3>Sign in</h3>
         <div class="hint">
-          Auth is controlled by Cloud Run env vars (<span class="mono">ADMIN_USERNAME</span> / <span class="mono">ADMIN_PASSWORD</span>).
+          Login uses Cloud Run env vars:
+          <span class="mono">ADMIN_USERNAME</span> /
+          <span class="mono">ADMIN_PASSWORD</span>.
         </div>
 
         <div class="row two" style="margin-top:10px">
@@ -239,7 +388,7 @@
       </div>
 
       <div class="grid">
-        <!-- LEFT CONTROL PANEL -->
+        <!-- LEFT -->
         <div class="panel">
           <h3>Controls</h3>
           <div class="hint" id="hint">Search + filter across the current tab.</div>
@@ -256,9 +405,18 @@
             </select>
           </div>
 
-          <div class="field" id="monthWrap" style="display:none">
-            <div class="label"><span>Month</span><span>KPIs window</span></div>
-            <input id="month" class="input" type="month" />
+          <!-- Summary controls -->
+          <div class="panel hidden" id="summaryControls" style="margin-top:10px">
+            <h3>Summary month</h3>
+            <div class="hint">Loads KPIs for all dealers in one request.</div>
+            <div class="field">
+              <div class="label"><span>Month</span><span>YYYY-MM</span></div>
+              <input id="summaryMonth" class="input" type="month" />
+            </div>
+            <div class="splitBtns">
+              <button class="btn btn-primary" id="btnLoadSummary" type="button">Load summary</button>
+            </div>
+            <div class="statusline" id="summaryStatus"></div>
           </div>
 
           <div class="statusline" id="dashStatus"></div>
@@ -266,7 +424,7 @@
           <!-- Dealer actions -->
           <div class="panel" id="dealerActions" style="margin-top:10px">
             <h3>Create dealer</h3>
-            <div class="hint">Fast onboarding. You can edit anytime.</div>
+            <div class="hint">Adds a dealer profile (Dealers table). Passcode is stored hashed server-side.</div>
 
             <div class="field">
               <div class="label"><span>Dealer name</span><span>Required</span></div>
@@ -275,8 +433,8 @@
 
             <div class="row two">
               <div class="field">
-                <div class="label"><span>Dealer ID</span><span>AA123</span></div>
-                <input id="newDealerId" class="input" placeholder="AA123" maxlength="12" />
+                <div class="label"><span>Dealer ID</span><span>3–40 chars</span></div>
+                <input id="newDealerId" class="input" placeholder="DEALER-0001" maxlength="40" />
               </div>
               <div class="field">
                 <div class="label"><span>Status</span><span>Default</span></div>
@@ -305,39 +463,14 @@
 
             <div class="splitBtns">
               <button class="btn btn-ghost" id="btnOpenDealerModal" type="button">Open editor</button>
-              <button class="btn btn-primary" id="btnCreateDealer" type="button">Create</button>
+              <button class="btn btn-primary" id="btnCreateDealer" type="button">Create dealer</button>
             </div>
 
             <div class="statusline" id="dealerActionStatus"></div>
           </div>
-
-          <div class="panel" id="summaryPanel" style="margin-top:10px; display:none">
-            <h3>Summary snapshot</h3>
-            <div class="hint">One-call KPI overview. Great for "morning check".</div>
-            <div class="kpis">
-              <div class="kpi"><div class="t">Active dealers</div><div class="v" id="sActive">–</div><div class="s">In month</div></div>
-              <div class="kpi"><div class="t">Available vehicles</div><div class="v" id="sAvail">–</div><div class="s">In month</div></div>
-              <div class="kpi"><div class="t">New requests</div><div class="v" id="sNew">–</div><div class="s">In month</div></div>
-              <div class="kpi"><div class="t">Booked requests</div><div class="v" id="sBooked">–</div><div class="s">In month</div></div>
-            </div>
-            <div class="field" style="margin-top:10px">
-              <div class="label"><span>Requests trend</span><span>Last 12 days</span></div>
-              <div class="spark" id="spark"></div>
-            </div>
-          </div>
-
-          <!-- System Info -->
-          <div class="panel" style="margin-top:10px">
-            <h3>System</h3>
-            <div class="hint">
-              API base: <span class="mono">/api</span><br/>
-              Cloudinary base folder: <span class="mono" id="cloudFolder">(loading)</span><br/>
-              Footer: Built by Pytch LLC ©
-            </div>
-          </div>
         </div>
 
-        <!-- RIGHT TABLE -->
+        <!-- RIGHT -->
         <div class="table-shell" id="mainTable">
           <div class="table-head">
             <div>
@@ -354,6 +487,46 @@
             </table>
           </div>
         </div>
+
+        <!-- Summary panel -->
+        <div class="panel hidden" id="summaryPanel">
+          <h3>All dealers summary</h3>
+          <div class="hint">Fast admin load: one request returns KPIs for every dealer.</div>
+
+          <div class="kpis" style="margin-top:10px">
+            <div class="kpi"><div class="t">Dealers</div><div class="v" id="sDealers">0</div><div class="s">Total</div></div>
+            <div class="kpi"><div class="t">Active</div><div class="v" id="sActive">0</div><div class="s">Dealers live</div></div>
+            <div class="kpi"><div class="t">Available</div><div class="v" id="sAvailable">0</div><div class="s">Vehicles in stock</div></div>
+            <div class="kpi"><div class="t">Requests</div><div class="v" id="sRequests">0</div><div class="s">Month total</div></div>
+          </div>
+
+          <div class="table-shell" style="margin-top:10px">
+            <div class="table-head">
+              <div>
+                <div class="table-title">Dealers KPIs</div>
+                <div class="table-meta">Showing <span id="sCount">0</span> dealers</div>
+              </div>
+              <div class="table-meta" id="sUpdated">—</div>
+            </div>
+            <div class="scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Dealer</th>
+                    <th>Status</th>
+                    <th>Inventory</th>
+                    <th>Available</th>
+                    <th>Requests</th>
+                    <th>New</th>
+                    <th>Booked</th>
+                  </tr>
+                </thead>
+                <tbody id="sBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -396,25 +569,24 @@
           </div>
         </div>
 
-        <div class="row two">
-          <div class="field">
-            <div class="label"><span>Passcode</span><span>Optional</span></div>
-            <input id="mDealerPasscode" class="input" placeholder="Leave blank to keep" />
-          </div>
-          <div class="field">
-            <div class="label"><span>Logo URL</span><span>Optional</span></div>
-            <input id="mDealerLogo" class="input" placeholder="https://..." />
-          </div>
+        <div class="field">
+          <div class="label"><span>Passcode (optional set)</span></div>
+          <input id="mDealerPasscode" class="input" placeholder="123456" />
+        </div>
+
+        <div class="field">
+          <div class="label"><span>Logo URL</span></div>
+          <input id="mDealerLogo" class="input" placeholder="https://..." />
         </div>
 
         <div class="panel" style="margin-top:10px">
-          <h3>Security</h3>
-          <div class="hint">Reset generates a new passcode on the server (never stored in frontend).</div>
+          <h3>Passcode reset</h3>
+          <div class="hint">Reset generates a fresh passcode for the dealer (server returns it once).</div>
 
           <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; justify-content:space-between; margin-top:8px">
-            <div class="pill" title="Passcode reveal only in demo mode" style="box-shadow:none">
+            <div class="pill" style="box-shadow:none">
               <span class="dot on" style="box-shadow:none"></span>
-              <span>Passcode: <span class="mono" id="mPasscode">••••••</span></span>
+              <span>Latest passcode: <span class="mono" id="mPasscode">••••••</span></span>
             </div>
             <div style="display:flex; gap:8px; flex-wrap:wrap">
               <button class="btn btn-danger" id="btnResetPasscode" type="button">Reset passcode</button>
@@ -429,29 +601,20 @@
   </div>
 
   <!-- Toast -->
-  <div id="toast"><div id="toastDot"></div><div id="toastMsg"></div></div>
+  <div id="toast">
+    <div id="toastDot"></div>
+    <div id="toastMsg"></div>
+  </div>
 
   <script>
-    // =============================
-    // API CONTRACT (expected)
-    // =============================
-    // POST /api/admin/login                  { username, password } -> { ok:true, token }
-    // GET  /api/admin/dealers                (auth) -> { ok:true, dealers:[...] }
-    // POST /api/admin/dealers                (auth) -> { ok:true, dealer, passcode? }  // upsert
-    // POST /api/admin/reset-passcode         (auth) -> { ok:true, dealerId, passcode? }
-    // GET  /api/admin/inventory              (auth) -> { ok:true, vehicles:[...] }
-    // GET  /api/admin/requests               (auth) -> { ok:true, requests:[...] }
-    // GET  /api/admin/dealers/summary?month=YYYY-MM  (auth) -> { ok:true, month, totals:{...}, dealers:[...], trend:[...]} 
-    // GET  /api/public/config                -> { ok:true, cloudinary:{ baseFolder } }
-
+    // ========= API endpoints =========
     const API = {
       login: () => "/api/admin/login",
       dealers: () => "/api/admin/dealers",
       resetPass: () => "/api/admin/reset-passcode",
       inventory: () => "/api/admin/inventory",
       requests: () => "/api/admin/requests",
-      dealersSummary: (month) => `/api/admin/dealers/summary?month=${encodeURIComponent(month)}`,
-      publicConfig: () => "/api/public/config",
+      summary: (month) => `/api/admin/dealers/summary?month=${encodeURIComponent(month)}`
     };
 
     const el = (id) => document.getElementById(id);
@@ -481,8 +644,6 @@
       q: el("q"),
       statusFilterWrap: el("statusFilterWrap"),
       statusFilter: el("statusFilter"),
-      monthWrap: el("monthWrap"),
-      month: el("month"),
 
       tableTitle: el("tableTitle"),
       theadRow: el("theadRow"),
@@ -502,15 +663,21 @@
       btnOpenDealerModal: el("btnOpenDealerModal"),
       dealerActionStatus: el("dealerActionStatus"),
 
+      // Summary
+      summaryControls: el("summaryControls"),
+      summaryMonth: el("summaryMonth"),
+      btnLoadSummary: el("btnLoadSummary"),
+      summaryStatus: el("summaryStatus"),
       summaryPanel: el("summaryPanel"),
+      sDealers: el("sDealers"),
       sActive: el("sActive"),
-      sAvail: el("sAvail"),
-      sNew: el("sNew"),
-      sBooked: el("sBooked"),
-      spark: el("spark"),
+      sAvailable: el("sAvailable"),
+      sRequests: el("sRequests"),
+      sCount: el("sCount"),
+      sUpdated: el("sUpdated"),
+      sBody: el("sBody"),
 
-      cloudFolder: el("cloudFolder"),
-
+      // Modal
       dealerBackdrop: el("dealerBackdrop"),
       mClose: el("mClose"),
       mDealerName: el("mDealerName"),
@@ -532,38 +699,33 @@
     const state = {
       tab: "dealers",
       token: null,
-      apiOnline: false,
+      apiOnline: true,
 
       dealers: [],
       vehicles: [],
       requests: [],
 
       selectedDealer: null,
-
-      demoPasscodes: {},
-
-      config: { cloudinary:{ baseFolder:"mediaexclusive" } },
-
-      summary: { month:"", totals:null, dealers:[], trend:[] }
+      demoPasscodes: {}
     };
 
-    document.addEventListener("DOMContentLoaded", async () => {
+    // ========= Boot =========
+    document.addEventListener("DOMContentLoaded", () => {
+      // Wire buttons (this is what makes them NOT "dead")
       wire();
-      // Helpful defaults for local testing
-      ui.username.value = ui.username.value || "admin";
 
-      await loadPublicConfig();
-      ui.month.value = defaultMonth();
-      paintSystemPanel();
-
-      // Try session restore
-      const saved = sessionStorage.getItem("adminToken");
+      // Restore token if present
+      const saved = sessionStorage.getItem("ADMIN_TOKEN");
       if(saved){
         state.token = saved;
-        state.apiOnline = true;
-        setApi("Restoring…", "on");
         enterDashboard("admin");
+        refresh().catch(()=>{});
+      } else {
+        setApi("Login", "err");
       }
+
+      // default month
+      ui.summaryMonth.value = new Date().toISOString().slice(0,7);
     });
 
     function wire(){
@@ -572,7 +734,7 @@
       ui.password.addEventListener("keydown", (e)=>{ if(e.key==="Enter") doLogin(); });
 
       ui.btnLogout.addEventListener("click", logout);
-      ui.btnRefresh.addEventListener("click", refresh);
+      ui.btnRefresh.addEventListener("click", () => refresh().catch(()=>{}));
 
       [ui.tabDealers, ui.tabSummary, ui.tabInventory, ui.tabRequests, ui.tabSettings].forEach(btn=>{
         btn.addEventListener("click", ()=> setTab(btn.dataset.tab));
@@ -581,36 +743,22 @@
       ui.q.addEventListener("keydown", (e)=>{ if(e.key==="Enter") render(); });
       ui.statusFilter.addEventListener("change", render);
 
-      ui.month.addEventListener("change", ()=>{
-        if(state.tab === "summary") refresh();
-      });
-
       ui.btnCreateDealer.addEventListener("click", createDealer);
-      ui.btnOpenDealerModal.addEventListener("click", ()=>{
+      ui.btnOpenDealerModal.addEventListener("click", () => {
         if(!state.dealers.length) return toast("No dealers yet. Create one first.", "error");
         openDealerModal(state.dealers[0]);
       });
 
       ui.mClose.addEventListener("click", closeDealerModal);
       ui.dealerBackdrop.addEventListener("click", (e)=>{ if(e.target === ui.dealerBackdrop) closeDealerModal(); });
+
       ui.btnResetPasscode.addEventListener("click", resetPasscode);
       ui.btnSaveDealer.addEventListener("click", saveDealerChanges);
+
+      ui.btnLoadSummary.addEventListener("click", () => loadSummary().catch(()=>{}));
     }
 
-    async function loadPublicConfig(){
-      try{
-        const res = await fetch(API.publicConfig(), { headers:{ "Accept":"application/json" } });
-        const data = await safeJson(res);
-        if(res.ok && data?.ok){
-          state.config.cloudinary.baseFolder = data.cloudinary?.baseFolder || state.config.cloudinary.baseFolder;
-        }
-      }catch{ /* ignore */ }
-    }
-
-    function paintSystemPanel(){
-      ui.cloudFolder.textContent = state.config.cloudinary.baseFolder || "mediaexclusive";
-    }
-
+    // ========= Auth =========
     async function doLogin(){
       const username = (ui.username.value||"").trim();
       const password = (ui.password.value||"").trim();
@@ -625,95 +773,160 @@
           body: JSON.stringify({ username, password })
         });
         const data = await safeJson(res);
-        if(!res.ok || !data?.ok) throw new Error(data?.error || "Login failed");
+
+        if(!res.ok || !data?.ok){
+          throw new Error(data?.error || `Login failed (${res.status})`);
+        }
 
         state.apiOnline = true;
         state.token = data.token;
-        sessionStorage.setItem("adminToken", state.token);
+        sessionStorage.setItem("ADMIN_TOKEN", state.token);
+
         setApi("Live", "on");
         enterDashboard(username);
+        toast("Signed in.", "success");
       }catch(e){
         setApi("Error", "err");
-        setLoginStatus("Login failed. Use Demo mode to preview UI.", true);
+        setLoginStatus(e?.message || "API login failed.", true);
+        toast("Login failed.", "error");
       }
     }
 
     function enterDemo(){
       state.apiOnline = false;
       state.token = "demo-token";
-      sessionStorage.removeItem("adminToken");
+      sessionStorage.setItem("ADMIN_TOKEN", state.token);
       setApi("Demo", "err");
-      enterDashboard("admin (demo)");
+      enterDashboard("admin-demo");
+      seedDemoIfNeeded();
+      render();
     }
 
-    function enterDashboard(who){
+    function enterDashboard(username){
       ui.loginView.classList.add("hidden");
       ui.dashView.classList.remove("hidden");
-      ui.whoami.textContent = String(who || "Admin");
-      seedDemoIfNeeded();
+      ui.whoami.textContent = `Admin · ${username}`;
       setTab(state.tab || "dealers");
-      refresh();
-      toast("Signed in.", "success");
     }
 
     function logout(){
-      sessionStorage.removeItem("adminToken");
+      sessionStorage.removeItem("ADMIN_TOKEN");
       state.token = null;
-      state.apiOnline = false;
+      state.apiOnline = true;
       state.dealers = [];
       state.vehicles = [];
       state.requests = [];
-      state.summary = { month:"", totals:null, dealers:[], trend:[] };
       state.selectedDealer = null;
 
       ui.dashView.classList.add("hidden");
       ui.loginView.classList.remove("hidden");
       ui.loginStatus.textContent = "";
+      setApi("Login", "err");
       toast("Logged out.", "success");
     }
 
+    function authHeaders(){
+      return {
+        "Accept":"application/json",
+        "Authorization":"Bearer " + state.token
+      };
+    }
+
+    // ========= Tabs =========
+    function setTab(tab){
+      state.tab = tab;
+
+      ui.tabDealers.classList.toggle("active", tab==="dealers");
+      ui.tabSummary.classList.toggle("active", tab==="summary");
+      ui.tabInventory.classList.toggle("active", tab==="inventory");
+      ui.tabRequests.classList.toggle("active", tab==="requests");
+      ui.tabSettings.classList.toggle("active", tab==="settings");
+
+      ui.tableTitle.textContent =
+        tab==="dealers" ? "Dealers"
+        : tab==="inventory" ? "Inventory"
+        : tab==="requests" ? "Viewing requests"
+        : tab==="settings" ? "Platform settings"
+        : "Summary";
+
+      ui.hint.textContent =
+        tab==="dealers" ? "Create and manage dealer accounts. Click a row to edit."
+        : tab==="summary" ? "Loads KPIs for all dealers in one request."
+        : tab==="inventory" ? "View all vehicles."
+        : tab==="requests" ? "View all viewing requests."
+        : "Env-driven settings.";
+
+      ui.dealerActions.classList.toggle("hidden", tab!=="dealers");
+      ui.summaryControls.classList.toggle("hidden", tab!=="summary");
+      ui.summaryPanel.classList.toggle("hidden", tab!=="summary");
+      ui.mainTable.classList.toggle("hidden", tab==="summary");
+
+      buildStatusFilterOptions(tab);
+      buildTableHeaders(tab);
+
+      refresh().catch(()=>{});
+    }
+
+    function buildStatusFilterOptions(tab){
+      ui.statusFilter.innerHTML = "";
+      const add = (v,t)=>{ const o=document.createElement("option"); o.value=v; o.textContent=t; ui.statusFilter.appendChild(o); };
+      add("", "All");
+
+      if(tab==="dealers"){ add("active","Active"); add("paused","Paused"); }
+      else if(tab==="inventory"){ add("available","Available"); add("pending","Pending"); add("sold","Sold"); }
+      else if(tab==="requests"){ add("new","New"); add("booked","Booked"); add("closed","Closed"); }
+
+      ui.statusFilterWrap.classList.toggle("hidden", tab==="settings" || tab==="summary");
+    }
+
+    function buildTableHeaders(tab){
+      ui.theadRow.innerHTML = "";
+      const cols =
+        tab==="dealers" ? ["Dealer", "Dealer ID", "Status", "WhatsApp", "Logo", "Actions"]
+        : tab==="inventory" ? ["Vehicle", "Dealer", "Status", "Price", "Updated"]
+        : tab==="requests" ? ["Customer", "Vehicle", "Dealer", "Type", "Status", "Requested"]
+        : ["Item", "Value", "Hint"];
+
+      cols.forEach(c=>{ const th=document.createElement("th"); th.textContent=c; ui.theadRow.appendChild(th); });
+    }
+
+    // ========= Data refresh =========
     async function refresh(){
       ui.dashStatus.textContent = state.apiOnline ? "Loading from API…" : "Loading demo data…";
       ui.lastUpdated.textContent = "Updated: " + fmt(new Date());
 
-      if(!state.apiOnline){
-        ui.dashStatus.textContent = "Ready (demo).";
-        render();
-        return;
-      }
-
       try{
-        if(state.tab === "summary"){
-          const month = ui.month.value || defaultMonth();
-          const res = await fetch(API.dealersSummary(month), { headers: authHeaders() });
-          const data = await safeJson(res);
-          if(!res.ok || !data?.ok) throw new Error(data?.error || "Failed to load summary");
-          state.summary.month = data.month || month;
-          state.summary.totals = data.totals || null;
-          state.summary.dealers = Array.isArray(data.dealers) ? data.dealers : [];
-          state.summary.trend = Array.isArray(data.trend) ? data.trend : [];
-          paintSummary();
+        if(!state.apiOnline){
+          seedDemoIfNeeded();
+          ui.dashStatus.textContent = "Ready (demo).";
+          render();
+          return;
         }
 
-        if(state.tab === "dealers" || state.tab === "settings"){
+        if(state.tab==="dealers"){
           const res = await fetch(API.dealers(), { headers: authHeaders() });
           const data = await safeJson(res);
           if(!res.ok || !data?.ok) throw new Error(data?.error || "Failed to load dealers");
           state.dealers = Array.isArray(data.dealers) ? data.dealers : [];
         }
 
-        if(state.tab === "inventory"){
+        // These two are optional — if you haven't built them yet, UI won't break.
+        if(state.tab==="inventory"){
           const res = await fetch(API.inventory(), { headers: authHeaders() });
           const data = await safeJson(res);
-          if(!res.ok || !data?.ok) throw new Error(data?.error || "Failed to load inventory");
-          state.vehicles = Array.isArray(data.vehicles) ? data.vehicles : [];
+          if(res.ok && data?.ok) state.vehicles = Array.isArray(data.vehicles) ? data.vehicles : [];
+          else state.vehicles = [];
         }
 
-        if(state.tab === "requests"){
+        if(state.tab==="requests"){
           const res = await fetch(API.requests(), { headers: authHeaders() });
           const data = await safeJson(res);
-          if(!res.ok || !data?.ok) throw new Error(data?.error || "Failed to load requests");
-          state.requests = Array.isArray(data.requests) ? data.requests : [];
+          if(res.ok && data?.ok) state.requests = Array.isArray(data.requests) ? data.requests : [];
+          else state.requests = [];
+        }
+
+        if(state.tab==="summary"){
+          await loadSummary();
         }
 
         ui.dashStatus.textContent = "Ready.";
@@ -726,92 +939,118 @@
       }
     }
 
-    function setTab(tab){
-      state.tab = tab;
+    async function loadSummary(){
+      ui.summaryStatus.textContent = "";
+      const month = ui.summaryMonth.value || new Date().toISOString().slice(0,7);
 
-      ui.tabDealers.classList.toggle("active", tab==="dealers");
-      ui.tabSummary.classList.toggle("active", tab==="summary");
-      ui.tabInventory.classList.toggle("active", tab==="inventory");
-      ui.tabRequests.classList.toggle("active", tab==="requests");
-      ui.tabSettings.classList.toggle("active", tab==="settings");
+      if(!state.apiOnline){
+        ui.summaryStatus.textContent = "Summary not available in demo (seeded data only).";
+        ui.summaryStatus.classList.remove("error");
+        renderSummaryFromDemo(month);
+        return;
+      }
 
-      ui.tableTitle.textContent =
-        tab==="dealers" ? "Dealers"
-        : tab==="summary" ? "Dealers summary"
-        : tab==="inventory" ? "Inventory"
-        : tab==="requests" ? "Viewing requests"
-        : "Platform settings";
+      try{
+        ui.summaryStatus.textContent = "Loading summary…";
+        const res = await fetch(API.summary(month), { headers: authHeaders() });
+        const data = await safeJson(res);
 
-      ui.hint.textContent =
-        tab==="dealers" ? "Create and manage dealer accounts. Reset passcodes. Set WhatsApp + branding."
-        : tab==="summary" ? "Snappy KPI view for all dealers in one request. Perfect for daily ops."
-        : tab==="inventory" ? "Search across all vehicles. Verify status, availability and pricing."
-        : tab==="requests" ? "Monitor incoming leads. Promote from New → Booked → Closed."
-        : "Read-only environment-driven settings.";
+        if(!res.ok || !data?.ok){
+          throw new Error(data?.error || `Summary failed (${res.status})`);
+        }
 
-      ui.dealerActions.style.display = (tab==="dealers") ? "block" : "none";
-      ui.summaryPanel.style.display = (tab==="summary") ? "block" : "none";
-      ui.monthWrap.style.display = (tab==="summary") ? "block" : "none";
+        // expected:
+        // data.summary: { month, totals:{ dealers, activeDealers, availableVehicles, requests }, dealers:[{ dealerId,name,status,inventory,available,requests,new,booked }] }
+        const s = data.summary || {};
+        const totals = s.totals || {};
+        const dealers = Array.isArray(s.dealers) ? s.dealers : [];
 
-      ui.statusFilterWrap.classList.toggle("hidden", tab==="settings" || tab==="summary");
+        ui.sDealers.textContent = String(totals.dealers ?? dealers.length ?? 0);
+        ui.sActive.textContent = String(totals.activeDealers ?? dealers.filter(d => (d.status||"").toLowerCase()==="active").length);
+        ui.sAvailable.textContent = String(totals.availableVehicles ?? dealers.reduce((a,d)=>a+Number(d.available||0),0));
+        ui.sRequests.textContent = String(totals.requests ?? dealers.reduce((a,d)=>a+Number(d.requests||0),0));
 
-      buildStatusFilterOptions(tab);
-      buildTableHeaders(tab);
+        ui.sBody.innerHTML = "";
+        ui.sCount.textContent = String(dealers.length);
+        ui.sUpdated.textContent = "Updated: " + fmt(new Date());
 
-      // auto-paint summary if already present
-      if(tab === "summary") paintSummary();
+        if(!dealers.length){
+          const tr = document.createElement("tr");
+          const td = document.createElement("td");
+          td.colSpan = 7;
+          td.style.color = "var(--muted)";
+          td.style.padding = "14px";
+          td.textContent = "No summary rows returned.";
+          tr.appendChild(td);
+          ui.sBody.appendChild(tr);
+        } else {
+          dealers.forEach((d)=>{
+            const tr = document.createElement("tr");
+            tr.appendChild(cell(`<div style="font-weight:900">${esc(d.name||d.dealerId||"—")}</div><div class="mono" style="color:var(--muted)">${esc(d.dealerId||"")}</div>`));
+            tr.appendChild(cell(statusPill(d.status)));
+            tr.appendChild(cell(`<span class="badgeMini">${Number(d.inventory||0)} vehicles</span>`));
+            tr.appendChild(cell(`<span class="badgeMini">${Number(d.available||0)} available</span>`));
+            tr.appendChild(cell(`<span class="badgeMini">${Number(d.requests||0)} req</span>`));
+            tr.appendChild(cell(`<span class="badgeMini">${Number(d.new||0)} new</span>`));
+            tr.appendChild(cell(`<span class="badgeMini">${Number(d.booked||0)} booked</span>`));
+            ui.sBody.appendChild(tr);
+          });
+        }
 
-      refresh();
-    }
-
-    function buildStatusFilterOptions(tab){
-      ui.statusFilter.innerHTML = "";
-      const add = (v, t) => {
-        const o = document.createElement("option");
-        o.value = v; o.textContent = t;
-        ui.statusFilter.appendChild(o);
-      };
-      add("", "All");
-
-      if(tab === "dealers"){
-        add("active", "Active");
-        add("paused", "Paused");
-      } else if(tab === "inventory"){
-        add("available", "Available");
-        add("pending", "Pending");
-        add("sold", "Sold");
-        add("archived", "Archived");
-      } else if(tab === "requests"){
-        add("new", "New");
-        add("booked", "Booked");
-        add("closed", "Closed");
+        ui.summaryStatus.textContent = "Ready.";
+      }catch(e){
+        ui.summaryStatus.textContent = "Summary failed: " + (e?.message || "error");
+        ui.summaryStatus.classList.add("error");
       }
     }
 
-    function buildTableHeaders(tab){
-      ui.theadRow.innerHTML = "";
+    function renderSummaryFromDemo(_month){
+      // minimal demo display from seeded dealers
+      const dealers = state.dealers.map(d => ({
+        dealerId: d.dealerId,
+        name: d.name,
+        status: d.status,
+        inventory: Number(d.vehicleCount||0),
+        available: Math.max(0, Number(d.vehicleCount||0)-2),
+        requests: 0,
+        new: 0,
+        booked: 0
+      }));
 
-      const cols =
-        tab==="dealers" ? ["Dealer", "Dealer ID", "Status", "WhatsApp", "Email", "Last login"]
-        : tab==="summary" ? ["Dealer", "Dealer ID", "Status", "Available", "Sold", "Requests"]
-        : tab==="inventory" ? ["Vehicle", "Dealer", "Status", "Availability", "Price", "Updated"]
-        : tab==="requests" ? ["Customer", "Vehicle", "Dealer", "Type", "Status", "Requested"]
-        : ["Item", "Value", "Hint", "Scope", "Action"];
+      ui.sDealers.textContent = String(dealers.length);
+      ui.sActive.textContent = String(dealers.filter(d=> (d.status||"").toLowerCase()==="active").length);
+      ui.sAvailable.textContent = String(dealers.reduce((a,d)=>a+Number(d.available||0),0));
+      ui.sRequests.textContent = "0";
+      ui.sBody.innerHTML = "";
+      ui.sCount.textContent = String(dealers.length);
+      ui.sUpdated.textContent = "Updated: " + fmt(new Date());
 
-      cols.forEach(c=>{
-        const th = document.createElement("th");
-        th.textContent = c;
-        ui.theadRow.appendChild(th);
+      dealers.forEach((d)=>{
+        const tr = document.createElement("tr");
+        tr.appendChild(cell(`<div style="font-weight:900">${esc(d.name||d.dealerId||"—")}</div><div class="mono" style="color:var(--muted)">${esc(d.dealerId||"")}</div>`));
+        tr.appendChild(cell(statusPill(d.status)));
+        tr.appendChild(cell(`<span class="badgeMini">${Number(d.inventory||0)} vehicles</span>`));
+        tr.appendChild(cell(`<span class="badgeMini">${Number(d.available||0)} available</span>`));
+        tr.appendChild(cell(`<span class="badgeMini">${Number(d.requests||0)} req</span>`));
+        tr.appendChild(cell(`<span class="badgeMini">${Number(d.new||0)} new</span>`));
+        tr.appendChild(cell(`<span class="badgeMini">${Number(d.booked||0)} booked</span>`));
+        ui.sBody.appendChild(tr);
       });
     }
 
+    // ========= Render tables =========
     function render(){
+      if(state.tab === "summary"){
+        // summary is its own panel
+        ui.count.textContent = "0";
+        return;
+      }
+
       const q = (ui.q.value||"").trim().toLowerCase();
       const f = (ui.statusFilter.value||"").trim().toLowerCase();
 
       let rows = [];
       if(state.tab==="dealers") rows = [...state.dealers];
-      if(state.tab==="summary") rows = [...(state.summary.dealers||[])];
       if(state.tab==="inventory") rows = [...state.vehicles];
       if(state.tab==="requests") rows = [...state.requests];
       if(state.tab==="settings") rows = settingsRows();
@@ -819,7 +1058,7 @@
       if(q){
         rows = rows.filter(r => JSON.stringify(r).toLowerCase().includes(q));
       }
-      if(f && state.tab!=="settings" && state.tab!=="summary"){
+      if(f && state.tab!=="settings"){
         rows = rows.filter(r => (r.status||"").toLowerCase() === f);
       }
 
@@ -827,239 +1066,73 @@
       ui.count.textContent = String(rows.length);
 
       if(!rows.length){
-        const tr = document.createElement("tr");
-        const td = document.createElement("td");
-        td.colSpan = 6;
-        td.style.color = "var(--muted)";
-        td.style.padding = "14px";
-        td.textContent = "No rows match your filters.";
+        const tr=document.createElement("tr");
+        const td=document.createElement("td");
+        td.colSpan = state.tab==="dealers" ? 6 : (state.tab==="requests" ? 6 : 5);
+        td.style.color="var(--muted)";
+        td.style.padding="14px";
+        td.textContent="No rows match your filters.";
         tr.appendChild(td);
         ui.tbody.appendChild(tr);
         return;
       }
 
       rows.forEach(r=>{
-        const tr = document.createElement("tr");
+        const tr=document.createElement("tr");
 
-        if(state.tab === "dealers"){
-          tr.style.cursor = "pointer";
+        if(state.tab==="dealers"){
+          tr.style.cursor="pointer";
           tr.addEventListener("click", ()=> openDealerModal(r));
-          tr.appendChild(cell(`<div style="font-weight:950">${esc(r.name||"—")}</div><div style="color:var(--muted);font-size:11px;margin-top:2px">Manage branding + access</div>`));
+
+          tr.appendChild(cell(`<div style="font-weight:900">${esc(r.name||"—")}</div><div style="color:var(--muted);font-size:11px;margin-top:2px">Click to edit</div>`));
           tr.appendChild(cell(`<span class="mono">${esc(r.dealerId||"—")}</span>`));
-          tr.appendChild(cell(dealerStatusPill(r.status)));
+          tr.appendChild(cell(statusPill(r.status)));
           tr.appendChild(cell(r.whatsapp ? `<span class="badgeMini">+${esc(r.whatsapp)}</span>` : `<span style="color:var(--muted)">—</span>`));
-          tr.appendChild(cell(r.email ? `<span class="mono">${esc(r.email)}</span>` : `<span style="color:var(--muted)">—</span>`));
-          tr.appendChild(cell(r.lastLoginAt ? `<span class="mono">${esc(r.lastLoginAt)}</span>` : `<span style="color:var(--muted)">—</span>`));
+          tr.appendChild(cell(r.logoUrl ? `<a class="mono" href="${escAttr(r.logoUrl)}" target="_blank" rel="noreferrer">logo</a>` : `<span style="color:var(--muted)">—</span>`));
+
+          const actions = document.createElement("td");
+          actions.innerHTML = `<button class="btn btn-ghost" type="button">Edit</button>`;
+          tr.appendChild(actions);
         }
 
-        if(state.tab === "summary"){
-          // expected shape from /dealers/summary
-          tr.appendChild(cell(`<div style="font-weight:950">${esc(r.name||"—")}</div><div style="color:var(--muted);font-size:11px;margin-top:2px">${esc(r.dealerId||"")}</div>`));
-          tr.appendChild(cell(`<span class="mono">${esc(r.dealerId||"—")}</span>`));
-          tr.appendChild(cell(dealerStatusPill(r.status)));
-          tr.appendChild(cell(`<span class="badgeMini">${Number(r.available||0)} avail</span>`));
-          tr.appendChild(cell(`<span class="badgeMini">${Number(r.sold||0)} sold</span>`));
-          tr.appendChild(cell(`<span class="badgeMini">${Number(r.requests||0)} req</span>`));
-        }
-
-        if(state.tab === "inventory"){
-          const title = [r.year, r.make, r.model].filter(Boolean).join(" ") || (r.title||"");
-          tr.appendChild(cell(`<div class="mono">${esc(r.vehicleId||r.Vehicle\u00a0ID||"—")}</div><div style="color:var(--muted);font-size:11px;margin-top:2px">${esc(title || "—")}</div>`));
+        if(state.tab==="inventory"){
+          tr.appendChild(cell(`<div class="mono">${esc(r.vehicleId||r.id||"—")}</div><div style="color:var(--muted);font-size:11px;margin-top:2px">${esc(r.make||"")} ${esc(r.model||"")}</div>`));
           tr.appendChild(cell(`<span class="badgeMini">${esc(r.dealerId||"—")}</span>`));
-          tr.appendChild(cell(invStatusPill(r.status)));
-          tr.appendChild(cell(r.availability === true || r.Availability === true ? `<span class="badgeMini">Visible</span>` : `<span style="color:var(--muted)">Hidden</span>`));
-          tr.appendChild(cell(`<div style="font-weight:950">${money(r.price||r.Price)}</div>`));
-          tr.appendChild(cell(`<span class="mono">${esc(r.updatedAt||r.updatedAtISO||r.updatedAtRaw||r.updatedAtText||r.updatedAtString||r.updatedAtValue||r.updatedAtDate||r.updatedAtTime||r.updatedAtLocal||r.updatedAtZ||r.updatedAtUtc||r.updatedAtUTC||r.updatedAt || r.updatedAt)}</span>`));
+          tr.appendChild(cell(`<span class="badgeMini">${esc(r.status||"—")}</span>`));
+          tr.appendChild(cell(`<div style="font-weight:900">${money(r.price)}</div>`));
+          tr.appendChild(cell(`<span class="mono">${esc(r.updatedAt||r.createdAt||"—")}</span>`));
         }
 
-        if(state.tab === "requests"){
-          tr.appendChild(cell(`<div style="font-weight:950">${esc(r.name||r.customerName||"—")}</div><div style="color:var(--muted);font-size:11px;margin-top:2px">${esc(r.phone||"")}</div>`));
+        if(state.tab==="requests"){
+          tr.appendChild(cell(`<div style="font-weight:900">${esc(r.name||r.customer||"—")}</div><div style="color:var(--muted);font-size:11px;margin-top:2px">${esc(r.phone||"")}</div>`));
           tr.appendChild(cell(`<div class="mono">${esc(r.vehicleId||"—")}</div>`));
           tr.appendChild(cell(`<span class="badgeMini">${esc(r.dealerId||"—")}</span>`));
           tr.appendChild(cell(`<span class="badgeMini">${esc(r.type||"—")}</span>`));
-          tr.appendChild(cell(reqPill(r.status)));
+          tr.appendChild(cell(`<span class="badgeMini">${esc(r.status||"—")}</span>`));
           tr.appendChild(cell(`<span class="mono">${esc(r.createdAt||"—")}</span>`));
         }
 
-        if(state.tab === "settings"){
-          tr.appendChild(cell(`<div style="font-weight:950">${esc(r.item)}</div>`));
+        if(state.tab==="settings"){
+          tr.appendChild(cell(`<div style="font-weight:900">${esc(r.item)}</div>`));
           tr.appendChild(cell(`<span class="mono">${esc(r.value)}</span>`));
           tr.appendChild(cell(`<span style="color:var(--muted)">${esc(r.hint)}</span>`));
-          tr.appendChild(cell(`<span class="badgeMini">${esc(r.scope)}</span>`));
-          tr.appendChild(cell(r.actionHtml || `<span style="color:var(--muted)">—</span>`));
         }
 
         ui.tbody.appendChild(tr);
       });
     }
 
-    function paintSummary(){
-      if(state.tab !== "summary") return;
-
-      const totals = state.summary.totals || null;
-      if(totals){
-        ui.sActive.textContent = String(totals.activeDealers ?? "–");
-        ui.sAvail.textContent = String(totals.availableVehicles ?? "–");
-        ui.sNew.textContent = String(totals.newRequests ?? "–");
-        ui.sBooked.textContent = String(totals.bookedRequests ?? "–");
-      } else {
-        ui.sActive.textContent = "–";
-        ui.sAvail.textContent = "–";
-        ui.sNew.textContent = "–";
-        ui.sBooked.textContent = "–";
-      }
-
-      // trend: array of { label, value } or numbers
-      ui.spark.innerHTML = "";
-      const trend = Array.isArray(state.summary.trend) ? state.summary.trend : [];
-      const vals = trend.map(t => (typeof t === "number" ? t : Number(t?.value || 0))).slice(-12);
-      const max = Math.max(1, ...vals);
-      for(const v of vals){
-        const bar = document.createElement("div");
-        bar.className = "bar";
-        const h = Math.round((Number(v||0) / max) * 100);
-        bar.style.height = `${Math.max(6, h)}%`;
-        ui.spark.appendChild(bar);
-      }
-
-      if(!vals.length){
-        const p = document.createElement("div");
-        p.style.color = "var(--muted)";
-        p.style.fontSize = "12px";
-        p.textContent = "Trend data will appear once endpoint returns it.";
-        ui.spark.appendChild(p);
-      }
-    }
-
     function settingsRows(){
       return [
-        { item:"ADMIN_USERNAME", value:"(server)", hint:"Admin login username", scope:"Cloud Run env", actionHtml:`<button class=\"btn btn-ghost\" type=\"button\" onclick=\"toast('Change ADMIN_USERNAME in Cloud Run.', 'success')\">How to change</button>` },
-        { item:"ADMIN_PASSWORD", value:"(server)", hint:"Admin login password", scope:"Cloud Run env", actionHtml:`<button class=\"btn btn-ghost\" type=\"button\" onclick=\"toast('Change ADMIN_PASSWORD in Cloud Run.', 'success')\">How to change</button>` },
-        { item:"AIRTABLE_API_KEY", value:"(server)", hint:"Airtable Personal Access Token", scope:"Cloud Run env", actionHtml:`<button class=\"btn btn-ghost\" type=\"button\" onclick=\"toast('Set AIRTABLE_API_KEY in Cloud Run. Never expose it to frontend.', 'success')\">Best practice</button>` },
-        { item:"AIRTABLE_BASE_ID", value:"(server)", hint:"Airtable base id", scope:"Cloud Run env", actionHtml:`<button class=\"btn btn-ghost\" type=\"button\" onclick=\"toast('Set AIRTABLE_BASE_ID in Cloud Run.', 'success')\">How to change</button>` },
-        { item:"CLOUDINARY_BASE_FOLDER", value:(state.config.cloudinary.baseFolder||"mediaexclusive"), hint:"Upload base folder", scope:"Cloud Run env", actionHtml:`<button class=\"btn btn-ghost\" type=\"button\" onclick=\"toast('Set CLOUDINARY_BASE_FOLDER in Cloud Run.', 'success')\">How to change</button>` },
+        { item:"ADMIN_USERNAME", value:"(Cloud Run env)", hint:"Admin login username" },
+        { item:"ADMIN_PASSWORD", value:"(Cloud Run env)", hint:"Admin login password" },
+        { item:"JWT_SECRET", value:"(Cloud Run env)", hint:"Token signing secret" },
+        { item:"AIRTABLE_API_KEY", value:"(Cloud Run env)", hint:"Airtable PAT token" },
+        { item:"AIRTABLE_BASE_ID", value:"(Cloud Run env)", hint:"Airtable base id" },
       ];
     }
 
-    // =============================
-    // Dealer Modal
-    // =============================
-    function openDealerModal(dealer){
-      state.selectedDealer = { ...dealer };
-      ui.mStatus.textContent = "";
-
-      ui.mDealerName.value = dealer.name || "";
-      ui.mDealerId.value = dealer.dealerId || "";
-      ui.mDealerStatus.value = (dealer.status || "active").toLowerCase();
-      ui.mDealerWhatsApp.value = dealer.whatsapp || "";
-      ui.mDealerPasscode.value = ""; // never auto-fill real passcode
-      ui.mDealerLogo.value = dealer.logoUrl || dealer.logo || "";
-
-      const demoPass = state.demoPasscodes[dealer.dealerId];
-      ui.mPasscode.textContent = demoPass ? demoPass : "••••••";
-
-      ui.dealerBackdrop.classList.add("show");
-      ui.dealerBackdrop.setAttribute("aria-hidden","false");
-    }
-
-    function closeDealerModal(){
-      ui.dealerBackdrop.classList.remove("show");
-      ui.dealerBackdrop.setAttribute("aria-hidden","true");
-      state.selectedDealer = null;
-    }
-
-    async function saveDealerChanges(){
-      if(!state.selectedDealer) return;
-
-      const payload = {
-        dealerId: (ui.mDealerId.value||"").trim(),
-        name: (ui.mDealerName.value||"").trim(),
-        status: (ui.mDealerStatus.value||"active").toLowerCase(),
-        whatsapp: digits(ui.mDealerWhatsApp.value||""),
-        passcode: (ui.mDealerPasscode.value||"").trim(),
-        logoUrl: (ui.mDealerLogo.value||"").trim(),
-      };
-
-      if(!payload.dealerId || !payload.name){
-        ui.mStatus.textContent = "Dealer ID and name are required.";
-        ui.mStatus.classList.add("error");
-        return;
-      }
-
-      ui.mStatus.textContent = "Saving…";
-      ui.mStatus.classList.remove("error");
-
-      try{
-        if(!state.apiOnline){
-          const idx = state.dealers.findIndex(d => d.dealerId === state.selectedDealer.dealerId);
-          if(idx>-1){
-            state.dealers[idx] = { ...state.dealers[idx], ...payload };
-          }
-          ui.mStatus.textContent = "Saved (demo).";
-          toast("Dealer updated.", "success");
-          render();
-          return;
-        }
-
-        const res = await fetch(API.dealers(), {
-          method:"POST",
-          headers:{ ...authHeaders(), "Content-Type":"application/json", "Accept":"application/json" },
-          body: JSON.stringify(payload)
-        });
-        const data = await safeJson(res);
-        if(!res.ok || !data?.ok) throw new Error(data?.error || "Save failed");
-
-        ui.mStatus.textContent = "Saved.";
-        toast("Dealer updated.", "success");
-        await refresh();
-      }catch(e){
-        ui.mStatus.textContent = "Failed to save.";
-        ui.mStatus.classList.add("error");
-        toast("Save failed: " + (e?.message||"error"), "error");
-      }
-    }
-
-    async function resetPasscode(){
-      if(!state.selectedDealer) return;
-
-      ui.mStatus.textContent = "Resetting passcode…";
-      ui.mStatus.classList.remove("error");
-
-      const dealerId = (ui.mDealerId.value||"").trim();
-
-      try{
-        if(!state.apiOnline){
-          const newPass = String(Math.floor(100000 + Math.random()*900000));
-          state.demoPasscodes[dealerId] = newPass;
-          ui.mPasscode.textContent = newPass;
-          ui.mStatus.textContent = "Passcode reset (demo).";
-          toast("Passcode reset.", "success");
-          return;
-        }
-
-        const res = await fetch(API.resetPass(), {
-          method:"POST",
-          headers:{ ...authHeaders(), "Content-Type":"application/json", "Accept":"application/json" },
-          body: JSON.stringify({ dealerId })
-        });
-        const data = await safeJson(res);
-        if(!res.ok || !data?.ok) throw new Error(data?.error || "Reset failed");
-
-        if(data.passcode) ui.mPasscode.textContent = String(data.passcode);
-
-        ui.mStatus.textContent = "Passcode reset.";
-        toast("Passcode reset.", "success");
-        await refresh();
-      }catch(e){
-        ui.mStatus.textContent = "Failed to reset passcode.";
-        ui.mStatus.classList.add("error");
-        toast("Reset failed: " + (e?.message||"error"), "error");
-      }
-    }
-
-    // =============================
-    // Dealer creation
-    // =============================
+    // ========= Create dealer =========
     async function createDealer(){
       const payload = {
         name: (ui.newDealerName.value||"").trim(),
@@ -1081,9 +1154,7 @@
 
       try{
         if(!state.apiOnline){
-          const exists = state.dealers.some(d => d.dealerId === payload.dealerId);
-          if(exists) throw new Error("Dealer ID already exists (demo).");
-
+          seedDemoIfNeeded();
           const pass = payload.passcode || String(Math.floor(100000 + Math.random()*900000));
           state.demoPasscodes[payload.dealerId] = pass;
 
@@ -1092,9 +1163,8 @@
             dealerId: payload.dealerId,
             status: payload.status,
             whatsapp: payload.whatsapp,
-            email: "",
             logoUrl: payload.logoUrl,
-            lastLoginAt: "",
+            vehicleCount: 0
           });
 
           ui.dealerActionStatus.textContent = `Created (demo). Passcode: ${pass}`;
@@ -1112,14 +1182,15 @@
         const data = await safeJson(res);
         if(!res.ok || !data?.ok) throw new Error(data?.error || "Create failed");
 
-        ui.dealerActionStatus.textContent = data.passcode ? `Created. New passcode: ${data.passcode}` : "Created.";
+        const pass = data.passcode ? ` New passcode: ${data.passcode}` : "";
+        ui.dealerActionStatus.textContent = `Created.${pass}`;
         toast("Dealer created.", "success");
         clearCreateInputs();
         await refresh();
       }catch(e){
-        ui.dealerActionStatus.textContent = "Failed to create dealer.";
+        ui.dealerActionStatus.textContent = "Failed to create dealer: " + (e?.message||"error");
         ui.dealerActionStatus.classList.add("error");
-        toast("Create failed: " + (e?.message||"error"), "error");
+        toast("Create failed.", "error");
       }
     }
 
@@ -1132,54 +1203,135 @@
       ui.newDealerStatus.value = "active";
     }
 
-    // =============================
-    // Demo seed
-    // =============================
+    // ========= Dealer modal =========
+    function openDealerModal(dealer){
+      state.selectedDealer = { ...dealer };
+      ui.mStatus.textContent = "";
+      ui.mStatus.classList.remove("error");
+
+      ui.mDealerName.value = dealer.name || "";
+      ui.mDealerId.value = dealer.dealerId || "";
+      ui.mDealerStatus.value = (dealer.status || "active").toLowerCase();
+      ui.mDealerWhatsApp.value = dealer.whatsapp || "";
+      ui.mDealerPasscode.value = "";
+      ui.mDealerLogo.value = dealer.logoUrl || "";
+
+      ui.mPasscode.textContent = state.demoPasscodes[dealer.dealerId] || "••••••";
+
+      ui.dealerBackdrop.classList.add("show");
+      ui.dealerBackdrop.setAttribute("aria-hidden","false");
+    }
+
+    function closeDealerModal(){
+      ui.dealerBackdrop.classList.remove("show");
+      ui.dealerBackdrop.setAttribute("aria-hidden","true");
+      state.selectedDealer = null;
+    }
+
+    async function saveDealerChanges(){
+      if(!state.selectedDealer) return;
+
+      const payload = {
+        dealerId: (ui.mDealerId.value||"").trim(),
+        name: (ui.mDealerName.value||"").trim(),
+        status: (ui.mDealerStatus.value||"active").toLowerCase(),
+        whatsapp: digits(ui.mDealerWhatsApp.value||""),
+        passcode: (ui.mDealerPasscode.value||"").trim(), // optional
+        logoUrl: (ui.mDealerLogo.value||"").trim(),
+      };
+
+      if(!payload.dealerId || !payload.name){
+        ui.mStatus.textContent = "Dealer ID and name are required.";
+        ui.mStatus.classList.add("error");
+        return;
+      }
+
+      ui.mStatus.textContent = "Saving…";
+      ui.mStatus.classList.remove("error");
+
+      try{
+        if(!state.apiOnline){
+          const idx = state.dealers.findIndex(d => d.dealerId === state.selectedDealer.dealerId);
+          if(idx > -1) state.dealers[idx] = { ...state.dealers[idx], ...payload };
+          ui.mStatus.textContent = "Saved (demo).";
+          toast("Dealer updated.", "success");
+          render();
+          return;
+        }
+
+        const res = await fetch(API.dealers(), {
+          method:"POST",
+          headers:{ ...authHeaders(), "Content-Type":"application/json", "Accept":"application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await safeJson(res);
+        if(!res.ok || !data?.ok) throw new Error(data?.error || "Save failed");
+
+        ui.mStatus.textContent = "Saved.";
+        toast("Dealer updated.", "success");
+        await refresh();
+      }catch(e){
+        ui.mStatus.textContent = "Failed to save: " + (e?.message||"error");
+        ui.mStatus.classList.add("error");
+        toast("Save failed.", "error");
+      }
+    }
+
+    async function resetPasscode(){
+      if(!state.selectedDealer) return;
+
+      const dealerId = (ui.mDealerId.value||"").trim();
+      if(!dealerId) return;
+
+      ui.mStatus.textContent = "Resetting…";
+      ui.mStatus.classList.remove("error");
+
+      try{
+        if(!state.apiOnline){
+          const newPass = String(Math.floor(100000 + Math.random()*900000));
+          state.demoPasscodes[dealerId] = newPass;
+          ui.mPasscode.textContent = newPass;
+          ui.mStatus.textContent = "Passcode reset (demo).";
+          toast("Passcode reset.", "success");
+          return;
+        }
+
+        const res = await fetch(API.resetPass(), {
+          method:"POST",
+          headers:{ ...authHeaders(), "Content-Type":"application/json", "Accept":"application/json" },
+          body: JSON.stringify({ dealerId })
+        });
+        const data = await safeJson(res);
+        if(!res.ok || !data?.ok) throw new Error(data?.error || "Reset failed");
+
+        if(data.passcode) ui.mPasscode.textContent = String(data.passcode);
+        ui.mStatus.textContent = "Passcode reset.";
+        toast("Passcode reset.", "success");
+        await refresh();
+      }catch(e){
+        ui.mStatus.textContent = "Failed to reset: " + (e?.message||"error");
+        ui.mStatus.classList.add("error");
+        toast("Reset failed.", "error");
+      }
+    }
+
+    // ========= Demo seed =========
     function seedDemoIfNeeded(){
       if(state.dealers.length) return;
-
       state.dealers = [
-        { name:"Pytch Motors", dealerId:"AA123", status:"active", whatsapp:"8765550123", email:"sales@pytch.test", logoUrl:"", lastLoginAt: fmt(new Date(Date.now()-3600*1000*6)) },
-        { name:"Island Auto", dealerId:"BB456", status:"active", whatsapp:"8765550199", email:"hello@island.test", logoUrl:"", lastLoginAt: fmt(new Date(Date.now()-3600*1000*28)) },
-        { name:"Mobay Cars", dealerId:"CC789", status:"paused", whatsapp:"", email:"", logoUrl:"", lastLoginAt: "" },
+        { name:"Pytch Motors", dealerId:"DEALER-0001", status:"active", whatsapp:"8765550123", logoUrl:"", vehicleCount:12 },
+        { name:"Island Auto", dealerId:"DEALER-0002", status:"active", whatsapp:"8765550199", logoUrl:"", vehicleCount:7 },
+        { name:"Mobay Cars", dealerId:"DEALER-0003", status:"paused", whatsapp:"", logoUrl:"", vehicleCount:3 },
       ];
-
-      state.demoPasscodes["AA123"] = "123456";
-
-      state.summary.month = defaultMonth();
-      state.summary.totals = { activeDealers: 2, availableVehicles: 19, newRequests: 34, bookedRequests: 11 };
-      state.summary.dealers = [
-        { name:"Pytch Motors", dealerId:"AA123", status:"active", available: 12, sold: 3, requests: 22 },
-        { name:"Island Auto", dealerId:"BB456", status:"active", available: 7, sold: 1, requests: 9 },
-        { name:"Mobay Cars", dealerId:"CC789", status:"paused", available: 0, sold: 0, requests: 3 },
-      ];
-      state.summary.trend = [2,4,1,6,3,7,5,8,6,7,9,6];
+      state.demoPasscodes["DEALER-0001"] = "123456";
     }
 
-    // =============================
-    // UI helpers
-    // =============================
-    function cell(html){
-      const td = document.createElement("td");
-      td.innerHTML = html;
-      return td;
-    }
+    // ========= UI helpers =========
+    function cell(html){ const td=document.createElement("td"); td.innerHTML=html; return td; }
 
-    function dealerStatusPill(s){
+    function statusPill(s){
       const v = (s||"active").toLowerCase();
       const cls = v==="paused" ? "paused" : "active";
-      return `<span class="status ${cls}">${esc(v)}</span>`;
-    }
-
-    function invStatusPill(s){
-      const v = (s||"available").toLowerCase();
-      const cls = v==="available" ? "available" : v==="pending" ? "pending" : v==="sold" ? "sold" : "archived";
-      return `<span class="status ${cls}">${esc(v)}</span>`;
-    }
-
-    function reqPill(s){
-      const v = (s||"new").toLowerCase();
-      const cls = v==="new" ? "reqNew" : v==="booked" ? "reqBooked" : "reqClosed";
       return `<span class="status ${cls}">${esc(v)}</span>`;
     }
 
@@ -1206,16 +1358,7 @@
       window.__t = setTimeout(()=>ui.toast.classList.remove("show"), 3200);
     }
 
-    function authHeaders(){
-      return {
-        "Accept":"application/json",
-        "Authorization":"Bearer " + String(state.token || "")
-      };
-    }
-
-    async function safeJson(res){
-      try{ return await res.json(); }catch(_){ return null; }
-    }
+    async function safeJson(res){ try{ return await res.json(); }catch(_){ return null; } }
 
     function money(n){
       const v = Number(n);
@@ -1233,9 +1376,7 @@
       return `${day}/${mon}/${yr} ${hr}:${mi}`;
     }
 
-    function digits(s){
-      return String(s||"").replace(/\D+/g,"").trim();
-    }
+    function digits(s){ return String(s||"").replace(/\D+/g,"").trim(); }
 
     function esc(s){
       return String(s ?? "")
@@ -1245,13 +1386,8 @@
         .replaceAll('"',"&quot;")
         .replaceAll("'","&#39;");
     }
-
-    function defaultMonth(){
-      const d = new Date();
-      const y = d.getFullYear();
-      const m = String(d.getMonth()+1).padStart(2,"0");
-      return `${y}-${m}`;
-    }
+    function escAttr(s){ return esc(s).replaceAll('"',"&quot;"); }
   </script>
 </body>
 </html>
+
