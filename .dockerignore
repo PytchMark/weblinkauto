@@ -1,29 +1,30 @@
-# dependencies
+# Dependencies
 node_modules
 npm-debug.log
 yarn.lock
 pnpm-lock.yaml
 
-# git
+# Git
 .git
 .gitignore
 
-# env
+# Environment
 .env
 .env.*
-!.env.example
 
-# OS / editor
+# OS junk
 .DS_Store
 Thumbs.db
+
+# Logs
+*.log
+
+# Editor junk
 .vscode
 .idea
 
-# logs
-*.log
-
-# docs (optional)
+# Docs
 README.md
 
-# optional local data
+# Optional local data
 data/
