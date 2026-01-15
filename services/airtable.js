@@ -1,29 +1,30 @@
 "use strict";
 
-const AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN;
+const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY || process.env.AIRTABLE_TOKEN;
 const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
 
-const T_DEALERS = process.env.AIRTABLE_TABLE_DEALERS || "DEALERS";
-const T_VEHICLES = process.env.AIRTABLE_TABLE_VEHICLES || "VEHICLES";
-const T_REQUESTS = process.env.AIRTABLE_TABLE_REQUESTS || "REQUESTS";
-const T_MEDIA = process.env.AIRTABLE_TABLE_MEDIA || "VEHICLE MEDIA";
-const T_SALES = process.env.AIRTABLE_TABLE_SALES || "SALES";
+const T_VEHICLES = process.env.AIRTABLE_TABLE_ID_VEHICLES;
+const T_DEALERS = process.env.AIRTABLE_TABLE_ID_DEALERS;
+const T_REQUESTS = process.env.AIRTABLE_TABLE_ID_VIEWING_REQUESTS;
 
-if (!AIRTABLE_TOKEN || !AIRTABLE_BASE_ID) {
-  throw new Error("Missing AIRTABLE_TOKEN or AIRTABLE_BASE_ID in env.");
+if (!AIRTABLE_API_KEY || !AIRTABLE_BASE_ID) {
+  throw new Error("Missing AIRTABLE_API_KEY (or AIRTABLE_TOKEN) or AIRTABLE_BASE_ID in env.");
+}
+if (!T_VEHICLES || !T_DEALERS || !T_REQUESTS) {
+  throw new Error("Missing one or more Airtable table ID env vars (AIRTABLE_TABLE_ID_*).");
 }
 
 const API_ROOT = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}`;
 
 function headers() {
   return {
-    Authorization: `Bearer ${AIRTABLE_TOKEN}`,
+    Authorization: `Bearer ${AIRTABLE_API_KEY}`,
     "Content-Type": "application/json",
   };
 }
 
-function tableUrl(tableName) {
-  return `${API_ROOT}/${encodeURIComponent(tableName)}`;
+function tableUrl(tableId) {
+  return `${API_ROOT}/${encodeURIComponent(tableId)}`;
 }
 
 async function sleep(ms) {
@@ -36,7 +37,6 @@ async function airtableFetch(url, opts = {}, attempt = 0) {
     headers: { ...headers(), ...(opts.headers || {}) },
   });
 
-  // Rate limited: Airtable typically uses 429
   if (res.status === 429 && attempt < 3) {
     await sleep(800 + attempt * 600);
     return airtableFetch(url, opts, attempt + 1);
@@ -58,29 +58,23 @@ async function airtableFetch(url, opts = {}, attempt = 0) {
   return body;
 }
 
-// Airtable filterByFormula expects proper escaping for strings.
-function formulaEquals(fieldName, value) {
+// Airtable formulas: escape single quotes
+function formulaEquals(field, value) {
   const safe = String(value).replace(/'/g, "\\'");
-  return `{${fieldName}}='${safe}'`;
+  return `{${field}}='${safe}'`;
 }
-
 function formulaAnd(...parts) {
   return `AND(${parts.join(",")})`;
 }
 
-function pickRecordFields(record, fields = []) {
-  const out = {};
-  fields.forEach((f) => (out[f] = record?.fields?.[f]));
-  return out;
-}
+/* =========================
+   DEALERS (Table ID)
+   ========================= */
 
-/** -------------------------
- * DEALERS
- * ------------------------*/
 async function getDealerByDealerId(dealerId) {
   const u = new URL(tableUrl(T_DEALERS));
   u.searchParams.set("maxRecords", "1");
-  u.searchParams.set("filterByFormula", formulaEquals("Dealer ID", dealerId));
+  u.searchParams.set("filterByFormula", formulaEquals("dealerId", dealerId));
 
   const data = await airtableFetch(u.toString(), { method: "GET" });
   const rec = data?.records?.[0];
@@ -92,31 +86,31 @@ async function getDealerByDealerId(dealerId) {
   };
 }
 
-/** -------------------------
- * VEHICLES
- * ------------------------*/
+/* =========================
+   VEHICLES (Table ID)
+   ========================= */
+
 async function getVehiclesForDealer(dealerId, { includeArchived = false, publicOnly = false } = {}) {
-  // publicOnly: published + not archived (and usually available)
-  // We'll keep this flexible; storefront logic can decide.
   const u = new URL(tableUrl(T_VEHICLES));
   u.searchParams.set("pageSize", "100");
 
-  const parts = [formulaEquals("Dealer ID", dealerId)];
+  const parts = [formulaEquals("dealerId", dealerId)];
 
+  // Your schema has BOTH: "archived" checkbox and "status" single select.
+  // We'll honor "archived" first (hard hide).
   if (!includeArchived) {
-    parts.push(`{Status}!='Archived'`);
+    parts.push("{archived}!=TRUE()");
   }
 
   if (publicOnly) {
-    // Show only Published + not Archived
-    parts.push(`{Published}=TRUE()`);
-    // Optional: only Available
-    // parts.push(`{Status}='Available'`);
+    // Your schema has "Availability" checkbox (fldcG1Z...) but also "Availability" and "availability".
+    // You listed: Availability checkbox in Vehicles table.
+    // We'll treat it as "Availability" (exact casing) if you use it, BUT you also have `status`.
+    // Easiest public rule: Availability = true AND archived != true
+    parts.push("{Availability}=TRUE()");
   }
 
   u.searchParams.set("filterByFormula", formulaAnd(...parts));
-  u.searchParams.set("sort[0][field]", "Sort Priority");
-  u.searchParams.set("sort[0][direction]", "desc");
 
   const records = [];
   let offset;
@@ -134,15 +128,16 @@ async function getVehiclesForDealer(dealerId, { includeArchived = false, publicO
 async function getVehicleByVehicleId(vehicleId) {
   const u = new URL(tableUrl(T_VEHICLES));
   u.searchParams.set("maxRecords", "1");
-  u.searchParams.set("filterByFormula", formulaEquals("Vehicle ID", vehicleId));
+  u.searchParams.set("filterByFormula", formulaEquals("vehicleId", vehicleId));
+
   const data = await airtableFetch(u.toString(), { method: "GET" });
   const rec = data?.records?.[0];
   if (!rec) return null;
+
   return { airtableRecordId: rec.id, ...rec.fields };
 }
 
 async function createVehicle(fields) {
-  // fields should match Airtable exact field names
   const url = tableUrl(T_VEHICLES);
   const payload = { records: [{ fields }] };
   const data = await airtableFetch(url, { method: "POST", body: JSON.stringify(payload) });
@@ -158,26 +153,26 @@ async function updateVehicleByRecordId(recordId, fields) {
 
 async function upsertVehicleByVehicleId(vehicleId, fields) {
   const existing = await getVehicleByVehicleId(vehicleId);
-  if (existing?.airtableRecordId) {
-    return updateVehicleByRecordId(existing.airtableRecordId, fields);
-  }
+  if (existing?.airtableRecordId) return updateVehicleByRecordId(existing.airtableRecordId, fields);
   return createVehicle(fields);
 }
 
-async function archiveVehicle(vehicleId, archivedReason = "Dealer request") {
+async function archiveVehicle(vehicleId) {
   const existing = await getVehicleByVehicleId(vehicleId);
   if (!existing?.airtableRecordId) return null;
 
+  // enforce “no deletes”: archive checkbox + status
   return updateVehicleByRecordId(existing.airtableRecordId, {
-    Status: "Archived",
-    "Archived Reason": archivedReason,
+    archived: true,
+    status: "archived",
   });
 }
 
-/** -------------------------
- * REQUESTS
- * ------------------------*/
-async function createRequest(fields) {
+/* =========================
+   VIEWING_REQUESTS (Table ID)
+   ========================= */
+
+async function createViewingRequest(fields) {
   const url = tableUrl(T_REQUESTS);
   const payload = { records: [{ fields }] };
   const data = await airtableFetch(url, { method: "POST", body: JSON.stringify(payload) });
@@ -185,31 +180,21 @@ async function createRequest(fields) {
   return rec ? { airtableRecordId: rec.id, ...rec.fields } : null;
 }
 
-/** -------------------------
- * Exports
- * ------------------------*/
 module.exports = {
-  // base/meta
-  T_DEALERS,
-  T_VEHICLES,
-  T_REQUESTS,
-  T_MEDIA,
-  T_SALES,
+  airtableFetch,
 
-  // dealers
+  // dealer
   getDealerByDealerId,
 
   // vehicles
   getVehiclesForDealer,
   getVehicleByVehicleId,
   createVehicle,
-  upsertVehicleByVehicleId,
   updateVehicleByRecordId,
+  upsertVehicleByVehicleId,
   archiveVehicle,
 
   // requests
-  createRequest,
-
-  // helpers (sometimes useful in routes)
-  pickRecordFields,
+  createViewingRequest,
 };
+
