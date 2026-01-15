@@ -17,6 +17,8 @@ require("dotenv").config();
 
 // ✅ Route modules
 const publicRoutes = require("./routes/public");
+const dealerRoutes = require("./routes/dealer");
+const adminRoutes = require("./routes/admin");
 
 const app = express();
 
@@ -25,7 +27,6 @@ const PORT = process.env.PORT || 8080;
 const NODE_ENV = process.env.NODE_ENV || "development";
 
 // Recommended: set CORS_ORIGINS to comma-separated list in env
-// Example: https://yourdomain.com,https://admin.yourdomain.com
 const CORS_ORIGINS = (process.env.CORS_ORIGINS || "")
   .split(",")
   .map((s) => s.trim())
@@ -60,24 +61,19 @@ app.use(
 // Logging (minimal in production)
 app.use(morgan(NODE_ENV === "production" ? "combined" : "dev"));
 
-/** ========= Static apps =========
- * You asked for:
- * /apps/storefront/index.html
- * /apps/dealer/index.html
- * /apps/admin/index.html
- */
+/** ========= Static apps ========= */
 const APPS_DIR = path.join(__dirname, "apps");
 
 app.use("/storefront", express.static(path.join(APPS_DIR, "storefront")));
 app.use("/dealer", express.static(path.join(APPS_DIR, "dealer")));
 app.use("/admin", express.static(path.join(APPS_DIR, "admin")));
 
-/** Root: can redirect to storefront */
+/** Root: redirect to storefront */
 app.get("/", (req, res) => {
   res.redirect("/storefront");
 });
 
-/** ========= Health checks ========= */
+/** ========= Health ========= */
 app.get("/health", (req, res) => {
   res.status(200).json({
     ok: true,
@@ -96,22 +92,10 @@ app.get("/api", (req, res) => {
   });
 });
 
-/** ========= API Routes =========
- *  - /api/public: storefront reads + create request ✅ implemented
- *  - /api/dealer: dealer login + vehicle CRUD + archive (next)
- *  - /api/admin: full access + analytics (later)
- */
-
-// ✅ Public routes are live now
+/** ========= API Routes ========= */
 app.use("/api/public", publicRoutes);
-
-// Keep dealer/admin as stubs until we implement routes/dealer.js & routes/admin.js
-app.use("/api/dealer", (req, res) => {
-  res.status(501).json({ ok: false, error: "Not implemented yet (dealer)" });
-});
-app.use("/api/admin", (req, res) => {
-  res.status(501).json({ ok: false, error: "Not implemented yet (admin)" });
-});
+app.use("/api/dealer", dealerRoutes);
+app.use("/api/admin", adminRoutes);
 
 /** ========= 404 ========= */
 app.use((req, res) => {
