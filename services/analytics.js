@@ -372,4 +372,5 @@ async function getDealersSummary({ month } = {}) {
 module.exports = {
   getDealerMetrics,
   getGlobalMetrics,
+  getDealersSummary, // ✅ add this
 };
