@@ -1,227 +1,134 @@
+/**
+ * Cloud Run (Express) server
+ * - Serves static HTML apps from /apps
+ * - Exposes API routes (public/dealer/admin) that will call Airtable server-side
+ * - Keeps all secrets in env vars (never in frontend)
+ */
+
 "use strict";
 
+const path = require("path");
 const express = require("express");
-const router = express.Router();
+const cors = require("cors");
+const helmet = require("helmet");
+const morgan = require("morgan");
+const rateLimit = require("express-rate-limit");
+require("dotenv").config();
 
-const {
-  getDealerByDealerId,
-  getVehiclesForDealer,
-  getVehicleByVehicleId,
-  createViewingRequest,
-} = require("../services/airtable");
+// ✅ Route modules
+const publicRoutes = require("./routes/public");
 
-/**
- * Basic input guards (kept lightweight)
+const app = express();
+
+/** ========= Config ========= */
+const PORT = process.env.PORT || 8080;
+const NODE_ENV = process.env.NODE_ENV || "development";
+
+// Recommended: set CORS_ORIGINS to comma-separated list in env
+// Example: https://yourdomain.com,https://admin.yourdomain.com
+const CORS_ORIGINS = (process.env.CORS_ORIGINS || "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+/** ========= Middleware ========= */
+app.set("trust proxy", 1); // Cloud Run / load balancers
+
+app.use(helmet());
+
+// CORS: if no origins provided, allow all (dev-friendly).
+// In production, set CORS_ORIGINS to lock this down.
+app.use(
+  cors({
+    origin: CORS_ORIGINS.length ? CORS_ORIGINS : true,
+    credentials: true,
+  })
+);
+
+app.use(express.json({ limit: "2mb" }));
+app.use(express.urlencoded({ extended: true }));
+
+app.use(
+  rateLimit({
+    windowMs: 60 * 1000,
+    max: 180, // per IP per minute
+    standardHeaders: true,
+    legacyHeaders: false,
+  })
+);
+
+// Logging (minimal in production)
+app.use(morgan(NODE_ENV === "production" ? "combined" : "dev"));
+
+/** ========= Static apps =========
+ * You asked for:
+ * /apps/storefront/index.html
+ * /apps/dealer/index.html
+ * /apps/admin/index.html
  */
-function cleanStr(v, max = 500) {
-  if (v === null || v === undefined) return "";
-  const s = String(v).trim();
-  return s.length > max ? s.slice(0, max) : s;
-}
+const APPS_DIR = path.join(__dirname, "apps");
 
-function isValidDealerId(dealerId) {
-  // Allow DEALER-0001, dealerpytch, etc. (letters/numbers/dash/underscore)
-  return /^[a-zA-Z0-9_-]{3,40}$/.test(dealerId);
-}
+app.use("/storefront", express.static(path.join(APPS_DIR, "storefront")));
+app.use("/dealer", express.static(path.join(APPS_DIR, "dealer")));
+app.use("/admin", express.static(path.join(APPS_DIR, "admin")));
 
-function normalizePhone(phone) {
-  // Keep digits + plus
-  return cleanStr(phone, 40).replace(/[^\d+]/g, "");
-}
-
-function mapRequestTypeToEnum(type) {
-  const t = cleanStr(type, 40).toLowerCase();
-
-  // map UI-friendly values -> Airtable single select values (your VIEWING_REQUESTS.type)
-  if (t === "whatsapp" || t === "wa" || t === "chat") return "whatsapp";
-  if (t === "live_video" || t === "live video" || t === "video" || t === "live") return "live_video";
-  if (t === "walk_in" || t === "walk-in" || t === "in_store" || t === "in-store" || t === "in person") return "walk_in";
-
-  return null;
-}
-
-function isPausedDealer(dealer) {
-  const status = cleanStr(dealer?.status, 30).toLowerCase();
-  return status === "paused";
-}
-
-/**
- * GET dealer profile (public)
- * GET /api/public/dealer/:dealerId
- */
-router.get("/dealer/:dealerId", async (req, res) => {
-  try {
-    const dealerId = cleanStr(req.params.dealerId, 60);
-
-    if (!isValidDealerId(dealerId)) {
-      return res.status(400).json({ ok: false, error: "Invalid dealerId" });
-    }
-
-    const dealer = await getDealerByDealerId(dealerId);
-    if (!dealer) return res.status(404).json({ ok: false, error: "Dealer not found" });
-
-    if (isPausedDealer(dealer)) {
-      return res.status(403).json({ ok: false, error: "Dealer storefront is paused" });
-    }
-
-    return res.json({
-      ok: true,
-      dealer: {
-        dealerId: dealer.dealerId,
-        name: dealer.name || "",
-        status: dealer.status || "",
-        whatsapp: dealer.whatsapp || "",
-        logoUrl: dealer.logoUrl || "",
-      },
-    });
-  } catch (err) {
-    console.error("GET /api/public/dealer/:dealerId error:", err);
-    return res.status(500).json({ ok: false, error: "Internal Server Error" });
-  }
+/** Root: can redirect to storefront */
+app.get("/", (req, res) => {
+  res.redirect("/storefront");
 });
 
-/**
- * GET vehicles for dealer (public)
- * GET /api/public/dealer/:dealerId/vehicles
- *
- * Defaults:
- * - publicOnly = true  => Availability = true AND archived != true
- * Query:
- * - ?all=1 => returns all non-archived vehicles for that dealer (Availability not required)
- */
-router.get("/dealer/:dealerId/vehicles", async (req, res) => {
-  try {
-    const dealerId = cleanStr(req.params.dealerId, 60);
-
-    if (!isValidDealerId(dealerId)) {
-      return res.status(400).json({ ok: false, error: "Invalid dealerId" });
-    }
-
-    const all = cleanStr(req.query.all, 10) === "1";
-
-    // Validate dealer exists + not paused
-    const dealer = await getDealerByDealerId(dealerId);
-    if (!dealer) return res.status(404).json({ ok: false, error: "Dealer not found" });
-
-    if (isPausedDealer(dealer)) {
-      return res.status(403).json({ ok: false, error: "Dealer storefront is paused" });
-    }
-
-    const vehicles = await getVehiclesForDealer(dealerId, {
-      includeArchived: false,
-      publicOnly: !all, // when publicOnly=true: Availability=TRUE and archived!=TRUE enforced inside service
-    });
-
-    return res.json({
-      ok: true,
-      dealer: {
-        dealerId: dealer.dealerId,
-        name: dealer.name || "",
-        logoUrl: dealer.logoUrl || "",
-      },
-      vehicles,
-    });
-  } catch (err) {
-    console.error("GET /api/public/dealer/:dealerId/vehicles error:", err);
-    return res.status(500).json({ ok: false, error: "Internal Server Error" });
-  }
+/** ========= Health checks ========= */
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    ok: true,
+    service: "carsales-platform",
+    env: NODE_ENV,
+    time: new Date().toISOString(),
+  });
 });
 
-/**
- * POST create viewing request (public)
- * POST /api/public/dealer/:dealerId/requests
- *
- * Body:
- * {
- *   requestType: "whatsapp" | "live_video" | "walk_in",
- *   vehicleId?: "VEH-XXXXX",
- *   customerName: "John Doe",
- *   phone: "+1876....",
- *   email?: "x@y.com",
- *   preferredDate?: "2026-01-15",
- *   preferredTime?: "2026-01-15T15:00:00.000Z" (recommended ISO) OR "10:00 AM" (best-effort)
- *   notes?: "..."
- * }
- */
-router.post("/dealer/:dealerId/requests", async (req, res) => {
-  try {
-    const dealerId = cleanStr(req.params.dealerId, 60);
-
-    if (!isValidDealerId(dealerId)) {
-      return res.status(400).json({ ok: false, error: "Invalid dealerId" });
-    }
-
-    const typeEnum = mapRequestTypeToEnum(req.body.requestType);
-    if (!typeEnum) {
-      return res.status(400).json({
-        ok: false,
-        error: "Invalid requestType. Use whatsapp, live_video, or walk_in.",
-      });
-    }
-
-    const name = cleanStr(req.body.customerName, 120);
-    const phone = normalizePhone(req.body.phone);
-    const email = cleanStr(req.body.email, 120);
-    const preferredDate = cleanStr(req.body.preferredDate, 40);
-    const preferredTime = cleanStr(req.body.preferredTime, 60);
-    const notes = cleanStr(req.body.notes, 1200);
-    const vehicleId = cleanStr(req.body.vehicleId, 60);
-
-    if (!name) return res.status(400).json({ ok: false, error: "customerName is required" });
-    if (!phone || phone.length < 7) return res.status(400).json({ ok: false, error: "phone is required" });
-
-    // Validate dealer exists + not paused
-    const dealer = await getDealerByDealerId(dealerId);
-    if (!dealer) return res.status(404).json({ ok: false, error: "Dealer not found" });
-
-    if (isPausedDealer(dealer)) {
-      return res.status(403).json({ ok: false, error: "Dealer storefront is paused" });
-    }
-
-    // Optional: validate vehicle belongs to dealer if vehicleId provided
-    let safeVehicleId = "";
-    if (vehicleId) {
-      const v = await getVehicleByVehicleId(vehicleId);
-      if (v && cleanStr(v.dealerId, 60) === dealerId) {
-        safeVehicleId = vehicleId;
-      }
-    }
-
-    // Build VIEWING_REQUESTS fields using your exact API field names
-    const fields = {
-      dealerId,              // VIEWING_REQUESTS.dealerId
-      type: typeEnum,        // VIEWING_REQUESTS.type (single select)
-      status: "new",         // VIEWING_REQUESTS.status (single select)
-      name,                  // VIEWING_REQUESTS.name
-      phone,                 // VIEWING_REQUESTS.phone
-      source: "storefront",  // VIEWING_REQUESTS.source (single select)
-    };
-
-    if (safeVehicleId) fields.vehicleId = safeVehicleId;
-    if (email) fields.email = email;
-    if (preferredDate) fields.preferredDate = preferredDate;
-
-    /**
-     * NOTE on preferredTime:
-     * Your schema shows preferredTime is a Date field.
-     * Best practice is ISO datetime string (e.g. 2026-01-15T15:00:00.000Z).
-     * If you send "10:00 AM", Airtable may reject depending on locale.
-     * We'll accept it as-is here; later we can normalize on the frontend.
-     */
-    if (preferredTime) fields.preferredTime = preferredTime;
-
-    if (notes) fields.notes = notes;
-
-    const created = await createViewingRequest(fields);
-
-    return res.status(201).json({
-      ok: true,
-      request: created,
-    });
-  } catch (err) {
-    console.error("POST /api/public/dealer/:dealerId/requests error:", err);
-    return res.status(500).json({ ok: false, error: "Internal Server Error" });
-  }
+/** ========= API index ========= */
+app.get("/api", (req, res) => {
+  res.json({
+    ok: true,
+    message: "API online",
+    routes: ["/api/public", "/api/dealer", "/api/admin"],
+  });
 });
 
-module.exports = router;
+/** ========= API Routes =========
+ *  - /api/public: storefront reads + create request ✅ implemented
+ *  - /api/dealer: dealer login + vehicle CRUD + archive (next)
+ *  - /api/admin: full access + analytics (later)
+ */
+
+// ✅ Public routes are live now
+app.use("/api/public", publicRoutes);
+
+// Keep dealer/admin as stubs until we implement routes/dealer.js & routes/admin.js
+app.use("/api/dealer", (req, res) => {
+  res.status(501).json({ ok: false, error: "Not implemented yet (dealer)" });
+});
+app.use("/api/admin", (req, res) => {
+  res.status(501).json({ ok: false, error: "Not implemented yet (admin)" });
+});
+
+/** ========= 404 ========= */
+app.use((req, res) => {
+  res.status(404).json({ ok: false, error: "Not Found" });
+});
+
+/** ========= Error handler ========= */
+app.use((err, req, res, next) => {
+  console.error("Server Error:", err);
+  res.status(500).json({
+    ok: false,
+    error: "Internal Server Error",
+  });
+});
+
+/** ========= Start ========= */
+app.listen(PORT, () => {
+  console.log(`✅ Server running on port ${PORT}`);
+});
+
