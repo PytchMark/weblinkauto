@@ -1,133 +1,267 @@
 "use strict";
 
-const {
-  getVehiclesForDealer,
-  createRequest, // not used here, but often paired later
-} = require("./airtable");
-
 const { airtableFetch } = require("./airtable");
 
-/**
- * Utility: date helpers
- */
-function startOfMonth(date = new Date()) {
-  return new Date(date.getFullYear(), date.getMonth(), 1);
+const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
+const T_VEHICLES = process.env.AIRTABLE_TABLE_ID_VEHICLES;
+const T_REQUESTS = process.env.AIRTABLE_TABLE_ID_VIEWING_REQUESTS;
+
+if (!AIRTABLE_BASE_ID || !T_VEHICLES || !T_REQUESTS) {
+  throw new Error(
+    "Missing Airtable env vars for analytics: AIRTABLE_BASE_ID, AIRTABLE_TABLE_ID_VEHICLES, AIRTABLE_TABLE_ID_VIEWING_REQUESTS"
+  );
 }
 
-function endOfMonth(date = new Date()) {
+function tableUrl(tableId) {
+  return `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(tableId)}`;
+}
+
+function escapeFormulaString(value) {
+  return String(value).replace(/'/g, "\\'");
+}
+
+function formulaEquals(field, value) {
+  return `{${field}}='${escapeFormulaString(value)}'`;
+}
+
+function formulaAnd(...parts) {
+  return `AND(${parts.join(",")})`;
+}
+
+// Month helpers
+function parseMonth(monthStr) {
+  // monthStr: YYYY-MM
+  if (!monthStr || !/^\d{4}-\d{2}$/.test(monthStr)) return null;
+  const [y, m] = monthStr.split("-").map(Number);
+  return new Date(y, m - 1, 1);
+}
+
+function startOfMonth(date) {
+  return new Date(date.getFullYear(), date.getMonth(), 1, 0, 0, 0);
+}
+
+function endOfMonth(date) {
   return new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59);
 }
 
-/**
- * Dealer-level inventory stats
- */
-async function getDealerInventoryStats(dealerId) {
-  const vehicles = await getVehiclesForDealer(dealerId, {
-    includeArchived: true,
-  });
+async function listAllRecords(tableId, { filterByFormula, pageSize = 100 } = {}) {
+  const records = [];
+  let offset;
 
-  const stats = {
+  const u = new URL(tableUrl(tableId));
+  u.searchParams.set("pageSize", String(pageSize));
+  if (filterByFormula) u.searchParams.set("filterByFormula", filterByFormula);
+
+  do {
+    if (offset) u.searchParams.set("offset", offset);
+    const data = await airtableFetch(u.toString(), { method: "GET" });
+    records.push(...(data.records || []));
+    offset = data.offset;
+  } while (offset);
+
+  return records.map((r) => ({ airtableRecordId: r.id, ...r.fields }));
+}
+
+/**
+ * Inventory KPIs for a dealer (all-time)
+ * Counts:
+ * - available / pending / sold / archived (from status)
+ * - archived checkbox count
+ * - live count (Availability checkbox true and not archived)
+ */
+async function getDealerInventoryKpis(dealerId) {
+  const filter = formulaEquals("dealerId", dealerId);
+  const vehicles = await listAllRecords(T_VEHICLES, { filterByFormula: filter });
+
+  const out = {
     total: vehicles.length,
-    available: 0,
-    pending: 0,
-    sold: 0,
-    archived: 0,
+    byStatus: {
+      available: 0,
+      pending: 0,
+      sold: 0,
+      archived: 0,
+      other: 0,
+    },
+    archivedChecked: 0,
+    liveAvailable: 0, // Availability=true AND archived!=true
+    totalValueJmd: 0,
   };
 
-  vehicles.forEach((v) => {
-    const status = (v.Status || "").toLowerCase();
-    if (stats[status] !== undefined) {
-      stats[status]++;
-    }
-  });
+  for (const v of vehicles) {
+    const status = String(v.status || "").toLowerCase();
+    if (status && out.byStatus[status] !== undefined) out.byStatus[status]++;
+    else out.byStatus.other++;
 
-  return stats;
+    if (v.archived === true) out.archivedChecked++;
+    if (v.Availability === true && v.archived !== true) out.liveAvailable++;
+
+    // Sum value using Price if present
+    const price = Number(v.Price || 0);
+    if (Number.isFinite(price) && price > 0) out.totalValueJmd += price;
+  }
+
+  return out;
 }
 
 /**
- * Dealer request funnel stats
+ * Request KPIs for a dealer, optionally within a month
  */
-async function getDealerRequestStats(dealerId) {
-  const AIRTABLE_TABLE_REQUESTS = process.env.AIRTABLE_TABLE_REQUESTS || "REQUESTS";
-  const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
+async function getDealerRequestKpis(dealerId, { month } = {}) {
+  const monthDate = parseMonth(month);
+  let filterParts = [formulaEquals("dealerId", dealerId)];
 
-  const url = new URL(
-    `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(
-      AIRTABLE_TABLE_REQUESTS
-    )}`
-  );
+  // createdAt is a Formula(Date) field in your schema.
+  // Airtable formula date comparisons expect ISO-like strings.
+  if (monthDate) {
+    const start = startOfMonth(monthDate).toISOString();
+    const end = endOfMonth(monthDate).toISOString();
+    filterParts.push(`IS_AFTER({createdAt}, '${start}')`);
+    filterParts.push(`IS_BEFORE({createdAt}, '${end}')`);
+  }
 
-  url.searchParams.set(
-    "filterByFormula",
-    `{Dealer ID}='${dealerId.replace(/'/g, "\\'")}'`
-  );
+  const filter = formulaAnd(...filterParts);
+  const requests = await listAllRecords(T_REQUESTS, { filterByFormula: filter });
 
-  const data = await airtableFetch(url.toString(), { method: "GET" });
-  const records = data.records || [];
-
-  const stats = {
-    total: records.length,
-    new: 0,
-    contacted: 0,
-    booked: 0,
-    closed: 0,
-    noShow: 0,
+  const out = {
+    total: requests.length,
+    byStatus: {},
+    byType: {},
   };
 
-  records.forEach((r) => {
-    const status = (r.fields?.Status || "").toLowerCase().replace(" ", "");
-    if (status === "new") stats.new++;
-    if (status === "contacted") stats.contacted++;
-    if (status === "booked") stats.booked++;
-    if (status === "closed") stats.closed++;
-    if (status === "noshow") stats.noShow++;
-  });
+  for (const r of requests) {
+    const s = String(r.status || "unknown").toLowerCase();
+    const t = String(r.type || "unknown").toLowerCase();
 
-  return stats;
+    out.byStatus[s] = (out.byStatus[s] || 0) + 1;
+    out.byType[t] = (out.byType[t] || 0) + 1;
+  }
+
+  return out;
 }
 
 /**
- * Dealer sales summary (current month)
- * Uses VEHICLES table (Status=Sold + Sold Date)
+ * “Sales” KPIs derived from vehicles: status=sold within month (best-effort)
+ * NOTE: You don't currently have soldDate in the schema you sent.
+ * We'll use updatedAt as the "sold timestamp" proxy.
  */
-async function getDealerSalesThisMonth(dealerId) {
-  const now = new Date();
-  const start = startOfMonth(now).toISOString();
-  const end = endOfMonth(now).toISOString();
+async function getDealerSalesKpis(dealerId, { month } = {}) {
+  const monthDate = parseMonth(month);
+  const parts = [formulaEquals("dealerId", dealerId), `{status}='sold'`];
 
-  const AIRTABLE_TABLE_VEHICLES = process.env.AIRTABLE_TABLE_VEHICLES || "VEHICLES";
-  const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
+  if (monthDate) {
+    const start = startOfMonth(monthDate).toISOString();
+    const end = endOfMonth(monthDate).toISOString();
+    parts.push(`IS_AFTER({updatedAt}, '${start}')`);
+    parts.push(`IS_BEFORE({updatedAt}, '${end}')`);
+  }
 
-  const formula = `AND(
-    {Dealer ID}='${dealerId.replace(/'/g, "\\'")}',
-    {Status}='Sold',
-    IS_AFTER({Sold Date}, '${start}'),
-    IS_BEFORE({Sold Date}, '${end}')
-  )`;
-
-  const url = new URL(
-    `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(
-      AIRTABLE_TABLE_VEHICLES
-    )}`
-  );
-  url.searchParams.set("filterByFormula", formula);
-
-  const data = await airtableFetch(url.toString(), { method: "GET" });
-  const records = data.records || [];
+  const filter = formulaAnd(...parts);
+  const soldVehicles = await listAllRecords(T_VEHICLES, { filterByFormula: filter });
 
   let revenue = 0;
-  records.forEach((r) => {
-    revenue += Number(r.fields?.["Sold Price"] || 0);
-  });
+  for (const v of soldVehicles) {
+    const price = Number(v.Price || 0);
+    if (Number.isFinite(price) && price > 0) revenue += price;
+  }
 
   return {
-    soldCount: records.length,
-    revenue,
+    soldCount: soldVehicles.length,
+    revenueJmd: revenue,
+  };
+}
+
+/**
+ * Dealer full metrics bundle
+ */
+async function getDealerMetrics(dealerId, { month } = {}) {
+  const [inventory, requests, sales] = await Promise.all([
+    getDealerInventoryKpis(dealerId),
+    getDealerRequestKpis(dealerId, { month }),
+    getDealerSalesKpis(dealerId, { month }),
+  ]);
+
+  return {
+    dealerId,
+    month: month || null,
+    inventory,
+    requests,
+    sales,
+  };
+}
+
+/**
+ * Global metrics bundle (admin)
+ */
+async function getGlobalMetrics({ month } = {}) {
+  // Vehicles (all dealers)
+  const vehicles = await listAllRecords(T_VEHICLES);
+
+  const vehiclesByStatus = {};
+  let totalVehicles = vehicles.length;
+  let archivedChecked = 0;
+  let liveAvailable = 0;
+
+  for (const v of vehicles) {
+    const s = String(v.status || "unknown").toLowerCase();
+    vehiclesByStatus[s] = (vehiclesByStatus[s] || 0) + 1;
+
+    if (v.archived === true) archivedChecked++;
+    if (v.Availability === true && v.archived !== true) liveAvailable++;
+  }
+
+  // Requests (optionally filtered by month)
+  const monthDate = parseMonth(month);
+  let requestFilter = null;
+  if (monthDate) {
+    const start = startOfMonth(monthDate).toISOString();
+    const end = endOfMonth(monthDate).toISOString();
+    requestFilter = formulaAnd(
+      `IS_AFTER({createdAt}, '${start}')`,
+      `IS_BEFORE({createdAt}, '${end}')`
+    );
+  }
+
+  const requests = await listAllRecords(T_REQUESTS, { filterByFormula: requestFilter });
+
+  const requestsByStatus = {};
+  const requestsByType = {};
+  const requestsByDealer = {};
+
+  for (const r of requests) {
+    const s = String(r.status || "unknown").toLowerCase();
+    const t = String(r.type || "unknown").toLowerCase();
+    const d = String(r.dealerId || "unknown");
+
+    requestsByStatus[s] = (requestsByStatus[s] || 0) + 1;
+    requestsByType[t] = (requestsByType[t] || 0) + 1;
+    requestsByDealer[d] = (requestsByDealer[d] || 0) + 1;
+  }
+
+  // Top dealers by request volume (month scope if provided)
+  const topDealers = Object.entries(requestsByDealer)
+    .filter(([dealerId]) => dealerId && dealerId !== "unknown")
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([dealerId, count]) => ({ dealerId, requestCount: count }));
+
+  return {
+    month: month || null,
+    vehicles: {
+      total: totalVehicles,
+      liveAvailable,
+      archivedChecked,
+      byStatus: vehiclesByStatus,
+    },
+    requests: {
+      total: requests.length,
+      byStatus: requestsByStatus,
+      byType: requestsByType,
+      topDealers,
+    },
   };
 }
 
 module.exports = {
-  getDealerInventoryStats,
-  getDealerRequestStats,
-  getDealerSalesThisMonth,
+  getDealerMetrics,
+  getGlobalMetrics,
 };
