@@ -736,6 +736,22 @@
 
         <div class="row">
           <div>
+            <label for="imageFiles">Upload Images (max 5)</label>
+            <input class="field" id="imageFiles" type="file" accept="image/*" multiple />
+          </div>
+          <div>
+            <label for="videoFiles">Upload Videos (max 3)</label>
+            <input class="field" id="videoFiles" type="file" accept="video/*" multiple />
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px">
+          <button class="btn btn-ghost" id="uploadMediaBtn" type="button">Upload Media</button>
+          <div class="statusline" id="uploadStatus"></div>
+        </div>
+
+        <div class="row">
+          <div>
             <label for="availability">Availability (storefront)</label>
             <select class="field" id="availability">
               <option value="true">true (show on storefront)</option>
@@ -842,6 +858,10 @@
   const vehForm = $('#vehForm');
   const vehStatus = $('#vehStatus');
   const archiveVehicleBtn = $('#archiveVehicleBtn');
+  const uploadStatus = $('#uploadStatus');
+  const uploadMediaBtn = $('#uploadMediaBtn');
+  const imageFiles = $('#imageFiles');
+  const videoFiles = $('#videoFiles');
 
   // Add buttons
   const newVehicleBtn = $('#newVehicleBtn');
@@ -1381,10 +1401,93 @@
       Color: cleanStr($('#color').value, 40),
       'notes / description': cleanStr($('#notes').value, 2000),
       cloudinaryImageUrls: cleanStr($('#cloudinaryImageUrls').value, 5000),
-      cloudinaryVideoUrl: cleanStr($('#cloudinaryVideoUrl').value, 500),
+      cloudinaryVideoUrl: cleanStr($('#cloudinaryVideoUrl').value, 2000),
       Availability: $('#availability').value === 'true',
       archived: $('#archived').value === 'true',
     };
+  }
+
+  function parseUrlList(raw){
+    if(!raw) return [];
+    try{
+      if(raw.trim().startsWith("[")){
+        const parsed = JSON.parse(raw);
+        if(Array.isArray(parsed)) return parsed.map(String);
+      }
+    }catch(_err){}
+    return raw
+      .replaceAll(",", " ")
+      .replaceAll("\n", " ")
+      .split(" ")
+      .map(s => s.trim())
+      .filter(Boolean);
+  }
+
+  async function handleMediaUpload(){
+    const vehicleId = cleanStr($('#vehicleId').value, 60);
+    if(!vehicleId){
+      uploadStatus.textContent = "Add a vehicle ID before uploading.";
+      return;
+    }
+
+    const images = Array.from(imageFiles.files || []);
+    const videos = Array.from(videoFiles.files || []);
+
+    if(images.length > 5){
+      uploadStatus.textContent = "Select up to 5 images.";
+      return;
+    }
+    if(videos.length > 3){
+      uploadStatus.textContent = "Select up to 3 videos.";
+      return;
+    }
+    if(!images.length && !videos.length){
+      uploadStatus.textContent = "Choose images or videos to upload.";
+      return;
+    }
+
+    uploadStatus.textContent = "Uploading…";
+    uploadMediaBtn.disabled = true;
+
+    try{
+      const form = new FormData();
+      form.append("vehicleId", vehicleId);
+      images.forEach(file => form.append("images", file));
+      videos.forEach(file => form.append("videos", file));
+
+      const res = await fetch("/api/dealer/cloudinary/upload", {
+        method: "POST",
+        headers: { "Authorization": "Bearer " + STATE.token },
+        body: form
+      });
+      const data = await res.json();
+      if(!res.ok || !data?.ok){
+        throw new Error(data?.error || "Upload failed");
+      }
+
+      const imageUrls = Array.isArray(data.imageUrls) ? data.imageUrls : [];
+      const videoUrls = Array.isArray(data.videoUrls) ? data.videoUrls : [];
+
+      if(imageUrls.length){
+        const existing = parseUrlList($('#cloudinaryImageUrls').value);
+        const next = [...existing, ...imageUrls];
+        $('#cloudinaryImageUrls').value = next.join("\n");
+      }
+
+      if(videoUrls.length){
+        const existingVideos = parseUrlList($('#cloudinaryVideoUrl').value);
+        const next = [...existingVideos, ...videoUrls];
+        $('#cloudinaryVideoUrl').value = next.join("\n");
+      }
+
+      uploadStatus.textContent = "Upload complete. Remember to save the vehicle.";
+      imageFiles.value = "";
+      videoFiles.value = "";
+    }catch(err){
+      uploadStatus.textContent = err.message || "Upload failed.";
+    }finally{
+      uploadMediaBtn.disabled = false;
+    }
   }
 
   /** ---------------------------
@@ -1443,6 +1546,8 @@
   $$('.nav button').forEach(btn => {
     btn.addEventListener('click', () => setTab(btn.getAttribute('data-tab')));
   });
+
+  uploadMediaBtn.addEventListener('click', handleMediaUpload);
 
   // Inventory filters
   invSearch.addEventListener('input', () => {
