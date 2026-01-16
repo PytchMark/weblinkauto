@@ -1,306 +1,110 @@
+/**
+ * Cloud Run (Express) server
+ * - Serves static HTML apps from /apps
+ * - Exposes API routes (public/dealer/admin) calling Airtable server-side
+ * - Keeps all secrets in env vars (never in frontend)
+ */
+
 "use strict";
 
+require("dotenv").config();
+
+const path = require("path");
 const express = require("express");
-const router = express.Router();
+const cors = require("cors");
+const helmet = require("helmet");
+const morgan = require("morgan");
+const rateLimit = require("express-rate-limit");
 
-const {
-  getDealerByDealerId,
-  getVehiclesForDealer,
-  getVehicleByVehicleId,
-  createVehicle,
-  updateVehicleByRecordId,
-  archiveVehicle,
-} = require("../services/airtable");
+// ✅ Route modules (make sure these files EXIST)
+const publicRoutes = require("./routes/public");
+const dealerRoutes = require("./routes/dealer"); // <-- file must be routes/dealer.js
+const adminRoutes = require("./routes/admin");   // <-- file must be routes/admin.js
 
-const {
-  verifyPasscode,
-  signToken,
-  requireDealer,
-} = require("../services/auth");
+const app = express();
 
-/** -----------------------
- * Helpers
- * ----------------------*/
-function cleanStr(v, max = 500) {
-  if (v === null || v === undefined) return "";
-  const s = String(v).trim();
-  return s.length > max ? s.slice(0, max) : s;
-}
+/** ========= Config ========= */
+const PORT = process.env.PORT || 8080;
+const NODE_ENV = process.env.NODE_ENV || "development";
 
-function cleanNum(v) {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : null;
-}
+const CORS_ORIGINS = (process.env.CORS_ORIGINS || "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
 
-function isValidDealerId(dealerId) {
-  return /^[a-zA-Z0-9_-]{3,40}$/.test(dealerId);
-}
+/** ========= Middleware ========= */
+app.set("trust proxy", 1);
 
-function isValidVehicleId(vehicleId) {
-  // allow VEH-xxxxx or any safe token
-  return /^[a-zA-Z0-9_-]{3,60}$/.test(vehicleId);
-}
+app.use(helmet());
 
-function ensureDealerActive(dealer) {
-  const status = cleanStr(dealer?.status, 30).toLowerCase();
-  return status !== "paused";
-}
+app.use(
+  cors({
+    origin: CORS_ORIGINS.length ? CORS_ORIGINS : true,
+    credentials: true,
+  })
+);
 
-function pickTruthy(obj) {
-  // remove undefined/null/"" to avoid overwriting fields with empties unintentionally
-  const out = {};
-  for (const [k, v] of Object.entries(obj || {})) {
-    if (v === undefined || v === null) continue;
-    if (typeof v === "string" && v.trim() === "") continue;
-    out[k] = v;
-  }
-  return out;
-}
+app.use(express.json({ limit: "2mb" }));
+app.use(express.urlencoded({ extended: true }));
 
-/** -----------------------
- * POST /api/dealer/login
- * Body: { dealerId, passcode }
- * ----------------------*/
-router.post("/login", async (req, res) => {
-  try {
-    const dealerId = cleanStr(req.body.dealerId, 60);
-    const passcode = cleanStr(req.body.passcode, 120);
+app.use(
+  rateLimit({
+    windowMs: 60 * 1000,
+    max: 180,
+    standardHeaders: true,
+    legacyHeaders: false,
+  })
+);
 
-    if (!isValidDealerId(dealerId)) {
-      return res.status(400).json({ ok: false, error: "Invalid dealerId" });
-    }
-    if (!passcode) {
-      return res.status(400).json({ ok: false, error: "passcode is required" });
-    }
+app.use(morgan(NODE_ENV === "production" ? "combined" : "dev"));
 
-    const dealer = await getDealerByDealerId(dealerId);
-    if (!dealer) return res.status(404).json({ ok: false, error: "Dealer not found" });
+/** ========= Static apps ========= */
+const APPS_DIR = path.join(__dirname, "apps");
 
-    if (!ensureDealerActive(dealer)) {
-      return res.status(403).json({ ok: false, error: "Dealer account is paused" });
-    }
+app.use("/storefront", express.static(path.join(APPS_DIR, "storefront")));
+app.use("/dealer", express.static(path.join(APPS_DIR, "dealer")));
+app.use("/admin", express.static(path.join(APPS_DIR, "admin")));
 
-    // Your Airtable schema uses `passcodeHash` (API field name)
-    const storedHash = dealer.passcodeHash;
-    if (!storedHash) {
-      return res.status(403).json({ ok: false, error: "Dealer passcode not set" });
-    }
+/** Root */
+app.get("/", (_req, res) => res.redirect("/storefront"));
 
-    const valid = verifyPasscode(passcode, storedHash);
-    if (!valid) {
-      return res.status(401).json({ ok: false, error: "Invalid passcode" });
-    }
-
-    const token = signToken({ role: "dealer", dealerId }, "12h");
-
-    return res.json({
-      ok: true,
-      token,
-      dealer: {
-        dealerId: dealer.dealerId,
-        name: dealer.name || "",
-        status: dealer.status || "",
-        whatsapp: dealer.whatsapp || "",
-        logoUrl: dealer.logoUrl || "",
-      },
-    });
-  } catch (err) {
-    console.error("POST /api/dealer/login error:", err);
-    return res.status(500).json({ ok: false, error: "Internal Server Error" });
-  }
+/** ========= Health ========= */
+app.get("/health", (_req, res) => {
+  res.status(200).json({
+    ok: true,
+    service: "carsales-platform",
+    env: NODE_ENV,
+    time: new Date().toISOString(),
+  });
 });
 
-/** -----------------------
- * GET /api/dealer/me
- * Header: Authorization: Bearer <token>
- * ----------------------*/
-router.get("/me", requireDealer, async (req, res) => {
-  try {
-    const dealerId = req.user.dealerId;
-    const dealer = await getDealerByDealerId(dealerId);
-    if (!dealer) return res.status(404).json({ ok: false, error: "Dealer not found" });
-
-    return res.json({
-      ok: true,
-      dealer: {
-        dealerId: dealer.dealerId,
-        name: dealer.name || "",
-        status: dealer.status || "",
-        whatsapp: dealer.whatsapp || "",
-        logoUrl: dealer.logoUrl || "",
-      },
-    });
-  } catch (err) {
-    console.error("GET /api/dealer/me error:", err);
-    return res.status(500).json({ ok: false, error: "Internal Server Error" });
-  }
+/** ========= API index ========= */
+app.get("/api", (_req, res) => {
+  res.json({
+    ok: true,
+    message: "API online",
+    routes: ["/api/public", "/api/dealer", "/api/admin"],
+  });
 });
 
-/** -----------------------
- * GET /api/dealer/vehicles
- * Dealer-scoped inventory
- * Query:
- *  - ?includeArchived=1
- * ----------------------*/
-router.get("/vehicles", requireDealer, async (req, res) => {
-  try {
-    const dealerId = req.user.dealerId;
-    const includeArchived = cleanStr(req.query.includeArchived, 10) === "1";
+/** ========= API Routes ========= */
+app.use("/api/public", publicRoutes);
+app.use("/api/dealer", dealerRoutes);
+app.use("/api/admin", adminRoutes);
 
-    const vehicles = await getVehiclesForDealer(dealerId, {
-      includeArchived,
-      publicOnly: false,
-    });
-
-    return res.json({ ok: true, dealerId, vehicles });
-  } catch (err) {
-    console.error("GET /api/dealer/vehicles error:", err);
-    return res.status(500).json({ ok: false, error: "Internal Server Error" });
-  }
+/** ========= 404 ========= */
+app.use((req, res) => {
+  // If they hit an app deep-link (SPA style), you can optionally serve index.html here later.
+  res.status(404).json({ ok: false, error: "Not Found" });
 });
 
-/** -----------------------
- * POST /api/dealer/vehicles
- * Create a vehicle (dealer-scoped)
- * Body: fields matching your Vehicles API field names
- * Required: vehicleId, title (recommended), status
- * ----------------------*/
-router.post("/vehicles", requireDealer, async (req, res) => {
-  try {
-    const dealerId = req.user.dealerId;
-
-    const vehicleId = cleanStr(req.body.vehicleId, 80);
-    if (!vehicleId || !isValidVehicleId(vehicleId)) {
-      return res.status(400).json({ ok: false, error: "vehicleId is required" });
-    }
-
-    // Prevent dealer from creating duplicates
-    const existing = await getVehicleByVehicleId(vehicleId);
-    if (existing) {
-      return res.status(409).json({ ok: false, error: "vehicleId already exists" });
-    }
-
-    // Build fields using your API field names (camelCase)
-    const fields = pickTruthy({
-      dealerId, // enforce server-side
-      vehicleId,
-      title: cleanStr(req.body.title, 160),
-      status: cleanStr(req.body.status, 40) || "available",
-      Make: cleanStr(req.body.Make, 80), // you have both Make and make-style fields; keep whichever you actually use in UI
-      Model: cleanStr(req.body.Model, 80),
-      Year: cleanNum(req.body.Year),
-      VIN: cleanStr(req.body.VIN, 80),
-      Price: cleanNum(req.body.Price),
-      Mileage: cleanNum(req.body.Mileage),
-      Color: cleanStr(req.body.Color, 60),
-      "Body Type": cleanStr(req.body["Body Type"], 60),
-      Transmission: cleanStr(req.body.Transmission, 40),
-      "Fuel Type": cleanStr(req.body["Fuel Type"], 40),
-      "Video URLs": cleanStr(req.body["Video URLs"], 2000),
-      Description: cleanStr(req.body.Description, 4000),
-
-      // Cloudinary URL storage (your schema)
-      cloudinaryImageUrls: cleanStr(req.body.cloudinaryImageUrls, 20000), // (JSON or newline string, your choice)
-      cloudinaryVideoUrl: cleanStr(req.body.cloudinaryVideoUrl, 600),
-
-      // archive controls
-      archived: false,
-
-      // Optional visibility checkbox (your schema: Availability checkbox)
-      Availability: req.body.Availability === true,
-    });
-
-    const created = await createVehicle(fields);
-    return res.status(201).json({ ok: true, vehicle: created });
-  } catch (err) {
-    console.error("POST /api/dealer/vehicles error:", err);
-    return res.status(500).json({ ok: false, error: "Internal Server Error" });
-  }
+/** ========= Error handler ========= */
+app.use((err, _req, res, _next) => {
+  console.error("Server Error:", err);
+  res.status(500).json({ ok: false, error: "Internal Server Error" });
 });
 
-/** -----------------------
- * PATCH /api/dealer/vehicles/:vehicleId
- * Update a vehicle (dealer-scoped)
- * Body: any mutable fields (no deletes, no dealerId changes)
- * ----------------------*/
-router.patch("/vehicles/:vehicleId", requireDealer, async (req, res) => {
-  try {
-    const dealerId = req.user.dealerId;
-    const vehicleId = cleanStr(req.params.vehicleId, 80);
-
-    if (!vehicleId || !isValidVehicleId(vehicleId)) {
-      return res.status(400).json({ ok: false, error: "Invalid vehicleId" });
-    }
-
-    const existing = await getVehicleByVehicleId(vehicleId);
-    if (!existing) return res.status(404).json({ ok: false, error: "Vehicle not found" });
-
-    // Ensure vehicle belongs to this dealer
-    if (cleanStr(existing.dealerId, 60) !== dealerId) {
-      return res.status(403).json({ ok: false, error: "Forbidden" });
-    }
-
-    // Deny dealerId edits + hard deletes
-    const fields = pickTruthy({
-      title: cleanStr(req.body.title, 160),
-      status: cleanStr(req.body.status, 40),
-      Make: cleanStr(req.body.Make, 80),
-      Model: cleanStr(req.body.Model, 80),
-      Year: cleanNum(req.body.Year),
-      VIN: cleanStr(req.body.VIN, 80),
-      Price: cleanNum(req.body.Price),
-      Mileage: cleanNum(req.body.Mileage),
-      Color: cleanStr(req.body.Color, 60),
-      "Body Type": cleanStr(req.body["Body Type"], 60),
-      Transmission: cleanStr(req.body.Transmission, 40),
-      "Fuel Type": cleanStr(req.body["Fuel Type"], 40),
-      "Video URLs": cleanStr(req.body["Video URLs"], 2000),
-      Description: cleanStr(req.body.Description, 4000),
-      "notes / description": cleanStr(req.body["notes / description"], 4000),
-
-      cloudinaryImageUrls: cleanStr(req.body.cloudinaryImageUrls, 20000),
-      cloudinaryVideoUrl: cleanStr(req.body.cloudinaryVideoUrl, 600),
-
-      Availability:
-        typeof req.body.Availability === "boolean" ? req.body.Availability : undefined,
-    });
-
-    // If someone tries to set archived via patch, we allow only if true -> archive (never unarchive via patch)
-    if (req.body.archived === true) {
-      fields.archived = true;
-      fields.status = "archived";
-    }
-
-    const updated = await updateVehicleByRecordId(existing.airtableRecordId, fields);
-    return res.json({ ok: true, vehicle: updated });
-  } catch (err) {
-    console.error("PATCH /api/dealer/vehicles/:vehicleId error:", err);
-    return res.status(500).json({ ok: false, error: "Internal Server Error" });
-  }
+/** ========= Start ========= */
+app.listen(PORT, () => {
+  console.log(`✅ Server running on port ${PORT}`);
 });
-
-/** -----------------------
- * POST /api/dealer/vehicles/:vehicleId/archive
- * Archive only (no delete)
- * ----------------------*/
-router.post("/vehicles/:vehicleId/archive", requireDealer, async (req, res) => {
-  try {
-    const dealerId = req.user.dealerId;
-    const vehicleId = cleanStr(req.params.vehicleId, 80);
-
-    const existing = await getVehicleByVehicleId(vehicleId);
-    if (!existing) return res.status(404).json({ ok: false, error: "Vehicle not found" });
-
-    if (cleanStr(existing.dealerId, 60) !== dealerId) {
-      return res.status(403).json({ ok: false, error: "Forbidden" });
-    }
-
-    const archived = await archiveVehicle(vehicleId);
-    return res.json({ ok: true, vehicle: archived });
-  } catch (err) {
-    console.error("POST /api/dealer/vehicles/:vehicleId/archive error:", err);
-    return res.status(500).json({ ok: false, error: "Internal Server Error" });
-  }
-});
-
-module.exports = router;
