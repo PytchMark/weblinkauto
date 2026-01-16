@@ -53,7 +53,11 @@ const CORS_ORIGINS = (process.env.CORS_ORIGINS || "")
 /** ========= Middleware ========= */
 app.set("trust proxy", 1);
 
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+  })
+);
 
 app.use(
   cors({
