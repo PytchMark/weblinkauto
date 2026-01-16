@@ -1,11 +1,13 @@
 /**
  * Cloud Run (Express) server
  * - Serves static HTML apps from /apps
- * - Exposes API routes (public/dealer/admin) that call Airtable server-side
+ * - Exposes API routes (public/dealer/admin) calling Airtable server-side
  * - Keeps all secrets in env vars (never in frontend)
  */
 
 "use strict";
+
+require("dotenv").config();
 
 const path = require("path");
 const express = require("express");
@@ -13,12 +15,11 @@ const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
 const rateLimit = require("express-rate-limit");
-require("dotenv").config();
 
-// ✅ Route modules
+// ✅ Route modules (make sure these files EXIST)
 const publicRoutes = require("./routes/public");
-const dealerRoutes = require("./routes/dealers"); // <-- make sure your file name matches
-const adminRoutes = require("./routes/admin");
+const dealerRoutes = require("./routes/dealer"); // <-- file must be routes/dealer.js
+const adminRoutes = require("./routes/admin");   // <-- file must be routes/admin.js
 
 const app = express();
 
@@ -34,13 +35,7 @@ const CORS_ORIGINS = (process.env.CORS_ORIGINS || "")
 /** ========= Middleware ========= */
 app.set("trust proxy", 1);
 
-// ✅ IMPORTANT: Helmet’s default CSP can block inline scripts.
-// Your HTML pages use inline <script> so we disable CSP here.
-app.use(
-  helmet({
-    contentSecurityPolicy: false,
-  })
-);
+app.use(helmet());
 
 app.use(
   cors({
@@ -71,10 +66,10 @@ app.use("/dealer", express.static(path.join(APPS_DIR, "dealer")));
 app.use("/admin", express.static(path.join(APPS_DIR, "admin")));
 
 /** Root */
-app.get("/", (req, res) => res.redirect("/storefront"));
+app.get("/", (_req, res) => res.redirect("/storefront"));
 
-/** Health */
-app.get("/health", (req, res) => {
+/** ========= Health ========= */
+app.get("/health", (_req, res) => {
   res.status(200).json({
     ok: true,
     service: "carsales-platform",
@@ -83,8 +78,8 @@ app.get("/health", (req, res) => {
   });
 });
 
-/** API index */
-app.get("/api", (req, res) => {
+/** ========= API index ========= */
+app.get("/api", (_req, res) => {
   res.json({
     ok: true,
     message: "API online",
@@ -97,18 +92,19 @@ app.use("/api/public", publicRoutes);
 app.use("/api/dealer", dealerRoutes);
 app.use("/api/admin", adminRoutes);
 
-/** 404 */
+/** ========= 404 ========= */
 app.use((req, res) => {
+  // If they hit an app deep-link (SPA style), you can optionally serve index.html here later.
   res.status(404).json({ ok: false, error: "Not Found" });
 });
 
-/** Error handler */
-app.use((err, req, res, next) => {
+/** ========= Error handler ========= */
+app.use((err, _req, res, _next) => {
   console.error("Server Error:", err);
   res.status(500).json({ ok: false, error: "Internal Server Error" });
 });
 
-/** Start */
+/** ========= Start ========= */
 app.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
 });
