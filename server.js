@@ -17,7 +17,6 @@ const helmet = require("helmet");
 const morgan = require("morgan");
 const rateLimit = require("express-rate-limit");
 const jwt = require("jsonwebtoken");
-const multer = require("multer");
 
 const app = express();
 
@@ -35,11 +34,6 @@ const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
 const T_VEHICLES = process.env.AIRTABLE_TABLE_ID_VEHICLES;
 const T_DEALERS = process.env.AIRTABLE_TABLE_ID_DEALERS;
 const T_REQUESTS = process.env.AIRTABLE_TABLE_ID_VIEWING_REQUESTS;
-
-const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || "";
-const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY || "";
-const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET || "";
-const CLOUDINARY_FOLDER_ROOT = process.env.CLOUDINARY_FOLDER_ROOT || "carsales-platform";
 
 if (!JWT_SECRET) {
   throw new Error("Missing JWT_SECRET in env.");
@@ -157,66 +151,6 @@ function isPausedDealer(dealer) {
 
 function generatePasscode() {
   return String(Math.floor(100000 + Math.random() * 900000));
-}
-
-function buildCloudinaryFolder({ dealerId, vehicleId, type }) {
-  const safeDealer = String(dealerId || "").trim();
-  const safeVeh = String(vehicleId || "").trim();
-  const safeType = type === "videos" ? "videos" : "images";
-  return `${CLOUDINARY_FOLDER_ROOT}/${safeDealer}/${safeVeh}/${safeType}`;
-}
-
-function createCloudinarySignature({ folder, timestamp }) {
-  const paramsToSign = [`folder=${folder}`, `timestamp=${timestamp}`];
-  const baseString = paramsToSign.sort().join("&");
-  return crypto
-    .createHash("sha1")
-    .update(baseString + CLOUDINARY_API_SECRET)
-    .digest("hex");
-}
-
-async function uploadFileToCloudinary({ buffer, mimeType, folder, resourceType }) {
-  const timestamp = Math.floor(Date.now() / 1000);
-  const signature = createCloudinarySignature({ folder, timestamp });
-  const fileData = `data:${mimeType};base64,${buffer.toString("base64")}`;
-
-  const form = new FormData();
-  form.append("file", fileData);
-  form.append("api_key", CLOUDINARY_API_KEY);
-  form.append("timestamp", String(timestamp));
-  form.append("signature", signature);
-  form.append("folder", folder);
-
-  const endpoint = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/${resourceType}/upload`;
-  const res = await fetch(endpoint, { method: "POST", body: form });
-  const data = await res.json();
-  if (!res.ok || !data?.secure_url) {
-    const msg = data?.error?.message || "Cloudinary upload failed";
-    throw new Error(msg);
-  }
-  return data.secure_url;
-}
-
-function pickVehicleFields(body) {
-  return {
-    status: cleanStr(body.status, 20),
-    title: cleanStr(body.title, 120),
-    Make: cleanStr(body.Make, 80),
-    Model: cleanStr(body.Model, 80),
-    Year: Number(body.Year || 0) || undefined,
-    Price: Number(body.Price || 0) || undefined,
-    VIN: cleanStr(body.VIN, 60),
-    Mileage: Number(body.Mileage || 0) || undefined,
-    Transmission: cleanStr(body.Transmission, 40),
-    "Fuel Type": cleanStr(body["Fuel Type"], 40),
-    "Body Type": cleanStr(body["Body Type"], 40),
-    Color: cleanStr(body.Color, 40),
-    "notes / description": cleanStr(body["notes / description"], 2000),
-    cloudinaryImageUrls: cleanStr(body.cloudinaryImageUrls, 5000),
-    cloudinaryVideoUrl: cleanStr(body.cloudinaryVideoUrl, 2000),
-    Availability: typeof body.Availability === "boolean" ? body.Availability : undefined,
-    archived: typeof body.archived === "boolean" ? body.archived : undefined,
-  };
 }
 
 /** ========= Auth helpers ========= */
@@ -995,7 +929,7 @@ app.post("/api/dealer/vehicles", requireDealer, async (req, res) => {
     }
 
     const fields = {
-      ...pickVehicleFields(req.body),
+      ...req.body,
       dealerId,
       vehicleId,
     };
@@ -1059,105 +993,6 @@ app.post("/api/dealer/requests/:requestId/status", requireDealer, async (req, re
     return res.json({ ok: true, request: updated });
   } catch (err) {
     console.error("POST /api/dealer/requests/:requestId/status error:", err);
-    return res.status(500).json({ ok: false, error: "Internal Server Error" });
-  }
-});
-
-app.post("/api/dealer/cloudinary/upload", requireDealer, (req, res) => {
-  const upload = multer({
-    storage: multer.memoryStorage(),
-    limits: { fileSize: 30 * 1024 * 1024 },
-  }).fields([
-    { name: "images", maxCount: 5 },
-    { name: "videos", maxCount: 3 },
-  ]);
-
-  upload(req, res, async (err) => {
-    try {
-      if (err) {
-        return res.status(400).json({ ok: false, error: err.message || "Upload failed" });
-      }
-
-      if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_API_KEY || !CLOUDINARY_API_SECRET) {
-        return res.status(503).json({ ok: false, error: "Cloudinary not configured" });
-      }
-
-      const dealerId = cleanStr(req.user?.dealerId, 60);
-      const vehicleId = cleanStr(req.body.vehicleId, 60);
-      if (!vehicleId) {
-        return res.status(400).json({ ok: false, error: "vehicleId is required" });
-      }
-
-      const imageFiles = Array.isArray(req.files?.images) ? req.files.images : [];
-      const videoFiles = Array.isArray(req.files?.videos) ? req.files.videos : [];
-
-      const imageUrls = [];
-      for (const file of imageFiles) {
-        const folder = buildCloudinaryFolder({ dealerId, vehicleId, type: "images" });
-        const url = await uploadFileToCloudinary({
-          buffer: file.buffer,
-          mimeType: file.mimetype || "image/jpeg",
-          folder,
-          resourceType: "image",
-        });
-        imageUrls.push(url);
-      }
-
-      const videoUrls = [];
-      for (const file of videoFiles) {
-        const folder = buildCloudinaryFolder({ dealerId, vehicleId, type: "videos" });
-        const url = await uploadFileToCloudinary({
-          buffer: file.buffer,
-          mimeType: file.mimetype || "video/mp4",
-          folder,
-          resourceType: "video",
-        });
-        videoUrls.push(url);
-      }
-
-      return res.json({ ok: true, imageUrls, videoUrls });
-    } catch (uploadErr) {
-      console.error("POST /api/dealer/cloudinary/upload error:", uploadErr);
-      return res.status(500).json({ ok: false, error: "Internal Server Error" });
-    }
-  });
-});
-
-app.post("/api/dealer/cloudinary/sign", requireDealer, async (req, res) => {
-  try {
-    if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_API_KEY || !CLOUDINARY_API_SECRET) {
-      return res.status(503).json({ ok: false, error: "Cloudinary not configured" });
-    }
-
-    const dealerId = cleanStr(req.user?.dealerId, 60);
-    const vehicleId = cleanStr(req.body.vehicleId, 60);
-    const type = cleanStr(req.body.type, 20);
-    const resourceType = type === "video" ? "video" : "image";
-    const folder = buildCloudinaryFolder({
-      dealerId,
-      vehicleId,
-      type: resourceType === "video" ? "videos" : "images",
-    });
-
-    const timestamp = Math.floor(Date.now() / 1000);
-    const paramsToSign = [`folder=${folder}`, `timestamp=${timestamp}`];
-    const baseString = paramsToSign.sort().join("&");
-    const signature = crypto
-      .createHash("sha1")
-      .update(baseString + CLOUDINARY_API_SECRET)
-      .digest("hex");
-
-    return res.json({
-      ok: true,
-      cloudName: CLOUDINARY_CLOUD_NAME,
-      apiKey: CLOUDINARY_API_KEY,
-      timestamp,
-      signature,
-      folder,
-      resourceType,
-    });
-  } catch (err) {
-    console.error("POST /api/dealer/cloudinary/sign error:", err);
     return res.status(500).json({ ok: false, error: "Internal Server Error" });
   }
 });

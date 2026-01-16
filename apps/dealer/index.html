@@ -1423,6 +1423,30 @@
       .filter(Boolean);
   }
 
+  async function signCloudinaryUpload({ type, vehicleId }){
+    return apiPost("/api/dealer/cloudinary/sign", { type, vehicleId });
+  }
+
+  async function uploadToCloudinary({ file, type, vehicleId }){
+    const signed = await signCloudinaryUpload({ type, vehicleId });
+    if(!signed?.ok) throw new Error(signed?.error || "Cloudinary signing failed");
+
+    const endpoint = `https://api.cloudinary.com/v1_1/${signed.cloudName}/${signed.resourceType}/upload`;
+    const form = new FormData();
+    form.append("file", file);
+    form.append("api_key", signed.apiKey);
+    form.append("timestamp", signed.timestamp);
+    form.append("signature", signed.signature);
+    form.append("folder", signed.folder);
+
+    const res = await fetch(endpoint, { method: "POST", body: form });
+    const data = await res.json();
+    if(!res.ok || !data?.secure_url){
+      throw new Error(data?.error?.message || "Upload failed");
+    }
+    return data.secure_url;
+  }
+
   async function handleMediaUpload(){
     const vehicleId = cleanStr($('#vehicleId').value, 60);
     if(!vehicleId){
@@ -1450,23 +1474,17 @@
     uploadMediaBtn.disabled = true;
 
     try{
-      const form = new FormData();
-      form.append("vehicleId", vehicleId);
-      images.forEach(file => form.append("images", file));
-      videos.forEach(file => form.append("videos", file));
-
-      const res = await fetch("/api/dealer/cloudinary/upload", {
-        method: "POST",
-        headers: { "Authorization": "Bearer " + STATE.token },
-        body: form
-      });
-      const data = await res.json();
-      if(!res.ok || !data?.ok){
-        throw new Error(data?.error || "Upload failed");
+      const imageUrls = [];
+      for(const file of images){
+        const url = await uploadToCloudinary({ file, type: "image", vehicleId });
+        imageUrls.push(url);
       }
 
-      const imageUrls = Array.isArray(data.imageUrls) ? data.imageUrls : [];
-      const videoUrls = Array.isArray(data.videoUrls) ? data.videoUrls : [];
+      const videoUrls = [];
+      for(const file of videos){
+        const url = await uploadToCloudinary({ file, type: "video", vehicleId });
+        videoUrls.push(url);
+      }
 
       if(imageUrls.length){
         const existing = parseUrlList($('#cloudinaryImageUrls').value);
