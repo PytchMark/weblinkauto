@@ -13,9 +13,6 @@ RUN npm install --omit=dev
 # ---- Copy rest of the app ----
 COPY . .
 
-# ---- Cloud Run uses PORT env var ----
-ENV PORT=8080
-
 # ---- Expose port (documentation only; Cloud Run ignores EXPOSE but it’s good practice) ----
 EXPOSE 8080
 
