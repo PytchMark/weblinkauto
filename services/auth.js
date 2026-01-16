@@ -16,17 +16,24 @@ if (!JWT_SECRET) {
  * pbkdf2$<iterations>$<saltBase64>$<hashBase64>
  */
 function hashPasscode(passcode, iterations = 120000) {
+  if (!passcode || typeof passcode !== "string") {
+    throw new Error("Passcode is required");
+  }
   const salt = crypto.randomBytes(16);
   const hash = crypto.pbkdf2Sync(passcode, salt, iterations, 32, "sha256");
   return `pbkdf2$${iterations}$${salt.toString("base64")}$${hash.toString("base64")}`;
 }
 
 function verifyPasscode(passcode, stored) {
+  if (!passcode || typeof passcode !== "string") return false;
   if (!stored || typeof stored !== "string") return false;
+
   const parts = stored.split("$");
   if (parts.length !== 4 || parts[0] !== "pbkdf2") return false;
 
   const iterations = parseInt(parts[1], 10);
+  if (!Number.isFinite(iterations) || iterations < 1) return false;
+
   const salt = Buffer.from(parts[2], "base64");
   const hashExpected = Buffer.from(parts[3], "base64");
 
@@ -52,7 +59,7 @@ function requireAuth(req, res, next) {
     const decoded = verifyToken(token);
     req.user = decoded;
     return next();
-  } catch (err) {
+  } catch (_err) {
     return res.status(401).json({ ok: false, error: "Invalid or expired token" });
   }
 }
@@ -82,45 +89,49 @@ function requireAdmin(req, res, next) {
   });
 }
 
-/** Dealer login: dealerId + passcode */
+/**
+ * Dealer login: dealerId + passcode
+ *
+ * IMPORTANT:
+ * Your Airtable schema you shared has field: `passcodeHash`
+ * So we read dealer.passcodeHash (NOT "Dealer Passcode Hash")
+ */
 async function dealerLogin(dealerId, passcode) {
   const dealer = await getDealerByDealerId(dealerId);
   if (!dealer) return { ok: false, error: "Dealer not found" };
 
-  // Recommended Airtable field name
-  const storedHash = dealer["Dealer Passcode Hash"];
+  const storedHash = dealer.passcodeHash; // <-- matches your Airtable schema
   if (!storedHash) return { ok: false, error: "Dealer passcode not set" };
 
   const valid = verifyPasscode(passcode, storedHash);
   if (!valid) return { ok: false, error: "Invalid passcode" };
 
   const token = signToken({ role: "dealer", dealerId });
+
   return {
     ok: true,
     token,
     dealer: {
-      dealerId: dealer["Dealer ID"],
-      dealerName: dealer["Dealer Name"],
-      status: dealer["Status"],
-      logoUrl: dealer["Logo URL"],
+      dealerId: dealer.dealerId,
+      name: dealer.name,
+      status: dealer.status,
+      whatsapp: dealer.whatsapp || "",
+      email: dealer.email || "",
+      logoUrl: dealer.logoUrl || "",
     },
   };
 }
 
 module.exports = {
-  // hashing helpers (admin setup)
   hashPasscode,
   verifyPasscode,
 
-  // jwt helpers
   signToken,
   verifyToken,
 
-  // middleware
   requireAuth,
   requireDealer,
   requireAdmin,
 
-  // actions
   dealerLogin,
 };
