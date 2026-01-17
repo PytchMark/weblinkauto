@@ -3,7 +3,7 @@
 A multi-dealer car inventory and viewing-request platform built with:
 
 - **Google Cloud Run** (Express API)
-- **Airtable** (single source of truth database)
+- **Supabase (Postgres)** (single source of truth database)
 - **Cloudinary** (media hosting)
 - **Static HTML apps** (storefront, dealer portal, admin)
 
@@ -14,7 +14,7 @@ This system installs a **sales process**, not just a website.
 ## Architecture Overview
 
 
-- Browsers **never** talk to Airtable directly
+- Browsers **never** talk to Supabase directly
 - All secrets live in environment variables
 - All dealer access is scoped by `Dealer ID`
 
@@ -26,7 +26,7 @@ This system installs a **sales process**, not just a website.
 Public, read-only dealer storefront.
 
 - User enters a **Dealer ID** (or via URL param)
-- Displays live inventory from Airtable
+- Displays live inventory from Supabase
 - Allows customers to:
   - Open WhatsApp chat
   - Request live video viewing
@@ -78,15 +78,11 @@ Internal admin dashboard.
 │ └── admin/index.html
 │
 ├── services/
-│ ├── airtable.js
+│ ├── supabase.js
 │ ├── auth.js
-│ ├── cloudinary.js
 │ └── analytics.js
 │
 └── public/assets/
-
-yaml
-Copy code
 
 
 ---
@@ -99,6 +95,9 @@ In production:
 - Use **Cloud Run environment variables** or **Google Secret Manager**
 - Never commit real secrets to GitHub
 
+Supabase schema setup:
+- Apply `supabase_schema.sql` in the Supabase SQL editor before running the API.
+
 ---
 
 ## Data Rules (Important)
@@ -106,10 +105,9 @@ In production:
 - **Dealer ID** is the partition key for all data
 - Vehicles are **never deleted**, only archived
 - Media is hosted on Cloudinary
-- Airtable stores:
-  - Cloudinary `secure_url`
-  - Optional Cloudinary metadata
-- Dropdowns / single-select fields are enforced to keep data clean
+- Supabase stores:
+  - Cloudinary URLs for images/videos
+- Dropdown / status values are enforced to keep data clean
 
 ---
 
@@ -142,21 +140,9 @@ All apps must display:
 Install dependencies:
 ```bash
 npm install
+```
 
----
-
-## ✅ You are now fully scaffolded
-
-At this point:
-- Repo structure is correct
-- Config files are production-safe
-- Documentation is locked
-- No refactors needed later
-
-### Next logical step
-Say **“Start with `services/airtable.js`”**  
-and we’ll implement the Airtable client + field mapping cleanly and fast.
-
+Run the server locally:
+```bash
 npm run dev
-npm start
-
+```
