@@ -1,7 +1,7 @@
 /**
  * Cloud Run (Express) server
  * - Serves static HTML apps from /apps
- * - Exposes API routes (public/dealer/admin) calling Airtable server-side
+ * - Exposes API routes (public/dealer/admin) calling Supabase server-side
  * - Keeps all secrets in env vars (never in frontend)
  */
 
@@ -16,7 +16,25 @@ const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
 const rateLimit = require("express-rate-limit");
-const jwt = require("jsonwebtoken");
+
+const { signToken, verifyToken } = require("./services/auth");
+const {
+  getProfileByDealerId,
+  getProfileByEmail,
+  upsertProfile,
+  listProfiles,
+  getVehiclesForDealer,
+  getVehiclesForDealers,
+  getVehicleByVehicleId,
+  createVehicle,
+  updateVehicleByVehicleId,
+  archiveVehicle,
+  listVehicles,
+  createViewingRequest,
+  updateViewingRequestByRequestId,
+  listViewingRequests,
+} = require("./services/supabase");
+const { getDealerMetrics, getDealersSummary } = require("./services/analytics");
 
 const app = express();
 
@@ -24,26 +42,7 @@ const app = express();
 const PORT = process.env.PORT || 8080;
 const NODE_ENV = process.env.NODE_ENV || "development";
 
-const JWT_SECRET = process.env.JWT_SECRET;
 const ADMIN_API_KEY = process.env.ADMIN_API_KEY || "";
-const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "";
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "";
-
-const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY || process.env.AIRTABLE_TOKEN;
-const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
-const T_VEHICLES = process.env.AIRTABLE_TABLE_ID_VEHICLES;
-const T_DEALERS = process.env.AIRTABLE_TABLE_ID_DEALERS;
-const T_REQUESTS = process.env.AIRTABLE_TABLE_ID_VIEWING_REQUESTS;
-
-if (!JWT_SECRET) {
-  throw new Error("Missing JWT_SECRET in env.");
-}
-if (!AIRTABLE_API_KEY || !AIRTABLE_BASE_ID) {
-  throw new Error("Missing AIRTABLE_API_KEY (or AIRTABLE_TOKEN) or AIRTABLE_BASE_ID in env.");
-}
-if (!T_VEHICLES || !T_DEALERS || !T_REQUESTS) {
-  throw new Error("Missing one or more Airtable table ID env vars (AIRTABLE_TABLE_ID_*).");
-}
 
 const CORS_ORIGINS = (process.env.CORS_ORIGINS || "")
   .split(",")
@@ -91,7 +90,6 @@ app.use("/admin", express.static(path.join(APPS_DIR, "admin")));
 app.get("/", (_req, res) => res.redirect("/storefront"));
 
 /** ========= Helpers ========= */
-const API_ROOT = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}`;
 
 function cleanStr(v, max = 500) {
   if (v === null || v === undefined) return "";
@@ -101,6 +99,10 @@ function cleanStr(v, max = 500) {
 
 function isValidDealerId(dealerId) {
   return /^[a-zA-Z0-9_-]{3,40}$/.test(dealerId);
+}
+
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
 function normalizePhone(phone) {
@@ -136,11 +138,11 @@ function normalizeVehicleStatus(value) {
 
 function normalizeRequestStatus(value) {
   const s = cleanStr(value, 40).toLowerCase();
-  if (s === "new") return "New";
-  if (s === "contacted") return "Contacted";
-  if (s === "booked") return "Booked";
-  if (s === "closed") return "Closed";
-  if (s === "no show" || s === "noshow" || s === "no_show") return "No Show";
+  if (s === "new") return "new";
+  if (s === "contacted") return "contacted";
+  if (s === "booked") return "booked";
+  if (s === "closed") return "closed";
+  if (s === "no show" || s === "noshow" || s === "no_show") return "no show";
   return null;
 }
 
@@ -153,39 +155,17 @@ function generatePasscode() {
   return String(Math.floor(100000 + Math.random() * 900000));
 }
 
-/** ========= Auth helpers ========= */
-function hashPasscode(passcode, iterations = 120000) {
-  if (!passcode || typeof passcode !== "string") {
-    throw new Error("Passcode is required");
-  }
-  const salt = crypto.randomBytes(16);
-  const hash = crypto.pbkdf2Sync(passcode, salt, iterations, 32, "sha256");
-  return `pbkdf2$${iterations}$${salt.toString("base64")}$${hash.toString("base64")}`;
-}
-
-function verifyPasscode(passcode, stored) {
-  if (!passcode || typeof passcode !== "string") return false;
-  if (!stored || typeof stored !== "string") return false;
-
-  const parts = stored.split("$");
-  if (parts.length !== 4 || parts[0] !== "pbkdf2") return false;
-
-  const iterations = parseInt(parts[1], 10);
-  if (!Number.isFinite(iterations) || iterations < 1) return false;
-
-  const salt = Buffer.from(parts[2], "base64");
-  const hashExpected = Buffer.from(parts[3], "base64");
-
-  const hash = crypto.pbkdf2Sync(passcode, salt, iterations, 32, "sha256");
-  return crypto.timingSafeEqual(hash, hashExpected);
-}
-
-function signToken(payload, expiresIn = "12h") {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn });
-}
-
-function verifyToken(token) {
-  return jwt.verify(token, JWT_SECRET);
+function getAdminCredentials() {
+  const adminEmail = cleanStr(process.env.ADMIN_EMAIL, 120);
+  const adminUsername = cleanStr(process.env.ADMIN_USERNAME, 120);
+  const adminPassword = cleanStr(process.env.ADMIN_PASSWORD, 200);
+  return {
+    adminIdentifier: adminEmail || adminUsername,
+    adminPassword,
+    adminEmailSet: Boolean(adminEmail),
+    adminUsernameSet: Boolean(adminUsername),
+    adminPasswordSet: Boolean(adminPassword),
+  };
 }
 
 function requireAuth(req, res, next) {
@@ -223,461 +203,104 @@ function requireAdmin(req, res, next) {
   });
 }
 
-/** ========= Airtable helpers ========= */
-function headers() {
+function generateRequestId() {
+  return `REQ-${crypto.randomUUID()}`;
+}
+
+function mapProfileRow(profile) {
+  if (!profile) return null;
   return {
-    Authorization: `Bearer ${AIRTABLE_API_KEY}`,
-    "Content-Type": "application/json",
+    dealerId: profile.dealer_id || "",
+    name: profile.name || "",
+    status: profile.status || "",
+    whatsapp: profile.whatsapp || "",
+    email: profile.profile_email || "",
+    logoUrl: profile.logo_url || "",
   };
 }
 
-function tableUrl(tableId) {
-  return `${API_ROOT}/${encodeURIComponent(tableId)}`;
-}
-
-async function sleep(ms) {
-  return new Promise((r) => setTimeout(r, ms));
-}
-
-async function airtableFetch(url, opts = {}, attempt = 0) {
-  const res = await fetch(url, {
-    ...opts,
-    headers: { ...headers(), ...(opts.headers || {}) },
-  });
-
-  if (res.status === 429 && attempt < 3) {
-    await sleep(800 + attempt * 600);
-    return airtableFetch(url, opts, attempt + 1);
-  }
-
-  const text = await res.text();
-  let body;
-  try {
-    body = text ? JSON.parse(text) : null;
-  } catch {
-    body = text;
-  }
-
-  if (!res.ok) {
-    const msg = typeof body === "object" ? JSON.stringify(body) : String(body);
-    throw new Error(`Airtable error ${res.status}: ${msg}`);
-  }
-
-  return body;
-}
-
-function formulaEquals(field, value) {
-  const safe = String(value).replace(/'/g, "\\'");
-  return `{${field}}='${safe}'`;
-}
-
-function formulaAnd(...parts) {
-  return `AND(${parts.join(",")})`;
-}
-
-async function listAllRecords(tableId, { filterByFormula, pageSize = 100 } = {}) {
-  const records = [];
-  let offset;
-
-  const u = new URL(tableUrl(tableId));
-  u.searchParams.set("pageSize", String(pageSize));
-  if (filterByFormula) u.searchParams.set("filterByFormula", filterByFormula);
-
-  do {
-    if (offset) u.searchParams.set("offset", offset);
-    const data = await airtableFetch(u.toString(), { method: "GET" });
-    records.push(...(data.records || []));
-    offset = data.offset;
-  } while (offset);
-
-  return records.map((r) => ({ airtableRecordId: r.id, ...r.fields }));
-}
-
-async function getDealerByDealerId(dealerId) {
-  const u = new URL(tableUrl(T_DEALERS));
-  u.searchParams.set("maxRecords", "1");
-  u.searchParams.set("filterByFormula", formulaEquals("dealerId", dealerId));
-
-  const data = await airtableFetch(u.toString(), { method: "GET" });
-  const rec = data?.records?.[0];
-  if (!rec) return null;
-
+function mapVehicleRow(vehicle) {
+  if (!vehicle) return null;
   return {
-    airtableRecordId: rec.id,
-    ...rec.fields,
+    dealerId: vehicle.dealer_id,
+    vehicleId: vehicle.vehicle_id,
+    title: vehicle.title || "",
+    make: vehicle.make || "",
+    model: vehicle.model || "",
+    year: vehicle.year || "",
+    vin: vehicle.vin || "",
+    price: vehicle.price || 0,
+    status: vehicle.status || "",
+    availability: vehicle.availability === true,
+    Availability: vehicle.availability === true,
+    archived: vehicle.archived === true,
+    mileage: vehicle.mileage || "",
+    color: vehicle.color || "",
+    bodyType: vehicle.body_type || "",
+    transmission: vehicle.transmission || "",
+    fuelType: vehicle.fuel_type || "",
+    description: vehicle.description || "",
+    "notes / description": vehicle.description || "",
+    cloudinaryImageUrls: vehicle.cloudinary_image_urls || "",
+    cloudinaryVideoUrl: vehicle.cloudinary_video_url || "",
+    Title: vehicle.title || "",
+    Make: vehicle.make || "",
+    Model: vehicle.model || "",
+    Year: vehicle.year || "",
+    VIN: vehicle.vin || "",
+    Price: vehicle.price || 0,
+    Mileage: vehicle.mileage || "",
+    Color: vehicle.color || "",
+    Status: vehicle.status || "",
   };
 }
 
-async function listDealers({ status } = {}) {
-  let filter;
-  if (status) {
-    filter = formulaEquals("status", status);
-  }
-  return listAllRecords(T_DEALERS, { filterByFormula: filter });
-}
-
-async function createDealer(fields) {
-  const url = tableUrl(T_DEALERS);
-  const payload = { records: [{ fields }] };
-  const data = await airtableFetch(url, { method: "POST", body: JSON.stringify(payload) });
-  const rec = data?.records?.[0];
-  return rec ? { airtableRecordId: rec.id, ...rec.fields } : null;
-}
-
-async function updateDealerByRecordId(recordId, fields) {
-  const url = `${tableUrl(T_DEALERS)}/${recordId}`;
-  const data = await airtableFetch(url, { method: "PATCH", body: JSON.stringify({ fields }) });
-  return data ? { airtableRecordId: data.id, ...data.fields } : null;
-}
-
-async function updateDealerByDealerId(dealerId, fields) {
-  const existing = await getDealerByDealerId(dealerId);
-  if (!existing?.airtableRecordId) return null;
-  return updateDealerByRecordId(existing.airtableRecordId, fields);
-}
-
-async function upsertDealerByDealerId(dealerId, fields) {
-  const existing = await getDealerByDealerId(dealerId);
-  if (existing?.airtableRecordId) return updateDealerByRecordId(existing.airtableRecordId, fields);
-  return createDealer(fields);
-}
-
-async function getVehiclesForDealer(dealerId, { includeArchived = false, publicOnly = false } = {}) {
-  const u = new URL(tableUrl(T_VEHICLES));
-  u.searchParams.set("pageSize", "100");
-
-  const parts = [formulaEquals("dealerId", dealerId)];
-
-  if (!includeArchived) {
-    parts.push("{archived}!=TRUE()");
-  }
-
-  if (publicOnly) {
-    parts.push("{Availability}=TRUE()");
-  }
-
-  u.searchParams.set("filterByFormula", formulaAnd(...parts));
-
-  const records = [];
-  let offset;
-
-  do {
-    if (offset) u.searchParams.set("offset", offset);
-    const data = await airtableFetch(u.toString(), { method: "GET" });
-    records.push(...(data.records || []));
-    offset = data.offset;
-  } while (offset);
-
-  return records.map((r) => ({ airtableRecordId: r.id, ...r.fields }));
-}
-
-async function getVehicleByVehicleId(vehicleId) {
-  const u = new URL(tableUrl(T_VEHICLES));
-  u.searchParams.set("maxRecords", "1");
-  u.searchParams.set("filterByFormula", formulaEquals("vehicleId", vehicleId));
-
-  const data = await airtableFetch(u.toString(), { method: "GET" });
-  const rec = data?.records?.[0];
-  if (!rec) return null;
-
-  return { airtableRecordId: rec.id, ...rec.fields };
-}
-
-async function createVehicle(fields) {
-  const url = tableUrl(T_VEHICLES);
-  const payload = { records: [{ fields }] };
-  const data = await airtableFetch(url, { method: "POST", body: JSON.stringify(payload) });
-  const rec = data?.records?.[0];
-  return rec ? { airtableRecordId: rec.id, ...rec.fields } : null;
-}
-
-async function updateVehicleByRecordId(recordId, fields) {
-  const url = `${tableUrl(T_VEHICLES)}/${recordId}`;
-  const data = await airtableFetch(url, { method: "PATCH", body: JSON.stringify({ fields }) });
-  return data ? { airtableRecordId: data.id, ...data.fields } : null;
-}
-
-async function upsertVehicleByVehicleId(vehicleId, fields) {
-  const existing = await getVehicleByVehicleId(vehicleId);
-  if (existing?.airtableRecordId) return updateVehicleByRecordId(existing.airtableRecordId, fields);
-  return createVehicle(fields);
-}
-
-async function archiveVehicle(vehicleId) {
-  const existing = await getVehicleByVehicleId(vehicleId);
-  if (!existing?.airtableRecordId) return null;
-
-  return updateVehicleByRecordId(existing.airtableRecordId, {
-    archived: true,
-    status: "archived",
+function mapVehicleInput(body) {
+  return pruneUndefined({
+    title: cleanStr(body.title || body.Title, 120),
+    make: cleanStr(body.make || body.Make, 80),
+    model: cleanStr(body.model || body.Model, 80),
+    year: Number(body.year || body.Year || 0) || null,
+    vin: cleanStr(body.vin || body.VIN, 80),
+    price: Number(body.price || body.Price || 0) || null,
+    status: normalizeVehicleStatus(body.status || body.Status) || cleanStr(body.status || body.Status, 40),
+    availability: toBool(body.availability ?? body.Availability),
+    archived: toBool(body.archived),
+    mileage: Number(body.mileage || body.Mileage || 0) || null,
+    color: cleanStr(body.color || body.Color, 60),
+    body_type: cleanStr(body.bodyType || body["Body Type"], 60),
+    transmission: cleanStr(body.transmission || body.Transmission, 60),
+    fuel_type: cleanStr(body.fuelType || body["Fuel Type"], 60),
+    description: cleanStr(
+      body.description || body.notes || body.Description || body["notes / description"],
+      2000
+    ),
+    cloudinary_image_urls: cleanStr(body.cloudinaryImageUrls || body.cloudinaryImageUrl, 5000),
+    cloudinary_video_url: cleanStr(body.cloudinaryVideoUrl, 2000),
   });
 }
 
-async function listVehicles({ dealerId, status } = {}) {
-  const parts = [];
-  if (dealerId) parts.push(formulaEquals("dealerId", dealerId));
-  if (status) parts.push(formulaEquals("status", status));
-  const filterByFormula = parts.length ? formulaAnd(...parts) : undefined;
-  return listAllRecords(T_VEHICLES, { filterByFormula });
-}
-
-async function createViewingRequest(fields) {
-  const url = tableUrl(T_REQUESTS);
-  const payload = { records: [{ fields }] };
-  const data = await airtableFetch(url, { method: "POST", body: JSON.stringify(payload) });
-  const rec = data?.records?.[0];
-  return rec ? { airtableRecordId: rec.id, ...rec.fields } : null;
-}
-
-async function getViewingRequestsForDealer(dealerId) {
-  const filter = formulaEquals("dealerId", dealerId);
-  return listAllRecords(T_REQUESTS, { filterByFormula: filter });
-}
-
-async function listViewingRequests({ dealerId, status } = {}) {
-  const parts = [];
-  if (dealerId) parts.push(formulaEquals("dealerId", dealerId));
-  if (status) parts.push(formulaEquals("status", status));
-  const filterByFormula = parts.length ? formulaAnd(...parts) : undefined;
-  return listAllRecords(T_REQUESTS, { filterByFormula });
-}
-
-async function getViewingRequestByRequestId(requestId) {
-  const u = new URL(tableUrl(T_REQUESTS));
-  u.searchParams.set("maxRecords", "1");
-  u.searchParams.set("filterByFormula", formulaEquals("requestId", requestId));
-
-  const data = await airtableFetch(u.toString(), { method: "GET" });
-  const rec = data?.records?.[0];
-  if (!rec) return null;
-  return { airtableRecordId: rec.id, ...rec.fields };
-}
-
-async function updateViewingRequestByRecordId(recordId, fields) {
-  const url = `${tableUrl(T_REQUESTS)}/${recordId}`;
-  const data = await airtableFetch(url, { method: "PATCH", body: JSON.stringify({ fields }) });
-  return data ? { airtableRecordId: data.id, ...data.fields } : null;
-}
-
-async function updateViewingRequestByRequestId(requestId, fields) {
-  const existing = await getViewingRequestByRequestId(requestId);
-  if (!existing?.airtableRecordId) return null;
-  return updateViewingRequestByRecordId(existing.airtableRecordId, fields);
-}
-
-/** ========= Analytics helpers ========= */
-function parseMonth(monthStr) {
-  if (!monthStr || !/^\d{4}-\d{2}$/.test(monthStr)) return null;
-  const [y, m] = monthStr.split("-").map(Number);
-  return new Date(y, m - 1, 1);
-}
-
-function startOfMonth(date) {
-  return new Date(date.getFullYear(), date.getMonth(), 1, 0, 0, 0);
-}
-
-function endOfMonth(date) {
-  return new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59);
-}
-
-async function getDealerInventoryKpis(dealerId) {
-  const filter = formulaEquals("dealerId", dealerId);
-  const vehicles = await listAllRecords(T_VEHICLES, { filterByFormula: filter });
-
-  const out = {
-    total: vehicles.length,
-    byStatus: {
-      available: 0,
-      pending: 0,
-      sold: 0,
-      archived: 0,
-      other: 0,
-    },
-    archivedChecked: 0,
-    liveAvailable: 0,
-    totalValueJmd: 0,
-  };
-
-  for (const v of vehicles) {
-    const status = String(v.status || "").toLowerCase();
-    if (status && out.byStatus[status] !== undefined) out.byStatus[status]++;
-    else out.byStatus.other++;
-
-    if (v.archived === true) out.archivedChecked++;
-    if (v.Availability === true && v.archived !== true) out.liveAvailable++;
-
-    const price = Number(v.Price || 0);
-    if (Number.isFinite(price) && price > 0) out.totalValueJmd += price;
-  }
-
-  return out;
-}
-
-async function getDealerRequestKpis(dealerId, { month } = {}) {
-  const monthDate = parseMonth(month);
-  const filterParts = [formulaEquals("dealerId", dealerId)];
-
-  if (monthDate) {
-    const start = startOfMonth(monthDate).toISOString();
-    const end = endOfMonth(monthDate).toISOString();
-    filterParts.push(`IS_AFTER({createdAt}, '${start}')`);
-    filterParts.push(`IS_BEFORE({createdAt}, '${end}')`);
-  }
-
-  const filter = formulaAnd(...filterParts);
-  const requests = await listAllRecords(T_REQUESTS, { filterByFormula: filter });
-
-  const out = {
-    total: requests.length,
-    byStatus: {},
-    byType: {},
-  };
-
-  for (const r of requests) {
-    const s = String(r.status || "unknown").toLowerCase();
-    const t = String(r.type || "unknown").toLowerCase();
-
-    out.byStatus[s] = (out.byStatus[s] || 0) + 1;
-    out.byType[t] = (out.byType[t] || 0) + 1;
-  }
-
-  return out;
-}
-
-async function getDealerSalesKpis(dealerId, { month } = {}) {
-  const monthDate = parseMonth(month);
-  const parts = [formulaEquals("dealerId", dealerId), `{status}='sold'`];
-
-  if (monthDate) {
-    const start = startOfMonth(monthDate).toISOString();
-    const end = endOfMonth(monthDate).toISOString();
-    parts.push(`IS_AFTER({updatedAt}, '${start}')`);
-    parts.push(`IS_BEFORE({updatedAt}, '${end}')`);
-  }
-
-  const filter = formulaAnd(...parts);
-  const soldVehicles = await listAllRecords(T_VEHICLES, { filterByFormula: filter });
-
-  let revenue = 0;
-  for (const v of soldVehicles) {
-    const price = Number(v.Price || 0);
-    if (Number.isFinite(price) && price > 0) revenue += price;
-  }
-
+function mapViewingRequestRow(request) {
+  if (!request) return null;
   return {
-    soldCount: soldVehicles.length,
-    revenueJmd: revenue,
+    requestId: request.request_id,
+    dealerId: request.dealer_id,
+    vehicleId: request.vehicle_id || "",
+    type: request.type || "",
+    status: request.status || "",
+    name: request.name || "",
+    phone: request.phone || "",
+    email: request.email || "",
+    preferredDate: request.preferred_date || "",
+    preferredTime: request.preferred_time || "",
+    notes: request.notes || "",
+    source: request.source || "",
+    createdAt: request.created_at || "",
   };
 }
 
-async function getDealerMetrics(dealerId, { month } = {}) {
-  const [inventory, requests, sales] = await Promise.all([
-    getDealerInventoryKpis(dealerId),
-    getDealerRequestKpis(dealerId, { month }),
-    getDealerSalesKpis(dealerId, { month }),
-  ]);
-
-  return {
-    dealerId,
-    month: month || null,
-    inventory,
-    requests,
-    sales,
-  };
-}
-
-async function getDealersSummary({ month } = {}) {
-  const monthDate = parseMonth(month);
-
-  const dealers = await listAllRecords(T_DEALERS);
-
-  const [vehicles, requests] = await Promise.all([
-    listAllRecords(T_VEHICLES),
-    (async () => {
-      if (!monthDate) return listAllRecords(T_REQUESTS);
-
-      const start = startOfMonth(monthDate).toISOString();
-      const end = endOfMonth(monthDate).toISOString();
-      const requestFilter = formulaAnd(
-        `IS_AFTER({createdAt}, '${start}')`,
-        `IS_BEFORE({createdAt}, '${end}')`
-      );
-      return listAllRecords(T_REQUESTS, { filterByFormula: requestFilter });
-    })(),
-  ]);
-
-  const vehiclesByDealer = new Map();
-  for (const v of vehicles) {
-    const d = String(v.dealerId || "");
-    if (!d) continue;
-    if (!vehiclesByDealer.has(d)) vehiclesByDealer.set(d, []);
-    vehiclesByDealer.get(d).push(v);
-  }
-
-  const requestsByDealer = new Map();
-  for (const r of requests) {
-    const d = String(r.dealerId || "");
-    if (!d) continue;
-    if (!requestsByDealer.has(d)) requestsByDealer.set(d, []);
-    requestsByDealer.get(d).push(r);
-  }
-
-  const rows = dealers.map((d) => {
-    const dealerId = String(d.dealerId || "");
-    const dealerVehicles = vehiclesByDealer.get(dealerId) || [];
-    const dealerRequests = requestsByDealer.get(dealerId) || [];
-
-    const byStatus = { available: 0, pending: 0, sold: 0, archived: 0, other: 0 };
-    let liveAvailable = 0;
-    let archivedChecked = 0;
-
-    for (const v of dealerVehicles) {
-      const s = String(v.status || "other").toLowerCase();
-      if (byStatus[s] !== undefined) byStatus[s]++;
-      else byStatus.other++;
-
-      if (v.archived === true) archivedChecked++;
-      if (v.Availability === true && v.archived !== true) liveAvailable++;
-    }
-
-    const reqByStatus = {};
-    const reqByType = {};
-    for (const r of dealerRequests) {
-      const rs = String(r.status || "unknown").toLowerCase();
-      const rt = String(r.type || "unknown").toLowerCase();
-      reqByStatus[rs] = (reqByStatus[rs] || 0) + 1;
-      reqByType[rt] = (reqByType[rt] || 0) + 1;
-    }
-
-    return {
-      dealerId,
-      name: d.name || "",
-      status: d.status || "",
-      whatsapp: d.whatsapp || "",
-      logoUrl: d.logoUrl || "",
-      inventory: {
-        total: dealerVehicles.length,
-        liveAvailable,
-        archivedChecked,
-        byStatus,
-      },
-      requests: {
-        month: month || null,
-        total: dealerRequests.length,
-        byStatus: reqByStatus,
-        byType: reqByType,
-      },
-    };
-  });
-
-  rows.sort((a, b) => {
-    const aActive = String(a.status).toLowerCase() === "active" ? 0 : 1;
-    const bActive = String(b.status).toLowerCase() === "active" ? 0 : 1;
-    if (aActive !== bActive) return aActive - bActive;
-    return (b.requests.total || 0) - (a.requests.total || 0);
-  });
-
-  return { month: month || null, dealers: rows };
+function pruneUndefined(obj) {
+  return Object.fromEntries(Object.entries(obj).filter(([, value]) => value !== undefined));
 }
 
 /** ========= Health ========= */
@@ -708,7 +331,7 @@ app.get("/api/public/dealer/:dealerId", async (req, res) => {
       return res.status(400).json({ ok: false, error: "Invalid dealerId" });
     }
 
-    const dealer = await getDealerByDealerId(dealerId);
+    const dealer = await getProfileByDealerId(dealerId);
     if (!dealer) return res.status(404).json({ ok: false, error: "Dealer not found" });
 
     if (isPausedDealer(dealer)) {
@@ -717,13 +340,7 @@ app.get("/api/public/dealer/:dealerId", async (req, res) => {
 
     return res.json({
       ok: true,
-      dealer: {
-        dealerId: dealer.dealerId,
-        name: dealer.name || "",
-        status: dealer.status || "",
-        whatsapp: dealer.whatsapp || "",
-        logoUrl: dealer.logoUrl || "",
-      },
+      dealer: mapProfileRow(dealer),
     });
   } catch (err) {
     console.error("GET /api/public/dealer/:dealerId error:", err);
@@ -741,7 +358,7 @@ app.get("/api/public/dealer/:dealerId/vehicles", async (req, res) => {
 
     const all = cleanStr(req.query.all, 10) === "1";
 
-    const dealer = await getDealerByDealerId(dealerId);
+    const dealer = await getProfileByDealerId(dealerId);
     if (!dealer) return res.status(404).json({ ok: false, error: "Dealer not found" });
 
     if (isPausedDealer(dealer)) {
@@ -756,14 +373,56 @@ app.get("/api/public/dealer/:dealerId/vehicles", async (req, res) => {
     return res.json({
       ok: true,
       dealer: {
-        dealerId: dealer.dealerId,
+        dealerId: dealer.dealer_id,
         name: dealer.name || "",
-        logoUrl: dealer.logoUrl || "",
+        logoUrl: dealer.logo_url || "",
       },
-      vehicles,
+      vehicles: vehicles.map(mapVehicleRow),
     });
   } catch (err) {
     console.error("GET /api/public/dealer/:dealerId/vehicles error:", err);
+    return res.status(500).json({ ok: false, error: "Internal Server Error" });
+  }
+});
+
+app.get("/api/public/vehicles", async (req, res) => {
+  try {
+    const rawDealerIds = cleanStr(req.query.dealerIds, 200);
+    const dealerIds = rawDealerIds
+      .split(",")
+      .map((id) => cleanStr(id, 60))
+      .filter(Boolean);
+
+    if (!dealerIds.length) {
+      return res.status(400).json({ ok: false, error: "dealerIds query param is required" });
+    }
+    if (dealerIds.length > 3) {
+      return res.status(400).json({ ok: false, error: "Up to 3 dealerIds are supported" });
+    }
+    if (dealerIds.some((id) => !isValidDealerId(id))) {
+      return res.status(400).json({ ok: false, error: "Invalid dealerId in list" });
+    }
+
+    const profiles = await Promise.all(dealerIds.map((id) => getProfileByDealerId(id)));
+    const activeDealers = profiles.filter((d) => d && !isPausedDealer(d));
+
+    if (!activeDealers.length) {
+      return res.status(404).json({ ok: false, error: "Dealers not found" });
+    }
+
+    const activeDealerIds = activeDealers.map((d) => d.dealer_id);
+    const vehicles = await getVehiclesForDealers(activeDealerIds, {
+      includeArchived: false,
+      publicOnly: true,
+    });
+
+    return res.json({
+      ok: true,
+      dealers: activeDealers.map(mapProfileRow),
+      vehicles: vehicles.map(mapVehicleRow),
+    });
+  } catch (err) {
+    console.error("GET /api/public/vehicles error:", err);
     return res.status(500).json({ ok: false, error: "Internal Server Error" });
   }
 });
@@ -795,7 +454,7 @@ app.post("/api/public/dealer/:dealerId/requests", async (req, res) => {
     if (!name) return res.status(400).json({ ok: false, error: "customerName is required" });
     if (!phone || phone.length < 7) return res.status(400).json({ ok: false, error: "phone is required" });
 
-    const dealer = await getDealerByDealerId(dealerId);
+    const dealer = await getProfileByDealerId(dealerId);
     if (!dealer) return res.status(404).json({ ok: false, error: "Dealer not found" });
 
     if (isPausedDealer(dealer)) {
@@ -805,31 +464,32 @@ app.post("/api/public/dealer/:dealerId/requests", async (req, res) => {
     let safeVehicleId = "";
     if (vehicleId) {
       const v = await getVehicleByVehicleId(vehicleId);
-      if (v && cleanStr(v.dealerId, 60) === dealerId) {
+      if (v && cleanStr(v.dealer_id, 60) === dealerId) {
         safeVehicleId = vehicleId;
       }
     }
 
     const fields = {
-      dealerId,
+      dealer_id: dealerId,
+      request_id: generateRequestId(),
       type: typeEnum,
-      status: "New",
+      status: "new",
       name,
       phone,
       source: "storefront",
     };
 
-    if (safeVehicleId) fields.vehicleId = safeVehicleId;
+    if (safeVehicleId) fields.vehicle_id = safeVehicleId;
     if (email) fields.email = email;
-    if (preferredDate) fields.preferredDate = preferredDate;
-    if (preferredTime) fields.preferredTime = preferredTime;
+    if (preferredDate) fields.preferred_date = preferredDate;
+    if (preferredTime) fields.preferred_time = preferredTime;
     if (notes) fields.notes = notes;
 
     const created = await createViewingRequest(fields);
 
     return res.status(201).json({
       ok: true,
-      request: created,
+      request: mapViewingRequestRow(created),
     });
   } catch (err) {
     console.error("POST /api/public/dealer/:dealerId/requests error:", err);
@@ -840,38 +500,49 @@ app.post("/api/public/dealer/:dealerId/requests", async (req, res) => {
 /** ========= Dealer API ========= */
 app.post("/api/dealer/login", async (req, res) => {
   try {
-    const dealerId = cleanStr(req.body.dealerId, 60);
+    const rawIdentity = cleanStr(req.body.dealerId, 120);
+    const emailInput = cleanStr(req.body.email, 120);
+    const emailFromDealerId = rawIdentity && isValidEmail(rawIdentity) ? rawIdentity : "";
+    const dealerIdInput = emailFromDealerId ? "" : rawIdentity;
+    const emailCandidate = emailFromDealerId || emailInput;
     const passcode = cleanStr(req.body.passcode, 120);
 
-    if (!isValidDealerId(dealerId)) {
+    if (!dealerIdInput && !emailCandidate) {
+      return res.status(400).json({ ok: false, error: "dealerId or email is required" });
+    }
+    if (dealerIdInput && !isValidDealerId(dealerIdInput)) {
       return res.status(400).json({ ok: false, error: "Invalid dealerId" });
+    }
+    if (emailCandidate && !isValidEmail(emailCandidate)) {
+      return res.status(400).json({ ok: false, error: "Invalid email" });
     }
     if (!passcode) {
       return res.status(400).json({ ok: false, error: "passcode is required" });
     }
 
-    const dealer = await getDealerByDealerId(dealerId);
+    const dealer =
+      (dealerIdInput ? await getProfileByDealerId(dealerIdInput) : null) ||
+      (emailCandidate ? await getProfileByEmail(emailCandidate) : null);
     if (!dealer) return res.status(401).json({ ok: false, error: "Dealer not found" });
 
-    const storedHash = dealer.passcodeHash;
-    if (!storedHash) return res.status(401).json({ ok: false, error: "Dealer passcode not set" });
+    if (isPausedDealer(dealer)) {
+      return res.status(403).json({ ok: false, error: "Dealer account is paused" });
+    }
 
-    const valid = verifyPasscode(passcode, storedHash);
-    if (!valid) return res.status(401).json({ ok: false, error: "Invalid passcode" });
+    const storedPasscode = dealer.password;
+    if (!storedPasscode) return res.status(401).json({ ok: false, error: "Dealer passcode not set" });
 
+    if (passcode !== storedPasscode) {
+      return res.status(401).json({ ok: false, error: "Invalid passcode" });
+    }
+
+    const dealerId = dealer.dealer_id || dealerIdInput;
     const token = signToken({ role: "dealer", dealerId });
 
     return res.json({
       ok: true,
       token,
-      dealer: {
-        dealerId: dealer.dealerId || dealerId,
-        name: dealer.name || "",
-        status: dealer.status || "",
-        whatsapp: dealer.whatsapp || "",
-        email: dealer.email || "",
-        logoUrl: dealer.logoUrl || "",
-      },
+      dealer: mapProfileRow(dealer),
     });
   } catch (err) {
     console.error("POST /api/dealer/login error:", err);
@@ -882,19 +553,12 @@ app.post("/api/dealer/login", async (req, res) => {
 app.get("/api/dealer/me", requireDealer, async (req, res) => {
   try {
     const dealerId = cleanStr(req.user?.dealerId, 60);
-    const dealer = await getDealerByDealerId(dealerId);
+    const dealer = await getProfileByDealerId(dealerId);
     if (!dealer) return res.status(404).json({ ok: false, error: "Dealer not found" });
 
     return res.json({
       ok: true,
-      dealer: {
-        dealerId: dealer.dealerId || dealerId,
-        name: dealer.name || "",
-        status: dealer.status || "",
-        whatsapp: dealer.whatsapp || "",
-        email: dealer.email || "",
-        logoUrl: dealer.logoUrl || "",
-      },
+      dealer: mapProfileRow(dealer),
     });
   } catch (err) {
     console.error("GET /api/dealer/me error:", err);
@@ -912,7 +576,7 @@ app.get("/api/dealer/vehicles", requireDealer, async (req, res) => {
       publicOnly: false,
     });
 
-    return res.json({ ok: true, vehicles });
+    return res.json({ ok: true, vehicles: vehicles.map(mapVehicleRow) });
   } catch (err) {
     console.error("GET /api/dealer/vehicles error:", err);
     return res.status(500).json({ ok: false, error: "Internal Server Error" });
@@ -928,18 +592,26 @@ app.post("/api/dealer/vehicles", requireDealer, async (req, res) => {
       return res.status(400).json({ ok: false, error: "vehicleId is required" });
     }
 
+    const existing = await getVehicleByVehicleId(vehicleId);
+    if (existing && existing.dealer_id !== dealerId) {
+      return res.status(403).json({ ok: false, error: "Vehicle belongs to another dealer" });
+    }
+
     const fields = {
-      ...req.body,
-      dealerId,
-      vehicleId,
+      ...mapVehicleInput(req.body),
+      dealer_id: dealerId,
+      vehicle_id: vehicleId,
     };
 
-    const vehicle = await upsertVehicleByVehicleId(vehicleId, fields);
+    const vehicle = existing
+      ? await updateVehicleByVehicleId(vehicleId, fields)
+      : await createVehicle(fields);
+
     if (!vehicle) {
       return res.status(500).json({ ok: false, error: "Failed to save vehicle" });
     }
 
-    return res.json({ ok: true, vehicle });
+    return res.json({ ok: true, vehicle: mapVehicleRow(vehicle) });
   } catch (err) {
     console.error("POST /api/dealer/vehicles error:", err);
     return res.status(500).json({ ok: false, error: "Internal Server Error" });
@@ -953,10 +625,16 @@ app.post("/api/dealer/vehicles/:vehicleId/archive", requireDealer, async (req, r
       return res.status(400).json({ ok: false, error: "vehicleId is required" });
     }
 
-    const updated = await archiveVehicle(vehicleId);
-    if (!updated) return res.status(404).json({ ok: false, error: "Vehicle not found" });
+    const dealerId = cleanStr(req.user?.dealerId, 60);
+    const existing = await getVehicleByVehicleId(vehicleId);
+    if (!existing) return res.status(404).json({ ok: false, error: "Vehicle not found" });
+    if (existing.dealer_id !== dealerId) {
+      return res.status(403).json({ ok: false, error: "Vehicle belongs to another dealer" });
+    }
 
-    return res.json({ ok: true, vehicle: updated });
+    const updated = await archiveVehicle(vehicleId);
+
+    return res.json({ ok: true, vehicle: mapVehicleRow(updated) });
   } catch (err) {
     console.error("POST /api/dealer/vehicles/:vehicleId/archive error:", err);
     return res.status(500).json({ ok: false, error: "Internal Server Error" });
@@ -966,8 +644,8 @@ app.post("/api/dealer/vehicles/:vehicleId/archive", requireDealer, async (req, r
 app.get("/api/dealer/requests", requireDealer, async (req, res) => {
   try {
     const dealerId = cleanStr(req.user?.dealerId, 60);
-    const requests = await getViewingRequestsForDealer(dealerId);
-    return res.json({ ok: true, requests });
+    const requests = await listViewingRequests({ dealerId });
+    return res.json({ ok: true, requests: requests.map(mapViewingRequestRow) });
   } catch (err) {
     console.error("GET /api/dealer/requests error:", err);
     return res.status(500).json({ ok: false, error: "Internal Server Error" });
@@ -990,7 +668,7 @@ app.post("/api/dealer/requests/:requestId/status", requireDealer, async (req, re
     const updated = await updateViewingRequestByRequestId(requestId, { status });
     if (!updated) return res.status(404).json({ ok: false, error: "Request not found" });
 
-    return res.json({ ok: true, request: updated });
+    return res.json({ ok: true, request: mapViewingRequestRow(updated) });
   } catch (err) {
     console.error("POST /api/dealer/requests/:requestId/status error:", err);
     return res.status(500).json({ ok: false, error: "Internal Server Error" });
@@ -1021,12 +699,23 @@ app.post("/api/admin/login", async (req, res) => {
     const username = cleanStr(req.body.username, 120);
     const password = cleanStr(req.body.password, 200);
 
-    if (!ADMIN_USERNAME || !ADMIN_PASSWORD) {
+    const { adminIdentifier, adminPassword, adminEmailSet, adminUsernameSet, adminPasswordSet } =
+      getAdminCredentials();
+
+    if (!adminIdentifier || !adminPasswordSet) {
       return res.status(500).json({ ok: false, error: "Admin credentials not configured" });
     }
 
-    if (username !== ADMIN_USERNAME || password !== ADMIN_PASSWORD) {
-      return res.status(401).json({ ok: false, error: "Invalid credentials" });
+    if (username !== adminIdentifier) {
+      return res.status(401).json({
+        ok: false,
+        error: "Invalid credentials",
+        reason: adminEmailSet || adminUsernameSet ? "username mismatch" : "admin identifier missing",
+      });
+    }
+
+    if (password !== adminPassword) {
+      return res.status(401).json({ ok: false, error: "Invalid credentials", reason: "password mismatch" });
     }
 
     const token = signToken({ role: "admin", username });
@@ -1037,11 +726,30 @@ app.post("/api/admin/login", async (req, res) => {
   }
 });
 
+app.get("/api/admin/debug-env", (req, res) => {
+  if (NODE_ENV === "production") {
+    return res.status(404).json({ ok: false, error: "Not Found" });
+  }
+
+  return res.json({
+    ok: true,
+    env: {
+      SUPABASE_URL: Boolean(process.env.SUPABASE_URL),
+      SUPABASE_SERVICE_ROLE_KEY: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
+      JWT_SECRET: Boolean(process.env.JWT_SECRET),
+      ADMIN_API_KEY: Boolean(process.env.ADMIN_API_KEY),
+      ADMIN_EMAIL: Boolean(process.env.ADMIN_EMAIL),
+      ADMIN_USERNAME: Boolean(process.env.ADMIN_USERNAME),
+      ADMIN_PASSWORD: Boolean(process.env.ADMIN_PASSWORD),
+    },
+  });
+});
+
 app.get("/api/admin/dealers", requireAdmin, async (req, res) => {
   try {
     const status = cleanStr(req.query.status, 30).toLowerCase();
-    const dealers = await listDealers(status ? { status } : {});
-    return res.json({ ok: true, dealers });
+    const dealers = await listProfiles(status ? { status } : {});
+    return res.json({ ok: true, dealers: dealers.map(mapProfileRow) });
   } catch (err) {
     console.error("GET /api/admin/dealers error:", err);
     return res.status(500).json({ ok: false, error: "Internal Server Error" });
@@ -1055,6 +763,7 @@ app.post("/api/admin/dealers", requireAdmin, async (req, res) => {
     const status = cleanStr(req.body.status, 40).toLowerCase() || "active";
     const whatsapp = cleanStr(req.body.whatsapp, 40);
     const logoUrl = cleanStr(req.body.logoUrl, 500);
+    const profileEmail = cleanStr(req.body.profileEmail || req.body.email, 120);
 
     if (!dealerId || !name) {
       return res.status(400).json({ ok: false, error: "dealerId and name are required" });
@@ -1064,32 +773,31 @@ app.post("/api/admin/dealers", requireAdmin, async (req, res) => {
     }
 
     let passcode = cleanStr(req.body.passcode, 120);
-    const fields = {
-      dealerId,
+    const fields = pruneUndefined({
+      dealer_id: dealerId,
       name,
       status,
       whatsapp,
-      logoUrl,
-    };
+      logo_url: logoUrl,
+      profile_email: profileEmail || undefined,
+    });
 
-    const existing = await getDealerByDealerId(dealerId);
+    const existing = await getProfileByDealerId(dealerId);
     if (!existing && !passcode) {
       passcode = generatePasscode();
     }
 
     if (passcode) {
-      fields.passcodeHash = hashPasscode(passcode);
+      fields.password = passcode;
     }
 
-    const dealer = existing
-      ? await updateDealerByDealerId(dealerId, fields)
-      : await upsertDealerByDealerId(dealerId, fields);
+    const dealer = await upsertProfile(fields);
 
     if (!dealer) {
       return res.status(500).json({ ok: false, error: "Failed to save dealer" });
     }
 
-    return res.json({ ok: true, dealer, passcode });
+    return res.json({ ok: true, dealer: mapProfileRow(dealer), passcode });
   } catch (err) {
     console.error("POST /api/admin/dealers error:", err);
     return res.status(500).json({ ok: false, error: "Internal Server Error" });
@@ -1104,15 +812,21 @@ app.post("/api/admin/reset-passcode", requireAdmin, async (req, res) => {
     }
 
     const passcode = generatePasscode();
-    const dealer = await updateDealerByDealerId(dealerId, {
-      passcodeHash: hashPasscode(passcode),
+    const existing = await getProfileByDealerId(dealerId);
+    if (!existing) {
+      return res.status(404).json({ ok: false, error: "Dealer not found" });
+    }
+
+    const dealer = await upsertProfile({
+      dealer_id: dealerId,
+      password: passcode,
     });
 
     if (!dealer) {
       return res.status(404).json({ ok: false, error: "Dealer not found" });
     }
 
-    return res.json({ ok: true, dealer, passcode });
+    return res.json({ ok: true, dealer: mapProfileRow(dealer), passcode });
   } catch (err) {
     console.error("POST /api/admin/reset-passcode error:", err);
     return res.status(500).json({ ok: false, error: "Internal Server Error" });
@@ -1124,7 +838,7 @@ app.get("/api/admin/inventory", requireAdmin, async (req, res) => {
     const dealerId = cleanStr(req.query.dealerId, 60);
     const status = normalizeVehicleStatus(req.query.status);
     const vehicles = await listVehicles({ dealerId, status });
-    return res.json({ ok: true, vehicles });
+    return res.json({ ok: true, vehicles: vehicles.map(mapVehicleRow) });
   } catch (err) {
     console.error("GET /api/admin/inventory error:", err);
     return res.status(500).json({ ok: false, error: "Internal Server Error" });
@@ -1136,7 +850,7 @@ app.get("/api/admin/requests", requireAdmin, async (req, res) => {
     const dealerId = cleanStr(req.query.dealerId, 60);
     const status = normalizeRequestStatus(req.query.status) || "";
     const requests = await listViewingRequests({ dealerId, status });
-    return res.json({ ok: true, requests });
+    return res.json({ ok: true, requests: requests.map(mapViewingRequestRow) });
   } catch (err) {
     console.error("GET /api/admin/requests error:", err);
     return res.status(500).json({ ok: false, error: "Internal Server Error" });
