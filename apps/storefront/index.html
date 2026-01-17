@@ -109,12 +109,44 @@
       color:#fff;box-shadow:0 14px 30px rgba(220,38,38,.22);
     }
     .btn-primary:hover{transform:translateY(-1px)}
+    .btn-outline{
+      background:#fff;
+      border:1px solid var(--brand);
+      color:var(--brand);
+      box-shadow:var(--shadow-soft);
+    }
+    .btn-outline:hover{transform:translateY(-1px);background:var(--brand-soft)}
     .btn-ghost{
       background:var(--surface);
       border:1px solid var(--line);
       color:var(--ink);
       box-shadow:var(--shadow-soft);
     }
+    .btn:disabled{
+      cursor:not-allowed;
+      opacity:.55;
+      box-shadow:none;
+      transform:none;
+    }
+
+    .cta-sheen{
+      position:relative;
+      overflow:hidden;
+      isolation:isolate;
+    }
+    .cta-sheen::after{
+      content:"";
+      position:absolute;
+      top:-120%;
+      left:-60%;
+      width:60%;
+      height:220%;
+      background:linear-gradient(120deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.6) 45%, rgba(255,255,255,0) 70%);
+      transform:translateX(-140%) rotate(20deg);
+      animation:sheenSweep 3s ease-in-out infinite;
+      pointer-events:none;
+    }
+    .btn:disabled.cta-sheen::after{opacity:0;animation:none}
 
     .dealer-bar{
       display:none;
@@ -255,7 +287,7 @@
       border:1px solid var(--line);background:var(--surface-soft)
     }
 
-    .card-actions{margin-top:auto}
+    .card-actions{margin-top:auto;display:flex;flex-direction:column;gap:8px}
 
     .empty-state{
       grid-column:1/-1;
@@ -281,6 +313,12 @@
     @keyframes heroIn{
       from{opacity:0;transform:translateY(12px)}
       to{opacity:1;transform:translateY(0)}
+    }
+
+    @keyframes sheenSweep{
+      0%{transform:translateX(-140%) rotate(20deg)}
+      55%{transform:translateX(140%) rotate(20deg)}
+      100%{transform:translateX(140%) rotate(20deg)}
     }
 
     .overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;place-items:center;z-index:50;padding:18px}
@@ -357,6 +395,7 @@
 
     @media (prefers-reduced-motion: reduce){
       *, *::before, *::after{animation-duration:0.01ms !important;animation-iteration-count:1 !important;transition-duration:0.01ms !important;scroll-behavior:auto !important}
+      .cta-sheen::after{animation:none !important}
     }
   </style>
 </head>
@@ -588,6 +627,7 @@
   const state = {
     dealerIds: [],
     dealers: [],
+    dealerProfiles: {},
     vehicles: [],
     filtered: [],
     tipIndex: 0,
@@ -716,6 +756,46 @@
     return true;
   }
 
+  function normalizeDealerProfile(profile){
+    const dealerId = profile?.dealerId || profile?.dealer_id || "";
+    return {
+      dealerId,
+      dealerName: profile?.dealerName || profile?.name || "",
+      status: profile?.status || "",
+      logoUrl: profile?.logoUrl || profile?.logo || "",
+      whatsappNumber: profile?.whatsappNumber || profile?.whatsapp_number || profile?.whatsapp || profile?.whatsappPhone || profile?.whatsapp_phone || profile?.phoneWhatsapp || profile?.phone_whatsapp || "",
+      whatsappDefaultMessage: profile?.whatsappDefaultMessage || profile?.whatsapp_default_message || profile?.whatsappMessage || profile?.whatsapp_message || profile?.defaultMessage || "",
+      raw: profile,
+    };
+  }
+
+  function getDealerProfile(dealerId){
+    return state.dealerProfiles[dealerId] || null;
+  }
+
+  function sanitizeWhatsAppNumber(raw){
+    return String(raw || "").replace(/\D/g, "");
+  }
+
+  function buildWhatsAppMessage(vehicle, dealerProfile){
+    const lines = [];
+    const vehicleId = vehicle?.vehicleId || "—";
+    lines.push(`Hi! I'm interested in Vehicle ID: ${vehicleId}`);
+
+    const defaultMessage = dealerProfile?.whatsappDefaultMessage;
+    if(defaultMessage) lines.push(defaultMessage);
+
+    const dealerName = dealerProfile?.dealerName || dealerProfile?.name;
+    if(dealerName) lines.push(`Dealer: ${dealerName}`);
+    if(vehicle?.title) lines.push(`Vehicle: ${vehicle.title}`);
+
+    const priceText = money(vehicle?.price);
+    if(priceText && priceText !== "Price on request") lines.push(`Price: ${priceText}`);
+    if(location?.href) lines.push(`Listing: ${location.href}`);
+
+    return lines.filter(Boolean).join("\n");
+  }
+
   function setBranding(){
     const dealerIds = state.dealerIds;
     const dealers = state.dealers;
@@ -831,6 +911,10 @@
       const st = normalizeStatus(v.status);
       const vehicleId = v.vehicleId || "";
       const dealerId = v.dealerId || state.dealerIds[0] || "";
+      const dealerProfile = getDealerProfile(dealerId);
+      const whatsappDigits = sanitizeWhatsAppNumber(dealerProfile?.whatsappNumber);
+      const whatsappAvailable = Boolean(whatsappDigits);
+      const whatsappTitle = whatsappAvailable ? "Request more info via WhatsApp" : "WhatsApp unavailable for this dealer.";
 
       const specs = [
         v.mileage ? (Number(v.mileage).toLocaleString() + " km") : "",
@@ -855,14 +939,30 @@
           <div class="price">${esc(price)}</div>
           <div class="specs">${specs.map(p=>`<span class="spec">${esc(p)}</span>`).join("")}</div>
           <div class="card-actions">
-            <button class="btn btn-primary" style="width:100%" type="button">Lock in a viewing</button>
+            <button class="btn btn-primary cta-sheen" style="width:100%" type="button">Lock in a viewing</button>
+            <div class="whatsapp-wrap">
+              <button class="btn btn-outline cta-sheen whatsapp-btn" style="width:100%" type="button" ${whatsappAvailable ? "" : "disabled"} title="${esc(whatsappTitle)}">Request More Info</button>
+            </div>
           </div>
         </div>
       `;
 
+      const vehiclePayload = { ...v, vehicleId, dealerId };
       card.querySelector("button").addEventListener("click", ()=>{
-        openModal({ ...v, vehicleId, dealerId });
+        openModal(vehiclePayload);
       });
+
+      const whatsappBtn = card.querySelector(".whatsapp-btn");
+      const whatsappWrap = card.querySelector(".whatsapp-wrap");
+      if(whatsappAvailable){
+        whatsappBtn.addEventListener("click", ()=>{
+          openWhatsApp(vehiclePayload, whatsappDigits, dealerProfile);
+        });
+      } else {
+        whatsappWrap.addEventListener("click", ()=>{
+          toast("WhatsApp unavailable for this dealer.", "error");
+        });
+      }
 
       ui.grid.appendChild(card);
       requestAnimationFrame(() => card.classList.add("show"));
@@ -908,6 +1008,23 @@
     }
   }
 
+  async function getDealerProfileOrLoad(dealerId){
+    if(!dealerId) return null;
+    if(state.dealerProfiles[dealerId]) return state.dealerProfiles[dealerId];
+    const profile = await loadDealerProfile(dealerId);
+    if(profile){
+      const normalized = normalizeDealerProfile(profile);
+      state.dealerProfiles[dealerId] = normalized;
+      return normalized;
+    }
+    return null;
+  }
+
+  async function ensureDealerProfiles(dealerIds){
+    const tasks = dealerIds.map((dealerId) => getDealerProfileOrLoad(dealerId));
+    await Promise.all(tasks);
+  }
+
   async function loadVehiclesForDealer(dealerId){
     const data = await fetchOk(API_BASE + "/api/public/dealer/" + encodeURIComponent(dealerId) + "/vehicles", { method:"GET" });
     return data;
@@ -949,6 +1066,16 @@
     if(type === "error") ui.toast.classList.add("error");
     clearTimeout(window.__toastTimer);
     window.__toastTimer = setTimeout(()=>ui.toast.classList.remove("show"), 3200);
+  }
+
+  function openWhatsApp(vehicle, digits, dealerProfile){
+    if(!digits){
+      toast("WhatsApp unavailable for this dealer.", "error");
+      return;
+    }
+    const message = buildWhatsAppMessage(vehicle, dealerProfile);
+    const url = "https://wa.me/" + digits + "?text=" + encodeURIComponent(message);
+    window.open(url, "_blank", "noopener");
   }
 
   function openModal(vehicle){
@@ -1047,13 +1174,16 @@
       let dealers = [];
 
       if(dealerIds.length > 1){
-        const data = await loadVehiclesForDealers(dealerIds);
+        const [data] = await Promise.all([
+          loadVehiclesForDealers(dealerIds),
+          ensureDealerProfiles(dealerIds),
+        ]);
         vehiclesData = data.vehicles || [];
         dealers = Array.isArray(data.dealers) ? data.dealers : [];
       } else {
         const dealerId = dealerIds[0];
         const [dealerProfile, vehicleResponse] = await Promise.all([
-          loadDealerProfile(dealerId),
+          getDealerProfileOrLoad(dealerId),
           loadVehiclesForDealer(dealerId),
         ]);
         vehiclesData = vehicleResponse.vehicles || [];
@@ -1061,12 +1191,20 @@
         else if(vehicleResponse.dealer) dealers = [vehicleResponse.dealer];
       }
 
-      state.dealers = dealers.map((d) => ({
-        dealerId: d.dealerId || d.dealer_id || d.dealerId,
-        dealerName: d.dealerName || d.name || d.dealerName,
-        status: d.status || "",
-        logoUrl: d.logoUrl || d.logo || "",
-      }));
+      const dealerMap = new Map();
+      dealerIds.forEach((dealerId) => {
+        const profile = state.dealerProfiles[dealerId];
+        const apiDealer = dealers.find((d) => (d.dealerId || d.dealer_id) === dealerId) || {};
+        dealerMap.set(dealerId, {
+          dealerId,
+          dealerName: profile?.dealerName || apiDealer.dealerName || apiDealer.name || dealerId,
+          status: profile?.status || apiDealer.status || "",
+          logoUrl: profile?.logoUrl || apiDealer.logoUrl || apiDealer.logo || "",
+          whatsappNumber: profile?.whatsappNumber || "",
+          whatsappDefaultMessage: profile?.whatsappDefaultMessage || "",
+        });
+      });
+      state.dealers = Array.from(dealerMap.values());
 
       const normalized = (vehiclesData || []).map(normalizeVehicle).filter(isPublicVehicle);
       state.vehicles = normalized;
