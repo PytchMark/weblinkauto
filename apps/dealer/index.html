@@ -307,6 +307,45 @@
 
     .statusline{min-height:18px;font-size:12px;color:var(--muted);margin-top:6px}
 
+    .gallery-panel{
+      margin-top:12px;
+      border:1px solid var(--line);
+      border-radius:16px;
+      background:var(--surface-soft);
+      box-shadow:var(--shadow-soft);
+      padding:12px;
+    }
+    .gallery-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+    .gallery-title{font-size:11px;font-weight:950;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+    .gallery-sub{font-size:11px;color:var(--muted-2)}
+    .gallery-count{font-size:11px;color:var(--muted);font-weight:900}
+    .gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:10px}
+    .gallery-card{
+      position:relative;
+      border-radius:14px;
+      overflow:hidden;
+      background:#fff;
+      border:1px solid var(--line);
+      box-shadow:0 8px 18px rgba(15,23,42,.08);
+      transition:transform .12s ease, box-shadow .12s ease;
+    }
+    .gallery-card:hover{transform:translateY(-2px);box-shadow:0 14px 26px rgba(220,38,38,.18)}
+    .gallery-card img{width:100%;height:86px;object-fit:cover;display:block}
+    .gallery-remove{
+      position:absolute;top:6px;right:6px;
+      background:rgba(15,23,42,.7);color:#fff;border:none;
+      border-radius:999px;font-size:10px;padding:4px 8px;cursor:pointer;
+      box-shadow:0 6px 12px rgba(15,23,42,.2);
+    }
+    .gallery-empty{font-size:12px;color:var(--muted-2);padding:10px;text-align:center}
+    .gallery-card.skeleton::before{
+      content:"";position:absolute;inset:0;
+      background:linear-gradient(110deg,#f3f4f6 8%,#eceff1 18%,#f3f4f6 33%);
+      background-size:200% 100%;
+      animation:shimmer 1.2s linear infinite;
+    }
+    @keyframes shimmer{to{background-position-x:-200%}}
+
     /* Login */
     .login{
       min-height:calc(100vh - 64px);
@@ -345,6 +384,7 @@
 
     @media (prefers-reduced-motion: reduce){
       .btn,.mini-btn{transition:none}
+      .gallery-card.skeleton::before{animation:none}
     }
   </style>
 </head>
@@ -750,6 +790,18 @@
           <div class="statusline" id="uploadStatus"></div>
         </div>
 
+        <div class="gallery-panel" id="imageGalleryPanel">
+          <div class="gallery-head">
+            <div>
+              <div class="gallery-title">Vehicle Gallery</div>
+              <div class="gallery-sub">Uploads appear instantly. Remove any image before saving.</div>
+            </div>
+            <div class="gallery-count" id="imageGalleryCount">0 images</div>
+          </div>
+          <div class="gallery-grid" id="imageGalleryGrid"></div>
+          <div class="gallery-empty" id="imageGalleryEmpty">No images uploaded yet.</div>
+        </div>
+
         <div class="row">
           <div>
             <label for="availability">Availability (storefront)</label>
@@ -862,6 +914,11 @@
   const uploadMediaBtn = $('#uploadMediaBtn');
   const imageFiles = $('#imageFiles');
   const videoFiles = $('#videoFiles');
+  const cloudinaryImageUrls = $('#cloudinaryImageUrls');
+  const imageGalleryPanel = $('#imageGalleryPanel');
+  const imageGalleryGrid = $('#imageGalleryGrid');
+  const imageGalleryEmpty = $('#imageGalleryEmpty');
+  const imageGalleryCount = $('#imageGalleryCount');
 
   // Add buttons
   const newVehicleBtn = $('#newVehicleBtn');
@@ -1332,6 +1389,7 @@
     vehStatus.textContent = '';
     archiveVehicleBtn.style.display = 'none';
     drawerTitle.textContent = 'Add Vehicle';
+    renderImageGallery([]);
 
     // defaults
     $('#availability').value = 'true';
@@ -1379,6 +1437,7 @@
       };
     }
 
+    renderImageGallery();
     setDrawer(true);
   }
 
@@ -1412,39 +1471,102 @@
     try{
       if(raw.trim().startsWith("[")){
         const parsed = JSON.parse(raw);
-        if(Array.isArray(parsed)) return parsed.map(String);
+        if(Array.isArray(parsed)) return parsed.map(String).filter(Boolean);
       }
     }catch(_err){}
     return raw
       .replaceAll(",", " ")
       .replaceAll("\n", " ")
-      .split(" ")
+      .split(/\s+/)
       .map(s => s.trim())
       .filter(Boolean);
   }
 
-  async function signCloudinaryUpload({ type, vehicleId }){
-    return apiPost("/api/dealer/cloudinary/sign", { type, vehicleId });
+  function detectUrlFormat(raw){
+    const trimmed = String(raw || "").trim();
+    if(!trimmed) return "newline";
+    if(trimmed.startsWith("[")){
+      try{
+        const parsed = JSON.parse(trimmed);
+        if(Array.isArray(parsed)) return "json";
+      }catch(_err){}
+    }
+    if(trimmed.includes(",")) return "comma";
+    if(trimmed.includes("\n")) return "newline";
+    return "newline";
   }
 
-  async function uploadToCloudinary({ file, type, vehicleId }){
-    const signed = await signCloudinaryUpload({ type, vehicleId });
-    if(!signed?.ok) throw new Error(signed?.error || "Cloudinary signing failed");
+  function formatUrlList(urls, format){
+    if(!urls.length) return "";
+    if(format === "json") return JSON.stringify(urls);
+    if(format === "comma") return urls.join(", ");
+    return urls.join("\n");
+  }
 
-    const endpoint = `https://api.cloudinary.com/v1_1/${signed.cloudName}/${signed.resourceType}/upload`;
-    const form = new FormData();
-    form.append("file", file);
-    form.append("api_key", signed.apiKey);
-    form.append("timestamp", signed.timestamp);
-    form.append("signature", signed.signature);
-    form.append("folder", signed.folder);
+  function setImageUrls(urls, format){
+    const next = formatUrlList(urls, format);
+    cloudinaryImageUrls.value = next;
+    renderImageGallery(urls);
+  }
 
-    const res = await fetch(endpoint, { method: "POST", body: form });
-    const data = await res.json();
-    if(!res.ok || !data?.secure_url){
-      throw new Error(data?.error?.message || "Upload failed");
+  function setGalleryLoading(isLoading, count=4){
+    if(isLoading){
+      imageGalleryPanel.setAttribute("data-loading", "true");
+      imageGalleryGrid.innerHTML = Array.from({ length: count }).map(() => `
+        <div class="gallery-card skeleton" aria-hidden="true"></div>
+      `).join("");
+      imageGalleryEmpty.style.display = "none";
+    }else{
+      imageGalleryPanel.removeAttribute("data-loading");
     }
-    return data.secure_url;
+  }
+
+  function renderImageGallery(urls = null){
+    const list = Array.isArray(urls) ? urls : parseUrlList(cloudinaryImageUrls.value);
+    imageGalleryGrid.innerHTML = list.map((url, index) => `
+      <div class="gallery-card">
+        <img src="${escapeHtml(url)}" alt="Vehicle image ${index + 1}" loading="lazy" />
+        <button class="gallery-remove" type="button" data-index="${index}">Remove</button>
+      </div>
+    `).join("");
+
+    imageGalleryEmpty.style.display = list.length ? "none" : "block";
+    imageGalleryCount.textContent = `${list.length} image${list.length === 1 ? "" : "s"}`;
+
+    $$(".gallery-remove", imageGalleryGrid).forEach(btn => {
+      btn.addEventListener("click", () => {
+        const idx = Number(btn.getAttribute("data-index"));
+        const current = parseUrlList(cloudinaryImageUrls.value);
+        if(Number.isNaN(idx)) return;
+        current.splice(idx, 1);
+        const format = detectUrlFormat(cloudinaryImageUrls.value);
+        setImageUrls(current, format);
+      });
+    });
+  }
+
+  async function uploadMediaBatch({ files, vehicleId, resourceType }){
+    const form = new FormData();
+    form.append("vehicleId", vehicleId);
+    if(resourceType) form.append("resourceType", resourceType);
+    files.forEach((file) => form.append("files", file));
+
+    const headers = {};
+    if(STATE.token) headers["Authorization"] = "Bearer " + STATE.token;
+
+    const res = await fetch("/api/media/upload", {
+      method: "POST",
+      headers,
+      body: form,
+      credentials: "include",
+    });
+    if(!res.ok){
+      const t = await res.text().catch(()=> "");
+      throw new Error(`Upload failed (${res.status}) ${t}`);
+    }
+    const data = await res.json();
+    if(!data?.ok) throw new Error(data?.error || "Upload failed");
+    return data.urls || [];
   }
 
   async function handleMediaUpload(){
@@ -1472,24 +1594,24 @@
 
     uploadStatus.textContent = "Uploading…";
     uploadMediaBtn.disabled = true;
+    setGalleryLoading(true, Math.min(Math.max(images.length, 3), 5));
 
+    let imagesUploaded = false;
     try{
-      const imageUrls = [];
-      for(const file of images){
-        const url = await uploadToCloudinary({ file, type: "image", vehicleId });
-        imageUrls.push(url);
-      }
+      const imageUrls = images.length
+        ? await uploadMediaBatch({ files: images, vehicleId, resourceType: "image" })
+        : [];
+      imagesUploaded = imageUrls.length > 0;
 
-      const videoUrls = [];
-      for(const file of videos){
-        const url = await uploadToCloudinary({ file, type: "video", vehicleId });
-        videoUrls.push(url);
-      }
+      const videoUrls = videos.length
+        ? await uploadMediaBatch({ files: videos, vehicleId, resourceType: "video" })
+        : [];
 
       if(imageUrls.length){
-        const existing = parseUrlList($('#cloudinaryImageUrls').value);
+        const existing = parseUrlList(cloudinaryImageUrls.value);
+        const format = detectUrlFormat(cloudinaryImageUrls.value);
         const next = [...existing, ...imageUrls];
-        $('#cloudinaryImageUrls').value = next.join("\n");
+        setImageUrls(next, format);
       }
 
       if(videoUrls.length){
@@ -1505,6 +1627,10 @@
       uploadStatus.textContent = err.message || "Upload failed.";
     }finally{
       uploadMediaBtn.disabled = false;
+      setGalleryLoading(false);
+      if(!imagesUploaded){
+        renderImageGallery();
+      }
     }
   }
 
@@ -1566,6 +1692,9 @@
   });
 
   uploadMediaBtn.addEventListener('click', handleMediaUpload);
+  cloudinaryImageUrls.addEventListener('input', () => {
+    renderImageGallery();
+  });
 
   // Inventory filters
   invSearch.addEventListener('input', () => {

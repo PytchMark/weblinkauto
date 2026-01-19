@@ -16,6 +16,7 @@ const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
 const rateLimit = require("express-rate-limit");
+const multer = require("multer");
 
 const { signToken, verifyToken } = require("./services/auth");
 const {
@@ -37,6 +38,13 @@ const {
 const { getDealerMetrics, getDealersSummary } = require("./services/analytics");
 
 const app = express();
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 12 * 1024 * 1024,
+    files: 6,
+  },
+});
 
 /** ========= Config ========= */
 const PORT = process.env.PORT || 8080;
@@ -205,6 +213,46 @@ function requireAdmin(req, res, next) {
 
 function generateRequestId() {
   return `REQ-${crypto.randomUUID()}`;
+}
+
+function buildCloudinaryFolder(dealerId, vehicleId) {
+  const template = cleanStr(process.env.CLOUDINARY_FOLDER, 200);
+  const fallback = `weblink/dealers/${dealerId}/vehicles/${vehicleId}`;
+  const base = template || fallback;
+  return base
+    .replaceAll("{dealerId}", dealerId)
+    .replaceAll("{vehicleId}", vehicleId)
+    .replace(/^\/+|\/+$/g, "");
+}
+
+function signCloudinaryParams(params, apiSecret) {
+  const entries = Object.entries(params)
+    .filter(([, value]) => value !== undefined && value !== "")
+    .sort(([a], [b]) => a.localeCompare(b));
+  const signatureBase = entries.map(([key, value]) => `${key}=${value}`).join("&");
+  return crypto.createHash("sha1").update(signatureBase + apiSecret).digest("hex");
+}
+
+async function uploadToCloudinary({ file, folder, resourceType, cloudName, apiKey, apiSecret }) {
+  const timestamp = Math.floor(Date.now() / 1000);
+  const signature = signCloudinaryParams({ folder, timestamp }, apiSecret);
+  const endpoint = `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`;
+
+  const form = new FormData();
+  const mime = file.mimetype || "application/octet-stream";
+  const blob = new Blob([file.buffer], { type: mime });
+  form.append("file", blob, file.originalname || `upload-${timestamp}`);
+  form.append("api_key", apiKey);
+  form.append("timestamp", String(timestamp));
+  form.append("signature", signature);
+  form.append("folder", folder);
+
+  const res = await fetch(endpoint, { method: "POST", body: form });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data?.secure_url) {
+    throw new Error(data?.error?.message || "Cloudinary upload failed");
+  }
+  return data.secure_url;
 }
 
 function mapProfileRow(profile) {
@@ -563,6 +611,54 @@ app.get("/api/dealer/me", requireDealer, async (req, res) => {
   } catch (err) {
     console.error("GET /api/dealer/me error:", err);
     return res.status(500).json({ ok: false, error: "Internal Server Error" });
+  }
+});
+
+app.post("/api/media/upload", requireDealer, upload.array("files", 5), async (req, res) => {
+  try {
+    const dealerId = cleanStr(req.user?.dealerId, 60);
+    const vehicleId = cleanStr(req.body.vehicleId, 60);
+    const rawType = cleanStr(req.body.resourceType || req.body.type, 20).toLowerCase();
+    const resourceTypeOverride = ["image", "video"].includes(rawType) ? rawType : "";
+
+    if (!dealerId) return res.status(401).json({ ok: false, error: "Dealer not found" });
+    if (!vehicleId) return res.status(400).json({ ok: false, error: "vehicleId is required" });
+
+    const files = Array.isArray(req.files) ? req.files : [];
+    if (!files.length) return res.status(400).json({ ok: false, error: "No files uploaded" });
+    if (files.length > 5) return res.status(400).json({ ok: false, error: "Max 5 files per upload" });
+
+    const cloudName = cleanStr(process.env.CLOUDINARY_CLOUD_NAME, 120);
+    const apiKey = cleanStr(process.env.CLOUDINARY_API_KEY, 120);
+    const apiSecret = cleanStr(process.env.CLOUDINARY_API_SECRET, 200);
+    if (!cloudName || !apiKey || !apiSecret) {
+      return res.status(500).json({ ok: false, error: "Cloudinary is not configured" });
+    }
+
+    const folder = buildCloudinaryFolder(dealerId, vehicleId);
+    const urls = [];
+
+    for (const file of files) {
+      const detected = file.mimetype?.startsWith("video/") ? "video" : "image";
+      const resourceType = resourceTypeOverride || detected;
+      if (!["image", "video"].includes(resourceType)) {
+        return res.status(400).json({ ok: false, error: "Unsupported media type" });
+      }
+      const url = await uploadToCloudinary({
+        file,
+        folder,
+        resourceType,
+        cloudName,
+        apiKey,
+        apiSecret,
+      });
+      urls.push(url);
+    }
+
+    return res.json({ ok: true, urls });
+  } catch (err) {
+    console.error("POST /api/media/upload error:", err);
+    return res.status(500).json({ ok: false, error: "Media upload failed" });
   }
 });
 
