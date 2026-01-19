@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Dealer Storefront · Live Inventory</title>
-  <meta name="description" content="Concierge vehicle viewings with verified live inventory." />
+  <title>Dealer Storefront · Curated Vehicles</title>
+  <meta name="description" content="Curated vehicles with verified availability and fast concierge booking." />
 
   <style>
     :root{
@@ -129,6 +129,66 @@
       transform:none;
     }
 
+    .btn-gloss{
+      position:relative;
+      overflow:hidden;
+      isolation:isolate;
+    }
+    .btn-gloss::after{
+      content:"";
+      position:absolute;
+      top:-120%;
+      left:-60%;
+      width:60%;
+      height:220%;
+      background:linear-gradient(120deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.6) 45%, rgba(255,255,255,0) 70%);
+      transform:translateX(-140%) rotate(20deg);
+      animation:sheenSweep 3s ease-in-out infinite;
+      pointer-events:none;
+    }
+    .btn:disabled.btn-gloss::after{opacity:0;animation:none}
+
+    .hero{
+      position:relative;
+      padding:0;
+      overflow:hidden;
+    }
+    .hero-media{
+      position:absolute;
+      inset:0;
+      z-index:0;
+    }
+    .hero-video{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      filter:saturate(1.1) contrast(1.05);
+    }
+    .hero-overlay{
+      position:absolute;
+      inset:0;
+      background:linear-gradient(120deg, rgba(10,10,12,.82), rgba(16,16,24,.55) 55%, rgba(12,12,18,.76));
+      backdrop-filter:blur(4px);
+    }
+    .hero-noise{
+      position:absolute;
+      inset:0;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140' viewBox='0 0 140 140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.15'/%3E%3C/svg%3E");
+      mix-blend-mode:soft-light;
+      opacity:.4;
+    }
+    .hero-gradient{
+      position:absolute;
+      inset:0;
+      background:radial-gradient(circle at 15% 20%, rgba(220,38,38,.35), transparent 45%),
+        radial-gradient(circle at 80% 10%, rgba(255,255,255,.12), transparent 55%);
+    }
+    .hero-content{
+      position:relative;
+      z-index:1;
+      padding:var(--section) 0 42px;
+    }
+
     .cta-sheen{
       position:relative;
       overflow:hidden;
@@ -172,66 +232,119 @@
     .dealer-tag img{width:20px;height:20px;border-radius:999px;object-fit:cover}
     .dealer-stats{font-weight:800;color:var(--ink)}
 
-    .hero{padding:var(--section) 0 24px}
-    .hero-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:18px}
+    .hero-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:22px;align-items:center}
 
     .hero-card{
-      background:var(--surface);
-      border:1px solid var(--line);
+      color:#fff;
+      background:linear-gradient(140deg, rgba(15,15,20,.75), rgba(15,15,20,.55));
+      border:1px solid rgba(255,255,255,.2);
       border-radius:var(--radius-lg);
-      padding:28px;
-      box-shadow:var(--shadow);
+      padding:30px;
+      box-shadow:0 30px 70px rgba(0,0,0,.35);
       position:relative;
       overflow:hidden;
       animation:heroIn .6s ease both;
     }
     .hero-card::after{
       content:"";position:absolute;right:-30px;top:-30px;width:120px;height:120px;
-      background:radial-gradient(circle, rgba(239,68,68,.16), transparent 70%);
+      background:radial-gradient(circle, rgba(239,68,68,.28), transparent 70%);
       border-radius:50%;
     }
+    .hero-badge{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:6px 12px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.3);
+      background:rgba(255,255,255,.1);
+      font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;
+    }
+    .hero-badge .dot{background:#22c55e}
+
     .eyebrow{
       display:inline-flex;align-items:center;gap:8px;
-      font-size:12px;color:var(--muted);
-      margin-bottom:10px
+      font-size:12px;color:rgba(255,255,255,.72);
+      margin-bottom:12px
     }
     .dot{width:8px;height:8px;border-radius:999px;background:var(--brand)}
 
-    h1{margin:0 0 10px;font-size:clamp(24px,3.2vw,40px);line-height:1.08}
-    .lead{margin:0;color:var(--muted);max-width:60ch}
+    h1{margin:0 0 12px;font-size:clamp(28px,3.6vw,46px);line-height:1.04}
+    .lead{margin:0;color:rgba(255,255,255,.76);max-width:60ch;font-size:15px}
 
-    .proofs{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 4px}
+    .proofs{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 10px}
     .proof{
       display:inline-flex;align-items:center;gap:6px;
       padding:6px 10px;border-radius:999px;
-      border:1px solid var(--line);
-      background:var(--surface-soft);
-      font-size:11px;font-weight:700;color:var(--ink);
+      border:1px solid rgba(255,255,255,.2);
+      background:rgba(15,15,20,.5);
+      font-size:11px;font-weight:700;color:#fff;
     }
-    .trust{font-size:12px;color:var(--muted);margin-top:8px}
+    .trust{font-size:12px;color:rgba(255,255,255,.7);margin-top:8px}
 
     .hero-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
 
     .hero-side{
-      background:var(--surface);
-      border:1px solid var(--line);
+      color:#fff;
+      background:linear-gradient(180deg, rgba(15,15,20,.7), rgba(15,15,20,.5));
+      border:1px solid rgba(255,255,255,.2);
       border-radius:var(--radius-lg);
       padding:18px;
-      box-shadow:var(--shadow-soft);
+      box-shadow:0 20px 45px rgba(0,0,0,.25);
       display:flex;flex-direction:column;gap:12px;
       animation:heroIn .6s ease .12s both;
     }
     .stat{
-      border:1px solid var(--line);
-      border-radius:16px;padding:12px;background:var(--surface-soft)
+      border:1px solid rgba(255,255,255,.2);
+      border-radius:16px;padding:12px;background:rgba(10,10,12,.5)
     }
-    .stat .t{font-size:11px;color:var(--muted)}
+    .stat .t{font-size:11px;color:rgba(255,255,255,.68)}
     .stat .v{font-size:18px;font-weight:900}
 
     .tip{
-      border:1px dashed rgba(220,38,38,.25);
-      background:var(--brand-soft);
-      border-radius:14px;padding:12px;font-size:12px
+      border:1px dashed rgba(255,255,255,.3);
+      background:rgba(255,255,255,.08);
+      border-radius:14px;padding:12px;font-size:12px;color:rgba(255,255,255,.85)
+    }
+
+    .hero-brand{
+      display:flex;align-items:center;gap:12px;margin-bottom:16px;
+    }
+    .hero-logo{
+      width:52px;height:52px;border-radius:16px;overflow:hidden;
+      border:1px solid rgba(255,255,255,.2);
+      background:rgba(255,255,255,.12);
+      display:grid;place-items:center;
+    }
+    .hero-logo img{width:100%;height:100%;object-fit:cover}
+    .hero-name{font-size:15px;font-weight:900}
+    .hero-sub{font-size:12px;color:rgba(255,255,255,.65)}
+
+    .trust-row{
+      display:flex;gap:10px;flex-wrap:wrap;margin-top:18px
+    }
+    .trust-chip{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:8px 12px;border-radius:999px;
+      background:rgba(15,15,20,.55);
+      border:1px solid rgba(255,255,255,.22);
+      font-size:11px;font-weight:700;color:#fff;
+    }
+
+    .control-bar{
+      position:relative;
+      margin-top:-30px;
+      z-index:3;
+    }
+    .control-wrap{
+      display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+      background:rgba(255,255,255,.92);
+      border:1px solid var(--line);
+      border-radius:22px;
+      padding:12px 14px;
+      box-shadow:var(--shadow);
+      backdrop-filter:blur(10px);
+    }
+    .control-title{
+      font-size:12px;font-weight:900;color:var(--muted);
     }
 
     .section{padding:24px 0 var(--section)}
@@ -260,11 +373,17 @@
       opacity:0;
       transform:translateY(10px);
     }
-    .card.show{opacity:1;transform:translateY(0);transition:transform .3s ease, opacity .3s ease, box-shadow .12s ease}
-    .card:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+    .card.show{opacity:1;transform:translateY(0);transition:transform .35s ease, opacity .35s ease, box-shadow .12s ease}
+    .card:hover{transform:translateY(-4px);box-shadow:0 30px 60px rgba(15,23,42,.16)}
 
-    .media{aspect-ratio:16/10;background:#f1f1f1;position:relative}
-    .media img{width:100%;height:100%;object-fit:cover}
+    .media{aspect-ratio:16/10;background:#f1f1f1;position:relative;overflow:hidden}
+    .media img{width:100%;height:100%;object-fit:cover;transition:transform .4s ease}
+    .media::after{
+      content:"";position:absolute;inset:0;
+      background:linear-gradient(180deg, rgba(0,0,0,.0) 55%, rgba(0,0,0,.3));
+      opacity:.7;
+    }
+    .card:hover .media img{transform:scale(1.05);transition:transform .4s ease}
 
     .badge{
       position:absolute;top:10px;left:10px;
@@ -275,6 +394,8 @@
     .badge.available{color:#166534;background:#dcfce7;border-color:#bbf7d0}
     .badge.pending{color:#92400e;background:#fef3c7;border-color:#fde68a}
     .badge.sold{color:#374151;background:#e5e7eb;border-color:#d1d5db}
+    .badge.sale{color:#9a3412;background:#ffedd5;border-color:#fdba74}
+    .badge.negotiable{color:#1d4ed8;background:#dbeafe;border-color:#93c5fd}
 
     .card-body{padding:14px;display:flex;flex-direction:column;gap:10px;flex:1}
     .veh-title{margin:0;font-size:16px;font-weight:900;letter-spacing:.02em}
@@ -384,11 +505,18 @@
     #toastDot{width:8px;height:8px;border-radius:999px;background:var(--brand)}
 
     @media(max-width:980px){
+      header{position:relative}
       .hero-grid{grid-template-columns:1fr}
+      .control-bar{margin-top:-18px}
       .card{grid-column:span 6}
       .modal-grid{grid-template-columns:1fr}
     }
     @media(max-width:640px){
+      .hero-actions .btn{width:100%}
+      .control-wrap{flex-direction:column;align-items:stretch}
+      .chip{width:100%}
+      .head-row{flex-direction:column;align-items:flex-start}
+      .head-actions{width:100%;justify-content:flex-start}
       .card{grid-column:span 12}
       .form-grid{grid-template-columns:1fr}
     }
@@ -414,12 +542,8 @@
         </div>
       </div>
       <div class="head-actions">
-        <div class="chip">
-          <span>Dealer IDs</span>
-          <input id="dealerIdInput" placeholder="DEALER-0001, DEALER-0002" />
-        </div>
-        <button id="loadBtn" class="btn btn-primary">Load inventory</button>
-        <button id="resetBtn" class="btn btn-ghost">Reset</button>
+        <button id="scrollBtn" class="btn btn-primary btn-gloss">Browse vehicles</button>
+        <button class="btn btn-ghost" id="headerSupportBtn" type="button">Buyer support</button>
       </div>
     </div>
   </div>
@@ -438,40 +562,82 @@
 
 <main>
   <section class="hero">
-    <div class="wrap">
-      <div class="hero-grid">
-        <div class="hero-card" id="heroCard">
-          <div class="eyebrow"><span class="dot"></span> Concierge buying experience</div>
-          <h1 id="heroTitle">Buy faster with live inventory and verified availability.</h1>
-          <p class="lead" id="heroLead">
-            Skip the guesswork. Every vehicle shown is live, verified, and ready for a serious viewing.
-            Submit a request in seconds and the dealer confirms fast.
-          </p>
-          <div class="proofs">
-            <span class="proof">Live inventory</span>
-            <span class="proof">Verified availability</span>
-            <span class="proof">Fast booking</span>
+    <div class="hero-media" aria-hidden="true">
+      <video class="hero-video" autoplay loop muted playsinline poster="https://res.cloudinary.com/dd8pjjxsm/image/upload/v1768193442/mediaexclusive/dealers/0000/vehicles/VEH-0069/qbu8lvupz54ufudhcnv6.jpg">
+        <source src="https://res.cloudinary.com/dd8pjjxsm/video/upload/v1768784781/From_KlickPin_CF_Unwrap_the_Luxury_of_the_2024_BMW_3_Series_this_Holiday_Season___Luxury_automotive_Car_videos_Car_advertising_hbxedt.mp4" type="video/mp4" />
+        <source src="assets/hero.mp4" type="video/mp4" />
+      </video>
+      <div class="hero-gradient"></div>
+      <div class="hero-overlay"></div>
+      <div class="hero-noise"></div>
+    </div>
+    <div class="hero-content">
+      <div class="wrap">
+        <div class="hero-grid">
+          <div class="hero-card" id="heroCard">
+            <div class="hero-brand">
+              <div class="hero-logo">
+                <img id="heroLogoImg" src="https://res.cloudinary.com/dd8pjjxsm/image/upload/v1768193442/mediaexclusive/dealers/0000/vehicles/VEH-0069/qbu8lvupz54ufudhcnv6.jpg" alt="Dealer logo" />
+              </div>
+              <div>
+                <div class="hero-name" id="heroDealerName">Dealer Concierge</div>
+                <div class="hero-sub" id="heroDealerSub">Curated vehicles · Verified availability</div>
+                <div class="hero-badge" id="verifiedBadge" style="margin-top:8px;display:none"><span class="dot"></span> Verified Dealer</div>
+              </div>
+            </div>
+            <div class="eyebrow"><span class="dot"></span> Premium dealer experience</div>
+            <h1 id="heroTitle">Curated vehicles. Real availability. Book a viewing in minutes.</h1>
+            <p class="lead" id="heroLead">
+              No ghost listings. No wasted trips. Only vehicles that are ready to show—managed by verified dealers.
+            </p>
+            <div class="proofs">
+              <span class="proof">Verified availability</span>
+              <span class="proof">Fast response</span>
+              <span class="proof">Secure requests</span>
+            </div>
+            <div class="trust-row">
+              <span class="trust-chip">✔ Verified availability</span>
+              <span class="trust-chip">⚡ Fast response</span>
+              <span class="trust-chip">🔒 Secure requests</span>
+            </div>
+            <div class="hero-actions">
+              <button class="btn btn-primary btn-gloss" id="heroPrimaryCta">View available vehicles</button>
+              <button class="btn btn-ghost" id="howBtn">How it works</button>
+            </div>
           </div>
-          <div class="trust">No spam. Dealers respond fast.</div>
-          <div class="hero-actions">
-            <button class="btn btn-primary" id="scrollBtn">Browse inventory</button>
-            <button class="btn btn-ghost" id="howBtn">How it works</button>
-          </div>
-        </div>
 
-        <aside class="hero-side">
-          <div class="stat">
-            <div class="t">Vehicles available</div>
-            <div class="v" id="kpiLive">–</div>
-          </div>
-          <div class="stat">
-            <div class="t">Dealer IDs</div>
-            <div class="v" id="kpiDealer">–</div>
-          </div>
-          <div class="tip" id="rotatingTip">
-            Tip: Use a live video viewing before visiting in person.
-          </div>
-        </aside>
+          <aside class="hero-side">
+            <div class="stat">
+              <div class="t">Vehicles available</div>
+              <div class="v" id="kpiLive">–</div>
+            </div>
+            <div class="stat">
+              <div class="t">Dealer IDs</div>
+              <div class="v" id="kpiDealer">–</div>
+            </div>
+            <div class="tip" id="rotatingTip">
+              Tip: Use a live video viewing before visiting in person.
+            </div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="control-bar">
+    <div class="wrap">
+      <div class="control-wrap">
+        <div class="control-title">Dealer ID</div>
+        <div class="chip" style="flex:1 1 280px">
+          <span>Dealer IDs</span>
+          <input id="dealerIdInput" placeholder="DEALER-0001, DEALER-0002" />
+        </div>
+        <div class="search" style="flex:1 1 240px">
+          <span>⌕</span>
+          <input id="searchInput" placeholder="Search make, model, year…" />
+        </div>
+        <button id="loadBtn" class="btn btn-primary btn-gloss">Load vehicles</button>
+        <button id="resetBtn" class="btn btn-ghost">Reset</button>
       </div>
     </div>
   </section>
@@ -479,11 +645,8 @@
   <section class="section" id="inventory">
     <div class="wrap">
       <div class="section-head">
-        <h2>Inventory</h2>
-        <div class="search">
-          <span>⌕</span>
-          <input id="searchInput" placeholder="Search make, model, year…" />
-        </div>
+        <h2>Available Vehicles</h2>
+        <div class="trust">Real-time availability · Updated on refresh</div>
       </div>
       <div class="grid" id="grid"></div>
     </div>
@@ -492,7 +655,7 @@
 
 <footer>
   <div class="wrap">
-    Concierge inventory for serious buyers · Built by Pytch LLC © <span id="year"></span>
+    Curated vehicles for serious buyers · Built by Pytch LLC © <span id="year"></span>
   </div>
 </footer>
 
@@ -574,10 +737,15 @@
     dealerLogoImg: $("dealerLogoImg"),
     dealerName: $("dealerName"),
     dealerSub: $("dealerSub"),
+    heroLogoImg: $("heroLogoImg"),
+    heroDealerName: $("heroDealerName"),
+    heroDealerSub: $("heroDealerSub"),
+    verifiedBadge: $("verifiedBadge"),
 
     dealerIdInput: $("dealerIdInput"),
     loadBtn: $("loadBtn"),
     resetBtn: $("resetBtn"),
+    headerSupportBtn: $("headerSupportBtn"),
 
     heroTitle: $("heroTitle"),
     heroLead: $("heroLead"),
@@ -587,6 +755,7 @@
     rotatingTip: $("rotatingTip"),
 
     scrollBtn: $("scrollBtn"),
+    heroPrimaryCta: $("heroPrimaryCta"),
     howBtn: $("howBtn"),
 
     searchInput: $("searchInput"),
@@ -680,6 +849,8 @@
     if(["available","in stock","instock","in_stock"].includes(v)) return { label:"Available", cls:"available" };
     if(["pending","reserved"].includes(v)) return { label:"Pending", cls:"pending" };
     if(["sold","archived"].includes(v)) return { label:(v === "archived" ? "Archived" : "Sold"), cls:"sold" };
+    if(v.includes("sale") || v.includes("deal")) return { label:"On Sale", cls:"sale" };
+    if(v.includes("negotiable")) return { label:"Negotiable", cls:"negotiable" };
     return { label:s, cls:"pending" };
   }
 
@@ -804,31 +975,44 @@
     ui.kpiDealer.textContent = dealerIds.length ? dealerIds.join(", ") : "–";
 
     if(!dealerIds.length){
+      ui.verifiedBadge.style.display = "none";
       ui.dealerName.textContent = "Dealer Concierge";
       ui.dealerSub.textContent = "Verified availability · Fast response";
-      ui.heroTitle.textContent = "Buy faster with live inventory and verified availability.";
-      ui.heroLead.textContent = "Skip the guesswork. Every vehicle shown is live, verified, and ready for a serious viewing. Submit a request in seconds and the dealer confirms fast.";
+      ui.heroDealerName.textContent = "Dealer Concierge";
+      ui.heroDealerSub.textContent = "Curated vehicles · Verified availability";
+      ui.heroTitle.textContent = "Curated vehicles. Real availability. Book a viewing in minutes.";
+      ui.heroLead.textContent = "Enter a Dealer ID to see what’s ready to drive today—no ghost listings, just verified availability.";
       ui.dealerLogoImg.src = "https://res.cloudinary.com/dd8pjjxsm/image/upload/v1768193442/mediaexclusive/dealers/0000/vehicles/VEH-0069/qbu8lvupz54ufudhcnv6.jpg";
+      ui.heroLogoImg.src = ui.dealerLogoImg.src;
       return;
     }
 
     if(primary){
       const name = primary.dealerName || primary.name || primary.dealerId || dealerIds[0];
+      ui.verifiedBadge.style.display = "inline-flex";
       ui.dealerName.textContent = name;
-      ui.dealerSub.textContent = (primary.status ? ("Status: " + primary.status) : "Live inventory") + " · Concierge viewing";
-      ui.heroTitle.textContent = "Explore " + name + " — concierge vehicle viewings.";
-      ui.heroLead.textContent = "Real-time availability with a premium booking experience. Reserve a viewing in seconds.";
+      ui.dealerSub.textContent = (primary.status ? ("Status: " + primary.status) : "Verified dealer") + " · Concierge viewing";
+      ui.heroDealerName.textContent = name;
+      ui.heroDealerSub.textContent = "Verified dealer · Priority responses";
+      ui.heroTitle.textContent = "Explore " + name + "’s available vehicles.";
+      ui.heroLead.textContent = "Serious buyers only — real-time availability, premium presentation, and fast booking.";
       const logoUrl = primary.logoUrl || primary.logo;
       if(logoUrl && String(logoUrl).startsWith("http")){
         ui.dealerLogoImg.src = logoUrl;
         ui.dealerLogoImg.alt = name;
+        ui.heroLogoImg.src = logoUrl;
+        ui.heroLogoImg.alt = name;
       }
     } else {
-      ui.dealerName.textContent = "Multi-Dealer Inventory";
-      ui.dealerSub.textContent = "Combined live inventory · Concierge booking";
-      ui.heroTitle.textContent = "Compare live inventory across top dealers.";
-      ui.heroLead.textContent = "Book a viewing instantly with the dealer that has the exact car you want.";
+      ui.verifiedBadge.style.display = "none";
+      ui.dealerName.textContent = "Multi-Dealer Showcase";
+      ui.dealerSub.textContent = "Curated vehicles · Concierge booking";
+      ui.heroDealerName.textContent = "Multi-Dealer Showcase";
+      ui.heroDealerSub.textContent = "Curated vehicles · Verified availability";
+      ui.heroTitle.textContent = "Compare verified vehicles across top dealers.";
+      ui.heroLead.textContent = "No wasted trips. Browse what’s truly available and book a viewing in minutes.";
       ui.dealerLogoImg.src = "https://res.cloudinary.com/dd8pjjxsm/image/upload/v1768193442/mediaexclusive/dealers/0000/vehicles/VEH-0069/qbu8lvupz54ufudhcnv6.jpg";
+      ui.heroLogoImg.src = ui.dealerLogoImg.src;
     }
   }
 
@@ -889,8 +1073,8 @@
 
     if(!state.dealerIds.length){
       renderEmptyState({
-        title:"Enter dealer IDs to load inventory",
-        body:"Use up to three dealer IDs, separated by commas. We'll pull live inventory instantly.",
+        title:"Enter dealer IDs to view vehicles",
+        body:"Use up to three dealer IDs, separated by commas. We’ll show verified vehicles instantly.",
       });
       return;
     }
@@ -938,12 +1122,12 @@
           </div>
           <div class="price">${esc(price)}</div>
           <div class="specs">${specs.map(p=>`<span class="spec">${esc(p)}</span>`).join("")}</div>
-          <div class="card-actions">
-            <button class="btn btn-primary cta-sheen" style="width:100%" type="button">Lock in a viewing</button>
-            <div class="whatsapp-wrap">
-              <button class="btn btn-outline cta-sheen whatsapp-btn" style="width:100%" type="button" ${whatsappAvailable ? "" : "disabled"} title="${esc(whatsappTitle)}">Request More Info</button>
-            </div>
+        <div class="card-actions">
+          <button class="btn btn-primary btn-gloss" style="width:100%" type="button">Lock in a viewing</button>
+          <div class="whatsapp-wrap">
+            <button class="btn btn-outline whatsapp-btn" style="width:100%" type="button" ${whatsappAvailable ? "" : "disabled"} title="${esc(whatsappTitle)}">Request More Info</button>
           </div>
+        </div>
         </div>
       `;
 
@@ -1214,6 +1398,7 @@
       setBranding();
       updateDealerBar();
       applySearch();
+      scrollToInventory();
     }catch(e){
       console.error("Load error", e);
       state.dealers = [];
@@ -1253,6 +1438,13 @@
     ui.rotatingTip.textContent = tips[state.tipIndex];
   }
 
+  function scrollToInventory(){
+    const inv = document.getElementById("inventory");
+    if(inv){
+      inv.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+    }
+  }
+
   ui.year.textContent = new Date().getFullYear();
 
   ui.loadBtn.addEventListener("click", doLoad);
@@ -1260,13 +1452,14 @@
   ui.dealerIdInput.addEventListener("keydown", (e)=>{ if(e.key === "Enter") doLoad(); });
   ui.searchInput.addEventListener("input", applySearch);
 
-  ui.scrollBtn.addEventListener("click", ()=>{
-    const inv = document.getElementById("inventory");
-    if(inv) inv.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  ui.scrollBtn.addEventListener("click", scrollToInventory);
+  ui.heroPrimaryCta.addEventListener("click", scrollToInventory);
+  ui.headerSupportBtn.addEventListener("click", ()=>{
+    toast("Need help? Enter your Dealer ID or contact your dealer concierge for access.", "info");
   });
 
   ui.howBtn.addEventListener("click", ()=>{
-    toast("Enter dealer IDs, browse live inventory, then book a viewing in seconds.");
+    toast("Enter a Dealer ID, browse verified vehicles, then book a viewing in minutes.");
   });
 
   ui.modalClose.addEventListener("click", closeModal);
