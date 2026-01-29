@@ -331,6 +331,24 @@
     }
     .gallery-card:hover{transform:translateY(-2px);box-shadow:0 14px 26px rgba(220,38,38,.18)}
     .gallery-card img{width:100%;height:86px;object-fit:cover;display:block}
+    .gallery-actions{
+      position:absolute;
+      inset:auto 6px 6px 6px;
+      display:flex;
+      gap:6px;
+      flex-wrap:wrap;
+      justify-content:center;
+    }
+    .gallery-action{
+      border:none;
+      background:rgba(15,23,42,.82);
+      color:#fff;
+      font-size:10px;
+      padding:4px 6px;
+      border-radius:8px;
+      cursor:pointer;
+    }
+    .gallery-action[data-hero=\"true\"]{background:rgba(220,38,38,.9)}
     .gallery-remove{
       position:absolute;top:6px;right:6px;
       background:rgba(15,23,42,.7);color:#fff;border:none;
@@ -573,6 +591,12 @@
           <div class="panel-body">
             <div class="table-tools">
               <div class="search" role="search"><span style="opacity:.75">⌕</span><input id="reqSearch" placeholder="Search name, phone, vehicleId…" aria-label="Search requests" /></div>
+              <div class="search" role="group" aria-label="Request date filters">
+                <span style="opacity:.75">📅</span>
+                <input id="reqFrom" type="date" aria-label="Requests from date" />
+                <span style="opacity:.5">→</span>
+                <input id="reqTo" type="date" aria-label="Requests to date" />
+              </div>
               <div class="seg" role="group" aria-label="Request status filter">
                 <button type="button" class="reqSeg" data-rstatus="all" aria-pressed="true">All</button>
                 <button type="button" class="reqSeg" data-rstatus="new" aria-pressed="false">New</button>
@@ -766,17 +790,17 @@
         <div>
           <label for="cloudinaryImageUrls">Cloudinary Image URLs (optional)</label>
           <textarea class="field" id="cloudinaryImageUrls" rows="4" placeholder='Paste URLs (JSON array, comma, or newline).'></textarea>
-          <div class="help">Your storefront will prioritize Airtable attachments first, then Cloudinary URLs.</div>
+          <div class="help">Storefront uses the hero image first, then this gallery list.</div>
         </div>
 
         <div>
-          <label for="cloudinaryVideoUrl">Cloudinary Video URL (optional)</label>
-          <input class="field" id="cloudinaryVideoUrl" placeholder="https://…" />
+          <label for="cloudinaryVideoUrl">Cloudinary Video URLs (optional)</label>
+          <textarea class="field" id="cloudinaryVideoUrl" rows="3" placeholder="Paste up to 3 video URLs (one per line)." ></textarea>
         </div>
 
         <div class="row">
           <div>
-            <label for="imageFiles">Upload Images (max 5)</label>
+            <label for="imageFiles">Upload Images (max 7)</label>
             <input class="field" id="imageFiles" type="file" accept="image/*" multiple />
           </div>
           <div>
@@ -794,12 +818,35 @@
           <div class="gallery-head">
             <div>
               <div class="gallery-title">Vehicle Gallery</div>
-              <div class="gallery-sub">Uploads appear instantly. Remove any image before saving.</div>
+              <div class="gallery-sub">Reorder images and choose a hero before saving.</div>
             </div>
             <div class="gallery-count" id="imageGalleryCount">0 images</div>
           </div>
           <div class="gallery-grid" id="imageGalleryGrid"></div>
           <div class="gallery-empty" id="imageGalleryEmpty">No images uploaded yet.</div>
+        </div>
+
+        <div class="gallery-panel" id="videoGalleryPanel">
+          <div class="gallery-head">
+            <div>
+              <div class="gallery-title">Video Clips</div>
+              <div class="gallery-sub">Up to 3 videos. Choose a hero video for the storefront.</div>
+            </div>
+            <div class="gallery-count" id="videoGalleryCount">0 videos</div>
+          </div>
+          <div class="gallery-grid" id="videoGalleryGrid"></div>
+          <div class="gallery-empty" id="videoGalleryEmpty">No videos uploaded yet.</div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="heroImageUrl">Hero Image (optional)</label>
+            <input class="field" id="heroImageUrl" placeholder="Auto-set to first image if empty" />
+          </div>
+          <div>
+            <label for="heroVideoUrl">Hero Video (optional)</label>
+            <input class="field" id="heroVideoUrl" placeholder="Auto-set to first video if empty" />
+          </div>
         </div>
 
         <div class="row">
@@ -902,6 +949,8 @@
   // Requests table
   const reqBody = $('#reqBody');
   const reqSearch = $('#reqSearch');
+  const reqFrom = $('#reqFrom');
+  const reqTo = $('#reqTo');
 
   // Drawer
   const drawer = $('#drawer');
@@ -915,10 +964,17 @@
   const imageFiles = $('#imageFiles');
   const videoFiles = $('#videoFiles');
   const cloudinaryImageUrls = $('#cloudinaryImageUrls');
+  const cloudinaryVideoUrl = $('#cloudinaryVideoUrl');
+  const heroImageUrl = $('#heroImageUrl');
+  const heroVideoUrl = $('#heroVideoUrl');
   const imageGalleryPanel = $('#imageGalleryPanel');
   const imageGalleryGrid = $('#imageGalleryGrid');
   const imageGalleryEmpty = $('#imageGalleryEmpty');
   const imageGalleryCount = $('#imageGalleryCount');
+  const videoGalleryPanel = $('#videoGalleryPanel');
+  const videoGalleryGrid = $('#videoGalleryGrid');
+  const videoGalleryEmpty = $('#videoGalleryEmpty');
+  const videoGalleryCount = $('#videoGalleryCount');
 
   // Add buttons
   const newVehicleBtn = $('#newVehicleBtn');
@@ -943,7 +999,7 @@
     vehicles: [],
     requests: [],
     invFilter: { q:'', status:'all' },
-    reqFilter: { q:'', status:'all' },
+    reqFilter: { q:'', status:'all', from:'', to:'' },
     month: '',
     dailyRequests: [],
   };
@@ -1161,12 +1217,17 @@
   function renderRequests(){
     const q = STATE.reqFilter.q;
     const rstatus = STATE.reqFilter.status;
+    const from = STATE.reqFilter.from ? new Date(STATE.reqFilter.from + "T00:00:00") : null;
+    const to = STATE.reqFilter.to ? new Date(STATE.reqFilter.to + "T23:59:59") : null;
 
     const list = STATE.requests.filter(r => {
       const blob = [r.requestId, r.name, r.phone, r.vehicleId, r.type].filter(Boolean).join(' ').toLowerCase();
       if(q && !blob.includes(q)) return false;
       const s = String(r.status || '').toLowerCase();
       if(rstatus !== 'all' && s !== rstatus) return false;
+      const createdAt = r.createdAt ? new Date(r.createdAt) : null;
+      if(from && createdAt && createdAt < from) return false;
+      if(to && createdAt && createdAt > to) return false;
       return true;
     });
 
@@ -1389,7 +1450,11 @@
     vehStatus.textContent = '';
     archiveVehicleBtn.style.display = 'none';
     drawerTitle.textContent = 'Add Vehicle';
+    cloudinaryVideoUrl.value = '';
+    heroImageUrl.value = '';
+    heroVideoUrl.value = '';
     renderImageGallery([]);
+    renderVideoGallery([]);
 
     // defaults
     $('#availability').value = 'true';
@@ -1417,8 +1482,10 @@
       $('#body').value = v['Body Type'] || '';
       $('#color').value = v.Color || '';
       $('#notes').value = v['notes / description'] || v.Description || v.notes || '';
-      $('#cloudinaryImageUrls').value = v.cloudinaryImageUrls || '';
-      $('#cloudinaryVideoUrl').value = v.cloudinaryVideoUrl || '';
+      cloudinaryImageUrls.value = v.cloudinaryImageUrls || '';
+      cloudinaryVideoUrl.value = v.cloudinaryVideoUrl || '';
+      heroImageUrl.value = v.heroImageUrl || v.hero_image_url || '';
+      heroVideoUrl.value = v.heroVideoUrl || v.hero_video_url || '';
       $('#availability').value = String(v.Availability === true ? 'true' : 'false');
       $('#archived').value = String(v.archived === true ? 'true' : 'false');
 
@@ -1438,6 +1505,7 @@
     }
 
     renderImageGallery();
+    renderVideoGallery();
     setDrawer(true);
   }
 
@@ -1460,7 +1528,9 @@
       Color: cleanStr($('#color').value, 40),
       'notes / description': cleanStr($('#notes').value, 2000),
       cloudinaryImageUrls: cleanStr($('#cloudinaryImageUrls').value, 5000),
-      cloudinaryVideoUrl: cleanStr($('#cloudinaryVideoUrl').value, 2000),
+      cloudinaryVideoUrl: cleanStr(cloudinaryVideoUrl.value, 2000),
+      heroImageUrl: cleanStr(heroImageUrl.value, 2000),
+      heroVideoUrl: cleanStr(heroVideoUrl.value, 2000),
       Availability: $('#availability').value === 'true',
       archived: $('#archived').value === 'true',
     };
@@ -1504,9 +1574,17 @@
   }
 
   function setImageUrls(urls, format){
-    const next = formatUrlList(urls, format);
+    const trimmed = urls.slice(0, 7);
+    const next = formatUrlList(trimmed, format);
     cloudinaryImageUrls.value = next;
-    renderImageGallery(urls);
+    if(trimmed.length){
+      if(!heroImageUrl.value || !trimmed.includes(heroImageUrl.value)){
+        heroImageUrl.value = trimmed[0];
+      }
+    }else{
+      heroImageUrl.value = "";
+    }
+    renderImageGallery(trimmed);
   }
 
   function setGalleryLoading(isLoading, count=4){
@@ -1522,10 +1600,29 @@
   }
 
   function renderImageGallery(urls = null){
-    const list = Array.isArray(urls) ? urls : parseUrlList(cloudinaryImageUrls.value);
+    let list = Array.isArray(urls) ? urls : parseUrlList(cloudinaryImageUrls.value);
+    if(list.length > 7){
+      list = list.slice(0, 7);
+      const format = detectUrlFormat(cloudinaryImageUrls.value);
+      setImageUrls(list, format);
+      return;
+    }
+    if(list.length){
+      if(!heroImageUrl.value || !list.includes(heroImageUrl.value)){
+        heroImageUrl.value = list[0];
+      }
+    }else{
+      heroImageUrl.value = "";
+    }
+    const hero = heroImageUrl.value;
     imageGalleryGrid.innerHTML = list.map((url, index) => `
       <div class="gallery-card">
         <img src="${escapeHtml(url)}" alt="Vehicle image ${index + 1}" loading="lazy" />
+        <div class="gallery-actions">
+          <button class="gallery-action" type="button" data-action="up" data-index="${index}">Up</button>
+          <button class="gallery-action" type="button" data-action="down" data-index="${index}">Down</button>
+          <button class="gallery-action" type="button" data-action="hero" data-index="${index}" data-hero="${hero === url}">${hero === url ? "Hero" : "Set Hero"}</button>
+        </div>
         <button class="gallery-remove" type="button" data-index="${index}">Remove</button>
       </div>
     `).join("");
@@ -1541,6 +1638,93 @@
         current.splice(idx, 1);
         const format = detectUrlFormat(cloudinaryImageUrls.value);
         setImageUrls(current, format);
+      });
+    });
+
+    $$(".gallery-action", imageGalleryGrid).forEach(btn => {
+      btn.addEventListener("click", () => {
+        const action = btn.getAttribute("data-action");
+        const idx = Number(btn.getAttribute("data-index"));
+        const current = parseUrlList(cloudinaryImageUrls.value);
+        if(Number.isNaN(idx)) return;
+
+        if(action === "up" && idx > 0){
+          [current[idx - 1], current[idx]] = [current[idx], current[idx - 1]];
+        }
+        if(action === "down" && idx < current.length - 1){
+          [current[idx + 1], current[idx]] = [current[idx], current[idx + 1]];
+        }
+        if(action === "hero"){
+          heroImageUrl.value = current[idx] || "";
+        }
+        const format = detectUrlFormat(cloudinaryImageUrls.value);
+        setImageUrls(current, format);
+      });
+    });
+  }
+
+  function setVideoUrls(urls, format){
+    const trimmed = urls.slice(0, 3);
+    const next = formatUrlList(trimmed, format);
+    cloudinaryVideoUrl.value = next;
+    if(trimmed.length){
+      if(!heroVideoUrl.value || !trimmed.includes(heroVideoUrl.value)){
+        heroVideoUrl.value = trimmed[0];
+      }
+    }else{
+      heroVideoUrl.value = "";
+    }
+    renderVideoGallery(trimmed);
+  }
+
+  function renderVideoGallery(urls = null){
+    let list = Array.isArray(urls) ? urls : parseUrlList(cloudinaryVideoUrl.value);
+    if(list.length > 3){
+      list = list.slice(0, 3);
+      const format = detectUrlFormat(cloudinaryVideoUrl.value);
+      setVideoUrls(list, format);
+      return;
+    }
+    if(list.length){
+      if(!heroVideoUrl.value || !list.includes(heroVideoUrl.value)){
+        heroVideoUrl.value = list[0];
+      }
+    }else{
+      heroVideoUrl.value = "";
+    }
+    const hero = heroVideoUrl.value;
+    videoGalleryGrid.innerHTML = list.map((url, index) => `
+      <div class="gallery-card">
+        <video src="${escapeHtml(url)}" muted playsinline></video>
+        <div class="gallery-actions">
+          <button class="gallery-action" type="button" data-vaction="hero" data-index="${index}" data-hero="${hero === url}">${hero === url ? "Hero" : "Set Hero"}</button>
+        </div>
+        <button class="gallery-remove" type="button" data-vindex="${index}">Remove</button>
+      </div>
+    `).join("");
+
+    videoGalleryEmpty.style.display = list.length ? "none" : "block";
+    videoGalleryCount.textContent = `${list.length} video${list.length === 1 ? "" : "s"}`;
+
+    $$(".gallery-remove", videoGalleryGrid).forEach(btn => {
+      btn.addEventListener("click", () => {
+        const idx = Number(btn.getAttribute("data-vindex"));
+        const current = parseUrlList(cloudinaryVideoUrl.value);
+        if(Number.isNaN(idx)) return;
+        current.splice(idx, 1);
+        const format = detectUrlFormat(cloudinaryVideoUrl.value);
+        setVideoUrls(current, format);
+      });
+    });
+
+    $$(".gallery-action", videoGalleryGrid).forEach(btn => {
+      btn.addEventListener("click", () => {
+        const idx = Number(btn.getAttribute("data-index"));
+        const current = parseUrlList(cloudinaryVideoUrl.value);
+        if(Number.isNaN(idx)) return;
+        heroVideoUrl.value = current[idx] || "";
+        const format = detectUrlFormat(cloudinaryVideoUrl.value);
+        setVideoUrls(current, format);
       });
     });
   }
@@ -1579,8 +1763,8 @@
     const images = Array.from(imageFiles.files || []);
     const videos = Array.from(videoFiles.files || []);
 
-    if(images.length > 5){
-      uploadStatus.textContent = "Select up to 5 images.";
+    if(images.length > 7){
+      uploadStatus.textContent = "Select up to 7 images.";
       return;
     }
     if(videos.length > 3){
@@ -1594,7 +1778,7 @@
 
     uploadStatus.textContent = "Uploading…";
     uploadMediaBtn.disabled = true;
-    setGalleryLoading(true, Math.min(Math.max(images.length, 3), 5));
+    setGalleryLoading(true, Math.min(Math.max(images.length, 3), 7));
 
     let imagesUploaded = false;
     try{
@@ -1615,9 +1799,10 @@
       }
 
       if(videoUrls.length){
-        const existingVideos = parseUrlList($('#cloudinaryVideoUrl').value);
+        const existingVideos = parseUrlList(cloudinaryVideoUrl.value);
         const next = [...existingVideos, ...videoUrls];
-        $('#cloudinaryVideoUrl').value = next.join("\n");
+        const format = detectUrlFormat(cloudinaryVideoUrl.value);
+        setVideoUrls(next, format);
       }
 
       uploadStatus.textContent = "Upload complete. Remember to save the vehicle.";
@@ -1631,6 +1816,7 @@
       if(!imagesUploaded){
         renderImageGallery();
       }
+      renderVideoGallery();
     }
   }
 
@@ -1695,6 +1881,9 @@
   cloudinaryImageUrls.addEventListener('input', () => {
     renderImageGallery();
   });
+  cloudinaryVideoUrl.addEventListener('input', () => {
+    renderVideoGallery();
+  });
 
   // Inventory filters
   invSearch.addEventListener('input', () => {
@@ -1713,6 +1902,14 @@
   // Requests filters
   reqSearch.addEventListener('input', () => {
     STATE.reqFilter.q = cleanStr(reqSearch.value, 80).toLowerCase();
+    renderRequests();
+  });
+  reqFrom.addEventListener('change', () => {
+    STATE.reqFilter.from = reqFrom.value || '';
+    renderRequests();
+  });
+  reqTo.addEventListener('change', () => {
+    STATE.reqFilter.to = reqTo.value || '';
     renderRequests();
   });
   $$('.reqSeg').forEach(b => {

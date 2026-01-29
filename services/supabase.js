@@ -1,20 +1,6 @@
 "use strict";
 
-const { createClient } = require("@supabase/supabase-js");
-
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in env.");
-}
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-  auth: {
-    persistSession: false,
-    autoRefreshToken: false,
-  },
-});
+const { supabase } = require("../lib/supabase");
 
 function unwrap(result, context) {
   if (result.error) {
@@ -43,6 +29,35 @@ async function listProfiles({ status } = {}) {
   if (status) query = query.eq("status", status);
   const result = await query.order("created_at", { ascending: false });
   return unwrap(result, "profiles list") || [];
+}
+
+async function getProfileByStripeCustomerId(customerId) {
+  const result = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("stripe_customer_id", customerId)
+    .maybeSingle();
+  return unwrap(result, "profiles stripe customer lookup");
+}
+
+async function getProfileByStripeSubscriptionId(subscriptionId) {
+  const result = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("stripe_subscription_id", subscriptionId)
+    .maybeSingle();
+  return unwrap(result, "profiles stripe subscription lookup");
+}
+
+async function getLatestDealerId() {
+  const result = await supabase
+    .from("profiles")
+    .select("dealer_id")
+    .like("dealer_id", "DEALER-%")
+    .order("dealer_id", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return unwrap(result, "profiles latest dealer id");
 }
 
 async function getVehiclesForDealer(dealerId, { includeArchived = false, publicOnly = false } = {}) {
@@ -124,6 +139,9 @@ async function listViewingRequests({ dealerId, status, monthStart, monthEnd } = 
 module.exports = {
   getProfileByDealerId,
   getProfileByEmail,
+  getProfileByStripeCustomerId,
+  getProfileByStripeSubscriptionId,
+  getLatestDealerId,
   upsertProfile,
   listProfiles,
   getVehiclesForDealer,
