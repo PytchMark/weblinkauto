@@ -11,6 +11,11 @@ create table if not exists profiles (
   status text default 'active',
   whatsapp text,
   logo_url text,
+  plan text,
+  trial_ends_at timestamptz,
+  stripe_customer_id text,
+  stripe_subscription_id text,
+  stripe_subscription_status text,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
@@ -19,6 +24,11 @@ alter table profiles add column if not exists profile_email text;
 alter table profiles add column if not exists password text;
 alter table profiles add column if not exists whatsapp text;
 alter table profiles add column if not exists logo_url text;
+alter table profiles add column if not exists plan text;
+alter table profiles add column if not exists trial_ends_at timestamptz;
+alter table profiles add column if not exists stripe_customer_id text;
+alter table profiles add column if not exists stripe_subscription_id text;
+alter table profiles add column if not exists stripe_subscription_status text;
 
 -- Vehicles inventory
 create table if not exists vehicles (
@@ -42,6 +52,8 @@ create table if not exists vehicles (
   description text,
   cloudinary_image_urls text,
   cloudinary_video_url text,
+  hero_image_url text,
+  hero_video_url text,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );

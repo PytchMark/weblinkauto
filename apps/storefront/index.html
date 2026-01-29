@@ -54,6 +54,23 @@
       backdrop-filter:blur(10px);
       border-bottom:1px solid var(--line);
     }
+    .marquee{
+      background:#0b0b0b;
+      color:#fff;
+      font-size:11px;
+      letter-spacing:.2em;
+      text-transform:uppercase;
+      overflow:hidden;
+      border-bottom:1px solid rgba(255,255,255,.1);
+    }
+    .marquee-track{
+      display:flex;
+      gap:24px;
+      padding:10px 0;
+      white-space:nowrap;
+      animation:marquee 20s linear infinite;
+    }
+    .marquee span{opacity:.9}
     .head-row{
       display:flex;align-items:center;justify-content:space-between;gap:14px;
       padding:14px 0;
@@ -148,6 +165,11 @@
     }
     .btn:disabled.btn-gloss::after{opacity:0;animation:none}
 
+    @keyframes marquee{
+      0%{transform:translateX(0)}
+      100%{transform:translateX(-50%)}
+    }
+
     .hero{
       position:relative;
       padding:0;
@@ -188,6 +210,29 @@
       z-index:1;
       padding:var(--section) 0 42px;
     }
+    .request-options{
+      display:grid;
+      gap:10px;
+      margin:16px 0 18px;
+    }
+    .option-card{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid var(--line);
+      background:var(--surface-soft);
+      font-size:13px;
+      font-weight:700;
+      cursor:pointer;
+      transition:transform .12s ease, box-shadow .12s ease;
+    }
+    .option-card:hover{transform:translateY(-1px);box-shadow:var(--shadow-soft)}
+    .option-card strong{font-size:14px}
+    .option-card small{display:block;font-weight:600;color:var(--muted);font-size:11px}
+    .option-card[data-disabled="true"]{opacity:.55;cursor:not-allowed}
 
     .cta-sheen{
       position:relative;
@@ -462,6 +507,7 @@
       border-radius:18px;border:1px solid var(--line);overflow:hidden;min-height:240px;background:#f1f1f1
     }
     .modal-media img{width:100%;height:100%;object-fit:cover}
+    .modal-media video{width:100%;height:100%;object-fit:cover;background:#000}
 
     .modal-copy{display:flex;flex-direction:column;gap:10px}
     .next-steps{margin:0;padding-left:18px;color:var(--muted);font-size:12px}
@@ -529,6 +575,19 @@
 </head>
 <body>
 
+<div class="marquee" aria-hidden="true">
+  <div class="wrap">
+    <div class="marquee-track">
+      <span>Live Inventory • Real Availability • Book Viewings Fast</span>
+      <span>No more “still available?” messages</span>
+      <span>Real-time updates • WhatsApp routing • Cleaner sales flow</span>
+      <span>Live Inventory • Real Availability • Book Viewings Fast</span>
+      <span>No more “still available?” messages</span>
+      <span>Real-time updates • WhatsApp routing • Cleaner sales flow</span>
+    </div>
+  </div>
+</div>
+
 <header>
   <div class="wrap">
     <div class="head-row">
@@ -543,6 +602,7 @@
       </div>
       <div class="head-actions">
         <button id="scrollBtn" class="btn btn-primary btn-gloss">Browse vehicles</button>
+        <a class="btn btn-outline" href="/landing">Become a Dealer</a>
         <button class="btn btn-ghost" id="headerSupportBtn" type="button">Buyer support</button>
       </div>
     </div>
@@ -612,7 +672,7 @@
               <div class="v" id="kpiLive">–</div>
             </div>
             <div class="stat">
-              <div class="t">Dealer IDs</div>
+              <div class="t">Dealer ID</div>
               <div class="v" id="kpiDealer">–</div>
             </div>
             <div class="tip" id="rotatingTip">
@@ -629,8 +689,8 @@
       <div class="control-wrap">
         <div class="control-title">Dealer ID</div>
         <div class="chip" style="flex:1 1 280px">
-          <span>Dealer IDs</span>
-          <input id="dealerIdInput" placeholder="DEALER-0001, DEALER-0002" />
+          <span>Dealer ID</span>
+          <input id="dealerIdInput" placeholder="DEALER-0001" />
         </div>
         <div class="search" style="flex:1 1 240px">
           <span>⌕</span>
@@ -671,6 +731,7 @@
       <div class="modal-grid">
         <div class="modal-media">
           <img id="modalImage" alt="Vehicle preview" />
+          <video id="modalVideo" class="modal-video" controls playsinline style="display:none"></video>
         </div>
         <div class="modal-copy">
           <div>
@@ -682,6 +743,29 @@
             <li>They confirm availability and a viewing window.</li>
             <li>No spam — just a fast confirmation.</li>
           </ul>
+          <div class="request-options" id="requestOptions">
+            <button class="option-card" type="button" data-type="whatsapp" id="whatsAppOption">
+              <div>
+                <strong>WhatsApp Chat Request</strong>
+                <small>Instant message to this dealer</small>
+              </div>
+              <span>↗</span>
+            </button>
+            <button class="option-card" type="button" data-type="live_video">
+              <div>
+                <strong>Live Video Viewing</strong>
+                <small>Book a real-time walkaround</small>
+              </div>
+              <span>+</span>
+            </button>
+            <button class="option-card" type="button" data-type="walk_in">
+              <div>
+                <strong>Book a Walk-In</strong>
+                <small>Reserve an in-person slot</small>
+              </div>
+              <span>+</span>
+            </button>
+          </div>
           <form id="requestForm">
             <div class="form-grid">
               <div class="form-field">
@@ -696,14 +780,7 @@
                 <label for="reqEmail">Email</label>
                 <input class="input" id="reqEmail" name="email" type="email" placeholder="you@email.com" />
               </div>
-              <div class="form-field">
-                <label for="reqType">Viewing type</label>
-                <select class="select" id="reqType" name="type">
-                  <option value="walk_in">In-person</option>
-                  <option value="live_video">Live video</option>
-                  <option value="whatsapp">WhatsApp</option>
-                </select>
-              </div>
+              <input type="hidden" id="reqType" name="type" value="live_video" />
               <div class="form-field">
                 <label for="reqDate">Preferred date</label>
                 <input class="input" id="reqDate" name="date" type="date" />
@@ -732,6 +809,7 @@
 <script>
   const API_BASE = "";
   const $ = (id) => document.getElementById(id);
+  const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
 
   const ui = {
     dealerLogoImg: $("dealerLogoImg"),
@@ -775,12 +853,15 @@
     modalClose: $("modalClose"),
     modalTitle: $("modalTitle"),
     modalImage: $("modalImage"),
+    modalVideo: $("modalVideo"),
     modalVehicle: $("modalVehicle"),
     modalPrice: $("modalPrice"),
     requestForm: $("requestForm"),
     submitBtn: $("submitBtn"),
     modalSuccess: $("modalSuccess"),
     modalError: $("modalError"),
+    requestOptions: $("requestOptions"),
+    whatsAppOption: $("whatsAppOption"),
 
     reqName: $("reqName"),
     reqPhone: $("reqPhone"),
@@ -805,10 +886,10 @@
   };
 
   const tips = [
-    "Tip: Use a live video viewing before visiting in person.",
-    "Tip: Ask for the VIN and service history during your viewing.",
-    "Tip: Save time — WhatsApp is usually fastest.",
-    "Tip: Shortlist two cars, then book one viewing block.",
+    "Tip: Live video viewings save you wasted trips.",
+    "Tip: Confirm availability before traveling.",
+    "Tip: WhatsApp chat gets the fastest response.",
+    "Tip: Ask for service history and VIN upfront.",
   ];
 
   function esc(s){
@@ -832,7 +913,7 @@
       const candidate = item.replace(/\s+/g, "");
       if(!isValidDealerId(candidate)) continue;
       if(!ids.includes(candidate)) ids.push(candidate);
-      if(ids.length >= 3) break;
+      if(ids.length >= 1) break;
     }
     return ids;
   }
@@ -879,7 +960,13 @@
   }
 
   function pickImageUrl(vehicle){
-    const direct = vehicle?.cloudinaryImageUrls || vehicle?.cloudinaryImageUrl || vehicle?.imageUrl || vehicle?.logoUrl;
+    const direct =
+      vehicle?.heroImageUrl ||
+      vehicle?.hero_image_url ||
+      vehicle?.cloudinaryImageUrls ||
+      vehicle?.cloudinaryImageUrl ||
+      vehicle?.imageUrl ||
+      vehicle?.logoUrl;
     const parsed = parseImageUrls(direct);
     if(parsed.length) return parsed[0];
 
@@ -912,6 +999,7 @@
       status,
       availability,
       imageUrl: pickImageUrl(v),
+      heroVideoUrl: v.heroVideoUrl || v.hero_video_url || v.cloudinaryVideoUrl || v.cloudinary_video_url || "",
       mileage: v.mileage || v.Mileage || v.odometer || "",
       transmission: v.transmission || v.Transmission || "",
       fuel: v.fuel || v.fuelType || v["Fuel Type"] || "",
@@ -1005,12 +1093,12 @@
       }
     } else {
       ui.verifiedBadge.style.display = "none";
-      ui.dealerName.textContent = "Multi-Dealer Showcase";
-      ui.dealerSub.textContent = "Curated vehicles · Concierge booking";
-      ui.heroDealerName.textContent = "Multi-Dealer Showcase";
-      ui.heroDealerSub.textContent = "Curated vehicles · Verified availability";
-      ui.heroTitle.textContent = "Compare verified vehicles across top dealers.";
-      ui.heroLead.textContent = "No wasted trips. Browse what’s truly available and book a viewing in minutes.";
+      ui.dealerName.textContent = "Dealer Storefront";
+      ui.dealerSub.textContent = "Enter a Dealer ID to view live inventory";
+      ui.heroDealerName.textContent = "Dealer Storefront";
+      ui.heroDealerSub.textContent = "Public listings · Verified availability";
+      ui.heroTitle.textContent = "Enter a Dealer ID to unlock live inventory.";
+      ui.heroLead.textContent = "Each storefront is dealer-specific. Type a Dealer ID to browse and book viewings.";
       ui.dealerLogoImg.src = "https://res.cloudinary.com/dd8pjjxsm/image/upload/v1768193442/mediaexclusive/dealers/0000/vehicles/VEH-0069/qbu8lvupz54ufudhcnv6.jpg";
       ui.heroLogoImg.src = ui.dealerLogoImg.src;
     }
@@ -1023,7 +1111,7 @@
       return;
     }
     ui.dealerBar.classList.add("show");
-    ui.dealerSummary.textContent = state.dealerIds.length > 1 ? "Dealers loaded" : "Dealer loaded";
+    ui.dealerSummary.textContent = "Dealer loaded";
     ui.dealerStats.textContent = state.vehicles.length + " vehicles";
     ui.lastRefresh.textContent = state.lastRefreshed ? "Last refreshed " + state.lastRefreshed : "Last refreshed —";
 
@@ -1073,8 +1161,8 @@
 
     if(!state.dealerIds.length){
       renderEmptyState({
-        title:"Enter dealer IDs to view vehicles",
-        body:"Use up to three dealer IDs, separated by commas. We’ll show verified vehicles instantly.",
+        title:"Enter a dealer ID to view vehicles",
+        body:"Paste the dealer ID from your link to load verified inventory. Example: DEALER-0001.",
       });
       return;
     }
@@ -1082,7 +1170,7 @@
     if(!list.length){
       renderEmptyState({
         title:"No vehicles found",
-        body:"Try a different search term or confirm the dealer IDs are correct.",
+        body:"Try a different search term or confirm the dealer ID is correct.",
       });
       return;
     }
@@ -1095,10 +1183,6 @@
       const st = normalizeStatus(v.status);
       const vehicleId = v.vehicleId || "";
       const dealerId = v.dealerId || state.dealerIds[0] || "";
-      const dealerProfile = getDealerProfile(dealerId);
-      const whatsappDigits = sanitizeWhatsAppNumber(dealerProfile?.whatsappNumber);
-      const whatsappAvailable = Boolean(whatsappDigits);
-      const whatsappTitle = whatsappAvailable ? "Request more info via WhatsApp" : "WhatsApp unavailable for this dealer.";
 
       const specs = [
         v.mileage ? (Number(v.mileage).toLocaleString() + " km") : "",
@@ -1123,30 +1207,15 @@
           <div class="price">${esc(price)}</div>
           <div class="specs">${specs.map(p=>`<span class="spec">${esc(p)}</span>`).join("")}</div>
         <div class="card-actions">
-          <button class="btn btn-primary btn-gloss" style="width:100%" type="button">Lock in a viewing</button>
-          <div class="whatsapp-wrap">
-            <button class="btn btn-outline whatsapp-btn" style="width:100%" type="button" ${whatsappAvailable ? "" : "disabled"} title="${esc(whatsappTitle)}">Request More Info</button>
-          </div>
+          <button class="btn btn-primary btn-gloss" style="width:100%" type="button">Make Request</button>
         </div>
-        </div>
+      </div>
       `;
 
       const vehiclePayload = { ...v, vehicleId, dealerId };
       card.querySelector("button").addEventListener("click", ()=>{
         openModal(vehiclePayload);
       });
-
-      const whatsappBtn = card.querySelector(".whatsapp-btn");
-      const whatsappWrap = card.querySelector(".whatsapp-wrap");
-      if(whatsappAvailable){
-        whatsappBtn.addEventListener("click", ()=>{
-          openWhatsApp(vehiclePayload, whatsappDigits, dealerProfile);
-        });
-      } else {
-        whatsappWrap.addEventListener("click", ()=>{
-          toast("WhatsApp unavailable for this dealer.", "error");
-        });
-      }
 
       ui.grid.appendChild(card);
       requestAnimationFrame(() => card.classList.add("show"));
@@ -1229,17 +1298,23 @@
   }
 
   function setDealerInUrl(dealerIds){
-    const clean = dealerIds.join(",");
-    const next = clean ? ("/storefront/" + encodeURIComponent(clean)) : "/storefront/";
+    const clean = dealerIds[0] || "";
+    const next = clean ? ("/" + encodeURIComponent(clean)) : "/storefront/";
     history.replaceState({}, "", next);
   }
 
   function parseDealerFromPath(){
     const parts = String(location.pathname || "").split("/").filter(Boolean);
-    if(parts.length >= 2 && parts[0].toLowerCase() === "storefront"){
-      return decodeURIComponent(parts[1]);
-    }
+    if(!parts.length) return "";
+    if(parts[0].toLowerCase() === "storefront" && parts[1]) return decodeURIComponent(parts[1]);
+    if(parts[0] && parts[0].toLowerCase() !== "storefront") return decodeURIComponent(parts[0]);
     return "";
+  }
+
+  function parseDealerFromQuery(){
+    const params = new URLSearchParams(window.location.search);
+    const dealerId = params.get("dealerId");
+    return dealerId ? dealerId.trim() : "";
   }
 
   function toast(message, type="info"){
@@ -1264,6 +1339,10 @@
 
   function openModal(vehicle){
     state.activeVehicle = vehicle;
+    const dealerProfile = getDealerProfile(vehicle.dealerId);
+    const whatsappDigits = sanitizeWhatsAppNumber(dealerProfile?.whatsappNumber);
+    const whatsappAvailable = Boolean(whatsappDigits);
+
     ui.modalError.textContent = "";
     ui.modalSuccess.classList.remove("show");
     ui.submitBtn.disabled = false;
@@ -1271,10 +1350,24 @@
 
     ui.modalVehicle.textContent = vehicle.title || "Vehicle";
     ui.modalPrice.textContent = money(vehicle.price);
-    ui.modalImage.src = vehicle.imageUrl || "https://res.cloudinary.com/dd8pjjxsm/image/upload/v1768193442/mediaexclusive/dealers/0000/vehicles/VEH-0069/qbu8lvupz54ufudhcnv6.jpg";
+    const fallbackImage = "https://res.cloudinary.com/dd8pjjxsm/image/upload/v1768193442/mediaexclusive/dealers/0000/vehicles/VEH-0069/qbu8lvupz54ufudhcnv6.jpg";
+    ui.modalImage.src = vehicle.imageUrl || fallbackImage;
+    const heroVideo = vehicle.heroVideoUrl || "";
+    if(heroVideo){
+      ui.modalVideo.src = heroVideo;
+      ui.modalVideo.style.display = "block";
+      ui.modalImage.style.display = "none";
+    }else{
+      ui.modalVideo.removeAttribute("src");
+      ui.modalVideo.style.display = "none";
+      ui.modalImage.style.display = "block";
+    }
     ui.modalTitle.textContent = "Book a viewing";
 
     ui.requestForm.reset();
+    ui.reqType.value = "live_video";
+    ui.whatsAppOption.setAttribute("data-disabled", whatsappAvailable ? "false" : "true");
+
     ui.modalOverlay.classList.add("show");
     ui.modalOverlay.setAttribute("aria-hidden", "false");
   }
@@ -1333,6 +1426,29 @@
     }
   }
 
+  function handleRequestOption(type){
+    const active = state.activeVehicle;
+    if(!active){
+      toast("Select a vehicle first.", "error");
+      return;
+    }
+    const dealerProfile = getDealerProfile(active.dealerId);
+    const whatsappDigits = sanitizeWhatsAppNumber(dealerProfile?.whatsappNumber);
+
+    if(type === "whatsapp"){
+      if(!whatsappDigits){
+        toast("WhatsApp unavailable for this dealer.", "error");
+        return;
+      }
+      openWhatsApp(active, whatsappDigits, dealerProfile);
+      closeModal();
+      return;
+    }
+
+    ui.reqType.value = type;
+    ui.reqName.focus();
+  }
+
   async function doLoad(){
     const dealerIds = parseDealerIds(ui.dealerIdInput.value);
     const rawIds = String(ui.dealerIdInput.value || "").trim();
@@ -1345,35 +1461,19 @@
       toast("Dealer ID format is invalid.", "error");
       return;
     }
-    if(rawIds.split(",").filter(Boolean).length > 3){
-      toast("Up to 3 dealer IDs are supported.", "error");
-    }
 
     state.dealerIds = dealerIds;
     setDealerInUrl(dealerIds);
     setLoading();
 
     try{
-      let vehiclesData = null;
-      let dealers = [];
-
-      if(dealerIds.length > 1){
-        const [data] = await Promise.all([
-          loadVehiclesForDealers(dealerIds),
-          ensureDealerProfiles(dealerIds),
-        ]);
-        vehiclesData = data.vehicles || [];
-        dealers = Array.isArray(data.dealers) ? data.dealers : [];
-      } else {
-        const dealerId = dealerIds[0];
-        const [dealerProfile, vehicleResponse] = await Promise.all([
-          getDealerProfileOrLoad(dealerId),
-          loadVehiclesForDealer(dealerId),
-        ]);
-        vehiclesData = vehicleResponse.vehicles || [];
-        if(dealerProfile) dealers = [dealerProfile];
-        else if(vehicleResponse.dealer) dealers = [vehicleResponse.dealer];
-      }
+      const dealerId = dealerIds[0];
+      const [dealerProfile, vehicleResponse] = await Promise.all([
+        getDealerProfileOrLoad(dealerId),
+        loadVehiclesForDealer(dealerId),
+      ]);
+      const vehiclesData = vehicleResponse.vehicles || [];
+      const dealers = dealerProfile ? [dealerProfile] : vehicleResponse.dealer ? [vehicleResponse.dealer] : [];
 
       const dealerMap = new Map();
       dealerIds.forEach((dealerId) => {
@@ -1465,9 +1565,16 @@
   ui.modalClose.addEventListener("click", closeModal);
   ui.modalOverlay.addEventListener("click", (e)=>{ if(e.target === ui.modalOverlay) closeModal(); });
   ui.requestForm.addEventListener("submit", submitRequest);
+  $$(".option-card", ui.requestOptions).forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const type = btn.getAttribute("data-type");
+      if(btn.getAttribute("data-disabled") === "true") return;
+      handleRequestOption(type);
+    });
+  });
 
   (function boot(){
-    const fromPath = parseDealerFromPath();
+    const fromPath = parseDealerFromPath() || parseDealerFromQuery();
     if(fromPath){
       ui.dealerIdInput.value = fromPath;
       doLoad();

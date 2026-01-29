@@ -448,6 +448,16 @@
             </div>
 
             <div class="field">
+              <div class="label"><span>Plan</span><span>Subscription tier</span></div>
+              <select id="newDealerPlan" class="select">
+                <option value="">Select plan</option>
+                <option value="tier1">Tier 1</option>
+                <option value="tier2">Tier 2</option>
+                <option value="tier3">Tier 3</option>
+              </select>
+            </div>
+
+            <div class="field">
               <div class="label"><span>Passcode</span><span>Optional</span></div>
               <input id="newDealerPasscode" class="input" placeholder="123456" />
             </div>
@@ -572,6 +582,16 @@
         </div>
 
         <div class="field">
+          <div class="label"><span>Plan</span></div>
+          <select id="mDealerPlan" class="select">
+            <option value="">Select plan</option>
+            <option value="tier1">Tier 1</option>
+            <option value="tier2">Tier 2</option>
+            <option value="tier3">Tier 3</option>
+          </select>
+        </div>
+
+        <div class="field">
           <div class="label"><span>Passcode (optional set)</span></div>
           <input id="mDealerPasscode" class="input" placeholder="123456" />
         </div>
@@ -594,6 +614,11 @@
               <button class="btn btn-danger" id="btnResetPasscode" type="button">Reset passcode</button>
               <button class="btn btn-primary" id="btnSaveDealer" type="button">Save changes</button>
             </div>
+          </div>
+
+          <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px">
+            <button class="btn btn-ghost" id="btnViewDealerInventory" type="button">View inventory</button>
+            <button class="btn btn-ghost" id="btnViewDealerRequests" type="button">View requests</button>
           </div>
 
           <div class="statusline" id="mStatus"></div>
@@ -658,6 +683,7 @@
       newDealerName: el("newDealerName"),
       newDealerId: el("newDealerId"),
       newDealerStatus: el("newDealerStatus"),
+      newDealerPlan: el("newDealerPlan"),
       newDealerPasscode: el("newDealerPasscode"),
       newDealerWhatsApp: el("newDealerWhatsApp"),
       newDealerLogo: el("newDealerLogo"),
@@ -685,12 +711,15 @@
       mDealerName: el("mDealerName"),
       mDealerId: el("mDealerId"),
       mDealerStatus: el("mDealerStatus"),
+      mDealerPlan: el("mDealerPlan"),
       mDealerWhatsApp: el("mDealerWhatsApp"),
       mDealerPasscode: el("mDealerPasscode"),
       mDealerLogo: el("mDealerLogo"),
       mPasscode: el("mPasscode"),
       btnResetPasscode: el("btnResetPasscode"),
       btnSaveDealer: el("btnSaveDealer"),
+      btnViewDealerInventory: el("btnViewDealerInventory"),
+      btnViewDealerRequests: el("btnViewDealerRequests"),
       mStatus: el("mStatus"),
 
       toast: el("toast"),
@@ -755,7 +784,21 @@
       ui.dealerBackdrop.addEventListener("click", (e)=>{ if(e.target === ui.dealerBackdrop) closeDealerModal(); });
 
       ui.btnResetPasscode.addEventListener("click", resetPasscode);
-      ui.btnSaveDealer.addEventListener("click", saveDealerChanges);
+    ui.btnSaveDealer.addEventListener("click", saveDealerChanges);
+    ui.btnViewDealerInventory.addEventListener("click", () => {
+      if(!state.selectedDealer) return;
+      switchTab("inventory");
+      ui.q.value = state.selectedDealer.dealerId || "";
+      render();
+      closeDealerModal();
+    });
+    ui.btnViewDealerRequests.addEventListener("click", () => {
+      if(!state.selectedDealer) return;
+      switchTab("requests");
+      ui.q.value = state.selectedDealer.dealerId || "";
+      render();
+      closeDealerModal();
+    });
 
       ui.btnLoadSummary.addEventListener("click", () => loadSummary().catch(()=>{}));
     }
@@ -884,7 +927,7 @@
     function buildTableHeaders(tab){
       ui.theadRow.innerHTML = "";
       const cols =
-        tab==="dealers" ? ["Dealer", "Dealer ID", "Status", "WhatsApp", "Logo", "Actions"]
+        tab==="dealers" ? ["Dealer", "Dealer ID", "Status", "Plan", "WhatsApp", "Logo", "Actions"]
         : tab==="inventory" ? ["Vehicle", "Dealer", "Status", "Price", "Updated"]
         : tab==="requests" ? ["Customer", "Vehicle", "Dealer", "Type", "Status", "Requested"]
         : ["Item", "Value", "Hint"];
@@ -1070,7 +1113,7 @@
       if(!rows.length){
         const tr=document.createElement("tr");
         const td=document.createElement("td");
-        td.colSpan = state.tab==="dealers" ? 6 : (state.tab==="requests" ? 6 : 5);
+        td.colSpan = state.tab==="dealers" ? 7 : (state.tab==="requests" ? 6 : 5);
         td.style.color="var(--muted)";
         td.style.padding="14px";
         td.textContent="No rows match your filters.";
@@ -1089,6 +1132,7 @@
           tr.appendChild(cell(`<div style="font-weight:900">${esc(r.name||"—")}</div><div style="color:var(--muted);font-size:11px;margin-top:2px">Click to edit</div>`));
           tr.appendChild(cell(`<span class="mono">${esc(r.dealerId||"—")}</span>`));
           tr.appendChild(cell(statusPill(r.status)));
+          tr.appendChild(cell(`<span class="badgeMini">${esc(r.plan||"—")}</span>`));
           tr.appendChild(cell(r.whatsapp ? `<span class="badgeMini">+${esc(r.whatsapp)}</span>` : `<span style="color:var(--muted)">—</span>`));
           tr.appendChild(cell(r.logoUrl ? `<a class="mono" href="${escAttr(r.logoUrl)}" target="_blank" rel="noreferrer">logo</a>` : `<span style="color:var(--muted)">—</span>`));
 
@@ -1136,14 +1180,15 @@
 
     // ========= Create dealer =========
     async function createDealer(){
-      const payload = {
-        name: (ui.newDealerName.value||"").trim(),
-        dealerId: (ui.newDealerId.value||"").trim(),
-        status: (ui.newDealerStatus.value||"active").toLowerCase(),
-        passcode: (ui.newDealerPasscode.value||"").trim(),
-        whatsapp: digits(ui.newDealerWhatsApp.value||""),
-        logoUrl: (ui.newDealerLogo.value||"").trim(),
-      };
+        const payload = {
+          name: (ui.newDealerName.value||"").trim(),
+          dealerId: (ui.newDealerId.value||"").trim(),
+          status: (ui.newDealerStatus.value||"active").toLowerCase(),
+          plan: (ui.newDealerPlan.value||"").trim().toLowerCase(),
+          passcode: (ui.newDealerPasscode.value||"").trim(),
+          whatsapp: digits(ui.newDealerWhatsApp.value||""),
+          logoUrl: (ui.newDealerLogo.value||"").trim(),
+        };
 
       if(!payload.name || !payload.dealerId){
         ui.dealerActionStatus.textContent = "Dealer name and ID are required.";
@@ -1203,6 +1248,7 @@
       ui.newDealerWhatsApp.value = "";
       ui.newDealerLogo.value = "";
       ui.newDealerStatus.value = "active";
+      ui.newDealerPlan.value = "";
     }
 
     // ========= Dealer modal =========
@@ -1214,6 +1260,7 @@
       ui.mDealerName.value = dealer.name || "";
       ui.mDealerId.value = dealer.dealerId || "";
       ui.mDealerStatus.value = (dealer.status || "active").toLowerCase();
+      ui.mDealerPlan.value = (dealer.plan || "").toLowerCase();
       ui.mDealerWhatsApp.value = dealer.whatsapp || "";
       ui.mDealerPasscode.value = "";
       ui.mDealerLogo.value = dealer.logoUrl || "";
@@ -1237,6 +1284,7 @@
         dealerId: (ui.mDealerId.value||"").trim(),
         name: (ui.mDealerName.value||"").trim(),
         status: (ui.mDealerStatus.value||"active").toLowerCase(),
+        plan: (ui.mDealerPlan.value||"").trim().toLowerCase(),
         whatsapp: digits(ui.mDealerWhatsApp.value||""),
         passcode: (ui.mDealerPasscode.value||"").trim(), // optional
         logoUrl: (ui.mDealerLogo.value||"").trim(),

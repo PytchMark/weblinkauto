@@ -22,6 +22,9 @@ const { signToken, verifyToken } = require("./services/auth");
 const {
   getProfileByDealerId,
   getProfileByEmail,
+  getProfileByStripeCustomerId,
+  getProfileByStripeSubscriptionId,
+  getLatestDealerId,
   upsertProfile,
   listProfiles,
   getVehiclesForDealer,
@@ -36,13 +39,14 @@ const {
   listViewingRequests,
 } = require("./services/supabase");
 const { getDealerMetrics, getDealersSummary } = require("./services/analytics");
+const { stripe } = require("./lib/stripe");
 
 const app = express();
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
     fileSize: 12 * 1024 * 1024,
-    files: 6,
+    files: 10,
   },
 });
 
@@ -73,7 +77,14 @@ app.use(
   })
 );
 
-app.use(express.json({ limit: "2mb" }));
+app.use(
+  express.json({
+    limit: "2mb",
+    verify: (req, _res, buf) => {
+      req.rawBody = buf;
+    },
+  })
+);
 app.use(express.urlencoded({ extended: true }));
 
 app.use(
@@ -93,9 +104,15 @@ const APPS_DIR = path.join(__dirname, "apps");
 app.use("/storefront", express.static(path.join(APPS_DIR, "storefront")));
 app.use("/dealer", express.static(path.join(APPS_DIR, "dealer")));
 app.use("/admin", express.static(path.join(APPS_DIR, "admin")));
+app.use("/landing", express.static(path.join(APPS_DIR, "landing")));
 
 /** Root */
 app.get("/", (_req, res) => res.redirect("/storefront"));
+
+/** Dealer storefront deep link (e.g. /DEALER-0001) */
+app.get(/^\/(?!api|dealer|admin|landing|storefront|health)([A-Za-z0-9_-]{3,40})$/, (req, res) => {
+  res.sendFile(path.join(APPS_DIR, "storefront", "index.html"));
+});
 
 /** ========= Helpers ========= */
 
@@ -122,7 +139,15 @@ function mapRequestTypeToEnum(type) {
 
   if (t === "whatsapp" || t === "wa" || t === "chat") return "whatsapp";
   if (t === "live_video" || t === "live video" || t === "video" || t === "live") return "live_video";
-  if (t === "walk_in" || t === "walk-in" || t === "in_store" || t === "in-store" || t === "in person") return "walk_in";
+  if (
+    t === "walk_in" ||
+    t === "walk-in" ||
+    t === "walkin" ||
+    t === "in_store" ||
+    t === "in-store" ||
+    t === "in person"
+  )
+    return "walk_in";
 
   return null;
 }
@@ -163,6 +188,101 @@ function generatePasscode() {
   return String(Math.floor(100000 + Math.random() * 900000));
 }
 
+function getAppBaseUrl(req) {
+  const envBase = cleanStr(process.env.APP_BASE_URL, 200).replace(/\/+$/, "");
+  if (envBase) return envBase;
+  return `${req.protocol}://${req.get("host")}`;
+}
+
+function isSubscriptionActive(dealer) {
+  if (!dealer) return false;
+  const status = cleanStr(dealer?.stripe_subscription_status, 40).toLowerCase();
+  if (!status) return true;
+  if (["active", "trialing"].includes(status)) return true;
+  const trialEndsAt = dealer?.trial_ends_at ? new Date(dealer.trial_ends_at) : null;
+  if (trialEndsAt && !Number.isNaN(trialEndsAt.getTime())) {
+    return trialEndsAt.getTime() > Date.now();
+  }
+  return false;
+}
+
+async function generateNextDealerId() {
+  const latest = await getLatestDealerId();
+  let nextNumber = 1;
+
+  if (latest?.dealer_id) {
+    const match = String(latest.dealer_id).match(/DEALER-(\d+)/i);
+    if (match) {
+      nextNumber = Number(match[1]) + 1;
+    }
+  }
+
+  for (let i = 0; i < 50; i += 1) {
+    const candidate = `DEALER-${String(nextNumber + i).padStart(4, "0")}`;
+    const existing = await getProfileByDealerId(candidate);
+    if (!existing) return candidate;
+  }
+
+  return `DEALER-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
+}
+
+async function provisionDealerFromStripe({ session, subscription, passcodeOverride } = {}) {
+  if (!session) return null;
+  const customerId = session.customer || "";
+  const subscriptionId = session.subscription || subscription?.id || "";
+  const metadata = session.metadata || {};
+  const tier = cleanStr(metadata.tier || metadata.plan, 40).toLowerCase();
+  const plan = tier || "";
+  const email = cleanStr(metadata.email || session.customer_details?.email, 120);
+  const name = cleanStr(metadata.business_name || metadata.businessName || session.customer_details?.name, 120);
+  const whatsapp = normalizePhone(metadata.whatsapp);
+
+  let dealer =
+    (customerId ? await getProfileByStripeCustomerId(customerId) : null) ||
+    (subscriptionId ? await getProfileByStripeSubscriptionId(subscriptionId) : null);
+
+  const trialEndTimestamp = subscription?.trial_end ? subscription.trial_end * 1000 : null;
+  const trialEndsAt =
+    trialEndTimestamp && Number.isFinite(trialEndTimestamp)
+      ? new Date(trialEndTimestamp).toISOString()
+      : new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+
+  const status = subscription?.status || "trialing";
+
+  if (!dealer) {
+    const dealerId = await generateNextDealerId();
+    const passcode = passcodeOverride || generatePasscode();
+    dealer = await upsertProfile({
+      dealer_id: dealerId,
+      name: name || "Dealer",
+      status: "active",
+      profile_email: email || undefined,
+      whatsapp: whatsapp || undefined,
+      password: passcode,
+      plan,
+      trial_ends_at: trialEndsAt,
+      stripe_customer_id: customerId || undefined,
+      stripe_subscription_id: subscriptionId || undefined,
+      stripe_subscription_status: status,
+    });
+    return { dealer, passcode };
+  }
+
+  const updated = await upsertProfile({
+    dealer_id: dealer.dealer_id,
+    name: name || dealer.name || undefined,
+    profile_email: email || dealer.profile_email || undefined,
+    whatsapp: whatsapp || dealer.whatsapp || undefined,
+    plan: plan || dealer.plan || undefined,
+    trial_ends_at: trialEndsAt,
+    stripe_customer_id: customerId || dealer.stripe_customer_id || undefined,
+    stripe_subscription_id: subscriptionId || dealer.stripe_subscription_id || undefined,
+    stripe_subscription_status: status,
+  });
+
+  return { dealer: updated, passcode: null };
+}
+
 function getAdminCredentials() {
   const adminEmail = cleanStr(process.env.ADMIN_EMAIL, 120);
   const adminUsername = cleanStr(process.env.ADMIN_USERNAME, 120);
@@ -199,6 +319,26 @@ function requireDealer(req, res, next) {
   });
 }
 
+function requireActiveDealer(req, res, next) {
+  requireDealer(req, res, async () => {
+    try {
+      const dealerId = cleanStr(req.user?.dealerId, 60);
+      const dealer = await getProfileByDealerId(dealerId);
+      if (!dealer) return res.status(404).json({ ok: false, error: "Dealer not found" });
+      if (isPausedDealer(dealer)) {
+        return res.status(403).json({ ok: false, error: "Dealer account is paused" });
+      }
+      if (!isSubscriptionActive(dealer)) {
+        return res.status(402).json({ ok: false, error: "Subscription inactive" });
+      }
+      return next();
+    } catch (err) {
+      console.error("Dealer subscription check error:", err);
+      return res.status(500).json({ ok: false, error: "Subscription check failed" });
+    }
+  });
+}
+
 function requireAdmin(req, res, next) {
   const key = req.headers["x-admin-key"];
   if (ADMIN_API_KEY && key && key === ADMIN_API_KEY) return next();
@@ -216,7 +356,7 @@ function generateRequestId() {
 }
 
 function buildCloudinaryFolder(dealerId, vehicleId) {
-  const template = cleanStr(process.env.CLOUDINARY_FOLDER, 200);
+  const template = cleanStr(process.env.CLOUDINARY_FOLDER || process.env.CLOUDINARY_BASE_FOLDER, 200);
   const fallback = `weblink/dealers/${dealerId}/vehicles/${vehicleId}`;
   const base = template || fallback;
   return base
@@ -264,6 +404,9 @@ function mapProfileRow(profile) {
     whatsapp: profile.whatsapp || "",
     email: profile.profile_email || "",
     logoUrl: profile.logo_url || "",
+    plan: profile.plan || "",
+    trialEndsAt: profile.trial_ends_at || "",
+    stripeSubscriptionStatus: profile.stripe_subscription_status || "",
   };
 }
 
@@ -291,6 +434,8 @@ function mapVehicleRow(vehicle) {
     "notes / description": vehicle.description || "",
     cloudinaryImageUrls: vehicle.cloudinary_image_urls || "",
     cloudinaryVideoUrl: vehicle.cloudinary_video_url || "",
+    heroImageUrl: vehicle.hero_image_url || "",
+    heroVideoUrl: vehicle.hero_video_url || "",
     Title: vehicle.title || "",
     Make: vehicle.make || "",
     Model: vehicle.model || "",
@@ -325,6 +470,8 @@ function mapVehicleInput(body) {
     ),
     cloudinary_image_urls: cleanStr(body.cloudinaryImageUrls || body.cloudinaryImageUrl, 5000),
     cloudinary_video_url: cleanStr(body.cloudinaryVideoUrl, 2000),
+    hero_image_url: cleanStr(body.heroImageUrl || body.hero_image_url, 2000),
+    hero_video_url: cleanStr(body.heroVideoUrl || body.hero_video_url, 2000),
   });
 }
 
@@ -392,6 +539,26 @@ app.get("/api/public/dealer/:dealerId", async (req, res) => {
     });
   } catch (err) {
     console.error("GET /api/public/dealer/:dealerId error:", err);
+    return res.status(500).json({ ok: false, error: "Internal Server Error" });
+  }
+});
+
+app.get("/api/public/dealer", async (req, res) => {
+  try {
+    const dealerId = cleanStr(req.query.dealerId, 60);
+    if (!dealerId || !isValidDealerId(dealerId)) {
+      return res.status(400).json({ ok: false, error: "Invalid dealerId" });
+    }
+
+    const dealer = await getProfileByDealerId(dealerId);
+    if (!dealer) return res.status(404).json({ ok: false, error: "Dealer not found" });
+    if (isPausedDealer(dealer)) {
+      return res.status(403).json({ ok: false, error: "Dealer storefront is paused" });
+    }
+
+    return res.json({ ok: true, dealer: mapProfileRow(dealer) });
+  } catch (err) {
+    console.error("GET /api/public/dealer error:", err);
     return res.status(500).json({ ok: false, error: "Internal Server Error" });
   }
 });
@@ -545,6 +712,151 @@ app.post("/api/public/dealer/:dealerId/requests", async (req, res) => {
   }
 });
 
+/** ========= Stripe API ========= */
+app.post("/api/stripe/create-checkout-session", async (req, res) => {
+  try {
+    const tier = cleanStr(req.body.tier, 20).toLowerCase();
+    const email = cleanStr(req.body.email, 120);
+    const businessName = cleanStr(req.body.businessName, 120);
+    const whatsapp = normalizePhone(req.body.whatsapp);
+
+    const priceMap = {
+      tier1: process.env.STRIPE_PRICE_TIER1,
+      tier2: process.env.STRIPE_PRICE_TIER2,
+      tier3: process.env.STRIPE_PRICE_TIER3,
+    };
+    const priceId = priceMap[tier];
+
+    if (!priceId) {
+      return res.status(400).json({ ok: false, error: "Invalid pricing tier" });
+    }
+
+    const baseUrl = getAppBaseUrl(req);
+    const session = await stripe.checkout.sessions.create({
+      mode: "subscription",
+      line_items: [{ price: priceId, quantity: 1 }],
+      customer_email: email || undefined,
+      success_url: `${baseUrl}/landing?status=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${baseUrl}/landing?status=cancel`,
+      subscription_data: {
+        trial_period_days: 14,
+        metadata: {
+          tier,
+        },
+      },
+      metadata: {
+        tier,
+        email,
+        business_name: businessName,
+        whatsapp,
+      },
+    });
+
+    return res.json({ ok: true, sessionId: session.id, url: session.url });
+  } catch (err) {
+    console.error("POST /api/stripe/create-checkout-session error:", err);
+    return res.status(500).json({ ok: false, error: "Unable to start checkout" });
+  }
+});
+
+app.get("/api/public/checkout-session", async (req, res) => {
+  try {
+    const sessionId = cleanStr(req.query.sessionId, 200);
+    if (!sessionId) {
+      return res.status(400).json({ ok: false, error: "sessionId is required" });
+    }
+
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    const customerId = session.customer;
+    const subscriptionId = session.subscription;
+
+    let dealer =
+      (customerId ? await getProfileByStripeCustomerId(customerId) : null) ||
+      (subscriptionId ? await getProfileByStripeSubscriptionId(subscriptionId) : null);
+
+    if (!dealer) {
+      return res.json({ ok: true, status: "pending" });
+    }
+
+    return res.json({
+      ok: true,
+      status: "ready",
+      dealer: mapProfileRow(dealer),
+    });
+  } catch (err) {
+    console.error("GET /api/public/checkout-session error:", err);
+    return res.status(500).json({ ok: false, error: "Unable to load checkout session" });
+  }
+});
+
+app.post("/api/stripe/webhook", async (req, res) => {
+  const signature = req.headers["stripe-signature"];
+  const secret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  if (!secret) {
+    return res.status(500).send("Stripe webhook secret not configured.");
+  }
+
+  let event;
+  try {
+    event = stripe.webhooks.constructEvent(req.rawBody, signature, secret);
+  } catch (err) {
+    console.error("Stripe webhook signature error:", err);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  try {
+    switch (event.type) {
+      case "checkout.session.completed": {
+        const session = event.data.object;
+        const subscription = session.subscription
+          ? await stripe.subscriptions.retrieve(session.subscription)
+          : null;
+        await provisionDealerFromStripe({ session, subscription });
+        break;
+      }
+      case "customer.subscription.created":
+      case "customer.subscription.updated":
+      case "customer.subscription.deleted": {
+        const subscription = event.data.object;
+        const session = subscription.latest_invoice
+          ? await stripe.checkout.sessions
+              .list({ customer: subscription.customer, limit: 1 })
+              .then((list) => list.data[0] || null)
+          : null;
+        if (session) {
+          await provisionDealerFromStripe({ session, subscription });
+        } else {
+          const dealer =
+            (subscription.customer
+              ? await getProfileByStripeCustomerId(subscription.customer)
+              : null) ||
+            (subscription.id ? await getProfileByStripeSubscriptionId(subscription.id) : null);
+          if (dealer) {
+            await upsertProfile({
+              dealer_id: dealer.dealer_id,
+              stripe_subscription_status: subscription.status,
+              trial_ends_at: subscription.trial_end
+                ? new Date(subscription.trial_end * 1000).toISOString()
+                : dealer.trial_ends_at,
+              stripe_subscription_id: subscription.id,
+              stripe_customer_id: subscription.customer || dealer.stripe_customer_id,
+            });
+          }
+        }
+        break;
+      }
+      default:
+        break;
+    }
+
+    return res.json({ received: true });
+  } catch (err) {
+    console.error("Stripe webhook handler error:", err);
+    return res.status(500).send("Webhook handler failed.");
+  }
+});
+
 /** ========= Dealer API ========= */
 app.post("/api/dealer/login", async (req, res) => {
   try {
@@ -576,6 +888,9 @@ app.post("/api/dealer/login", async (req, res) => {
     if (isPausedDealer(dealer)) {
       return res.status(403).json({ ok: false, error: "Dealer account is paused" });
     }
+    if (!isSubscriptionActive(dealer)) {
+      return res.status(402).json({ ok: false, error: "Subscription inactive" });
+    }
 
     const storedPasscode = dealer.password;
     if (!storedPasscode) return res.status(401).json({ ok: false, error: "Dealer passcode not set" });
@@ -598,7 +913,7 @@ app.post("/api/dealer/login", async (req, res) => {
   }
 });
 
-app.get("/api/dealer/me", requireDealer, async (req, res) => {
+app.get("/api/dealer/me", requireActiveDealer, async (req, res) => {
   try {
     const dealerId = cleanStr(req.user?.dealerId, 60);
     const dealer = await getProfileByDealerId(dealerId);
@@ -614,7 +929,7 @@ app.get("/api/dealer/me", requireDealer, async (req, res) => {
   }
 });
 
-app.post("/api/media/upload", requireDealer, upload.array("files", 5), async (req, res) => {
+app.post("/api/media/upload", requireActiveDealer, upload.array("files", 5), async (req, res) => {
   try {
     const dealerId = cleanStr(req.user?.dealerId, 60);
     const vehicleId = cleanStr(req.body.vehicleId, 60);
@@ -626,7 +941,7 @@ app.post("/api/media/upload", requireDealer, upload.array("files", 5), async (re
 
     const files = Array.isArray(req.files) ? req.files : [];
     if (!files.length) return res.status(400).json({ ok: false, error: "No files uploaded" });
-    if (files.length > 5) return res.status(400).json({ ok: false, error: "Max 5 files per upload" });
+    if (files.length > 10) return res.status(400).json({ ok: false, error: "Max 10 files per upload" });
 
     const cloudName = cleanStr(process.env.CLOUDINARY_CLOUD_NAME, 120);
     const apiKey = cleanStr(process.env.CLOUDINARY_API_KEY, 120);
@@ -662,7 +977,7 @@ app.post("/api/media/upload", requireDealer, upload.array("files", 5), async (re
   }
 });
 
-app.get("/api/dealer/vehicles", requireDealer, async (req, res) => {
+app.get("/api/dealer/vehicles", requireActiveDealer, async (req, res) => {
   try {
     const dealerId = cleanStr(req.user?.dealerId, 60);
     const includeArchived = toBool(req.query.includeArchived);
@@ -679,7 +994,7 @@ app.get("/api/dealer/vehicles", requireDealer, async (req, res) => {
   }
 });
 
-app.post("/api/dealer/vehicles", requireDealer, async (req, res) => {
+app.post("/api/dealer/vehicles", requireActiveDealer, async (req, res) => {
   try {
     const dealerId = cleanStr(req.user?.dealerId, 60);
     const vehicleId = cleanStr(req.body.vehicleId, 60);
@@ -714,7 +1029,7 @@ app.post("/api/dealer/vehicles", requireDealer, async (req, res) => {
   }
 });
 
-app.post("/api/dealer/vehicles/:vehicleId/archive", requireDealer, async (req, res) => {
+app.post("/api/dealer/vehicles/:vehicleId/archive", requireActiveDealer, async (req, res) => {
   try {
     const vehicleId = cleanStr(req.params.vehicleId, 60);
     if (!vehicleId) {
@@ -737,7 +1052,7 @@ app.post("/api/dealer/vehicles/:vehicleId/archive", requireDealer, async (req, r
   }
 });
 
-app.get("/api/dealer/requests", requireDealer, async (req, res) => {
+app.get("/api/dealer/requests", requireActiveDealer, async (req, res) => {
   try {
     const dealerId = cleanStr(req.user?.dealerId, 60);
     const requests = await listViewingRequests({ dealerId });
@@ -748,7 +1063,7 @@ app.get("/api/dealer/requests", requireDealer, async (req, res) => {
   }
 });
 
-app.post("/api/dealer/requests/:requestId/status", requireDealer, async (req, res) => {
+app.post("/api/dealer/requests/:requestId/status", requireActiveDealer, async (req, res) => {
   try {
     const requestId = cleanStr(req.params.requestId, 80);
     const status = normalizeRequestStatus(req.body.status);
@@ -771,7 +1086,7 @@ app.post("/api/dealer/requests/:requestId/status", requireDealer, async (req, re
   }
 });
 
-app.get("/api/dealer/summary", requireDealer, async (req, res) => {
+app.get("/api/dealer/summary", requireActiveDealer, async (req, res) => {
   try {
     const dealerId = cleanStr(req.user?.dealerId, 60);
     const month = cleanStr(req.query.month, 20);
@@ -860,6 +1175,7 @@ app.post("/api/admin/dealers", requireAdmin, async (req, res) => {
     const whatsapp = cleanStr(req.body.whatsapp, 40);
     const logoUrl = cleanStr(req.body.logoUrl, 500);
     const profileEmail = cleanStr(req.body.profileEmail || req.body.email, 120);
+    const plan = cleanStr(req.body.plan, 40).toLowerCase();
 
     if (!dealerId || !name) {
       return res.status(400).json({ ok: false, error: "dealerId and name are required" });
@@ -876,6 +1192,7 @@ app.post("/api/admin/dealers", requireAdmin, async (req, res) => {
       whatsapp,
       logo_url: logoUrl,
       profile_email: profileEmail || undefined,
+      plan: plan || undefined,
     });
 
     const existing = await getProfileByDealerId(dealerId);

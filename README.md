@@ -6,6 +6,7 @@ A multi-dealer car inventory and viewing-request platform built with:
 - **Supabase (Postgres)** (single source of truth database)
 - **Cloudinary** (media hosting)
 - **Static HTML apps** (storefront, dealer portal, admin)
+- **Stripe** (SaaS subscriptions + dealer provisioning)
 
 This system installs a **sales process**, not just a website.
 
@@ -63,6 +64,15 @@ Internal admin dashboard.
 
 ---
 
+### `/apps/landing`
+Dealer onboarding funnel.
+
+- Stripe checkout with a 14-day free trial
+- Tiered pricing: Tier 1 ($45/mo), Tier 2 ($75/mo), Tier 3 ($98/mo)
+- Automatic dealer provisioning after checkout
+
+---
+
 ## Repository Structure
 
 /
@@ -75,7 +85,8 @@ Internal admin dashboard.
 ├── apps/
 │ ├── storefront/index.html
 │ ├── dealer/index.html
-│ └── admin/index.html
+│ ├── admin/index.html
+│ └── landing/index.html
 │
 ├── services/
 │ ├── supabase.js
@@ -95,8 +106,72 @@ In production:
 - Use **Cloud Run environment variables** or **Google Secret Manager**
 - Never commit real secrets to GitHub
 
+### Required env vars
+
+Supabase
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY` (server-only)
+
+Stripe
+- `STRIPE_SECRET_KEY`
+- `STRIPE_WEBHOOK_SECRET`
+- `STRIPE_PRICE_TIER1`
+- `STRIPE_PRICE_TIER2`
+- `STRIPE_PRICE_TIER3`
+
+App + Cloudinary
+- `APP_BASE_URL` (e.g. `https://autoconciergeja.com`)
+- `CLOUDINARY_CLOUD_NAME`
+- `CLOUDINARY_API_KEY`
+- `CLOUDINARY_API_SECRET`
+- `CLOUDINARY_FOLDER` (optional; default uses dealerId/vehicleId)
+- `CLOUDINARY_BASE_FOLDER` (optional alias for folder template)
+
+Admin auth
+- `ADMIN_EMAIL` or `ADMIN_USERNAME`
+- `ADMIN_PASSWORD`
+- `ADMIN_API_KEY` (optional)
+- `JWT_SECRET`
+
 Supabase schema setup:
 - Apply `supabase_schema.sql` in the Supabase SQL editor before running the API.
+
+### Stripe setup checklist
+1. Create Stripe products + prices for:
+   - Tier 1: **$45/mo**
+   - Tier 2: **$75/mo**
+   - Tier 3: **$98/mo**
+2. Store price IDs in `STRIPE_PRICE_TIER1`, `STRIPE_PRICE_TIER2`, `STRIPE_PRICE_TIER3`.
+3. Set a 14-day trial in Stripe (or allow app-side trial via webhook).
+4. Configure webhook endpoint:
+   - `POST https://<your-domain>/api/stripe/webhook`
+5. Local webhook testing with Stripe CLI:
+   ```bash
+   stripe listen --forward-to localhost:8080/api/stripe/webhook
+   ```
+6. Confirm provisioning:
+   - Complete checkout on `/landing`
+   - Check Supabase `profiles` for new dealer row (dealer_id, stripe ids, trial_ends_at).
+
+### Supabase schema additions
+If your Supabase schema is missing any of the fields below, apply these SQL statements:
+
+```sql
+alter table profiles add column if not exists plan text;
+alter table profiles add column if not exists trial_ends_at timestamptz;
+alter table profiles add column if not exists stripe_customer_id text;
+alter table profiles add column if not exists stripe_subscription_id text;
+alter table profiles add column if not exists stripe_subscription_status text;
+
+alter table vehicles add column if not exists hero_image_url text;
+alter table vehicles add column if not exists hero_video_url text;
+```
+
+### New API endpoints
+- `POST /api/stripe/create-checkout-session`
+- `POST /api/stripe/webhook`
+- `GET /api/public/checkout-session?sessionId=...`
+- `GET /api/public/dealer?dealerId=...`
 
 ---
 
@@ -146,3 +221,12 @@ Run the server locally:
 ```bash
 npm run dev
 ```
+
+---
+
+## Cloud Run deployment notes
+
+- Ensure all required environment variables are configured in Cloud Run.
+- Deploy the Express server (`server.js`) as the container entrypoint.
+- Confirm the Stripe webhook endpoint is reachable:
+  - `https://<your-domain>/api/stripe/webhook`
