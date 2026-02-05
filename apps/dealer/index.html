@@ -2019,6 +2019,139 @@
   dealerIdEl.addEventListener('keydown', (e) => { if(e.key==='Enter') loginBtn.click(); });
   passcodeEl.addEventListener('keydown', (e) => { if(e.key==='Enter') loginBtn.click(); });
 
+  // #9 Passcode Reset UI Elements
+  const forgotPasscodeLink = $('#forgotPasscodeLink');
+  const resetForm = $('#resetForm');
+  const resetEmail = $('#resetEmail');
+  const resetBtn = $('#resetBtn');
+  const resetStatus = $('#resetStatus');
+  const backToLogin = $('#backToLogin');
+  const newPasscodeForm = $('#newPasscodeForm');
+  const newPasscodeEl = $('#newPasscode');
+  const confirmPasscodeEl = $('#confirmPasscode');
+  const setPasscodeBtn = $('#setPasscodeBtn');
+  const newPasscodeStatus = $('#newPasscodeStatus');
+  const loginFormDiv = document.querySelector('#loginSection > div:first-of-type');
+  
+  // #9 Forgot Passcode Link Handler
+  forgotPasscodeLink?.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (loginFormDiv) loginFormDiv.style.display = 'none';
+    if (resetForm) resetForm.style.display = 'block';
+    loginStatus.textContent = '';
+  });
+  
+  // #9 Back to Login Handler
+  backToLogin?.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (resetForm) resetForm.style.display = 'none';
+    if (loginFormDiv) loginFormDiv.style.display = 'block';
+    resetStatus.textContent = '';
+  });
+  
+  // #9 Request Reset Handler
+  resetBtn?.addEventListener('click', async () => {
+    const email = (resetEmail?.value || '').trim();
+    if (!email || !email.includes('@')) {
+      resetStatus.textContent = 'Please enter a valid email address.';
+      resetStatus.style.color = 'var(--brand)';
+      return;
+    }
+    
+    resetBtn.disabled = true;
+    resetBtn.textContent = 'Sending…';
+    resetStatus.textContent = '';
+    
+    try {
+      await fetch(API_BASE + '/api/dealer/request-reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      resetStatus.textContent = 'If an account exists, a reset link has been sent to your email.';
+      resetStatus.style.color = 'var(--ok)';
+    } catch (err) {
+      resetStatus.textContent = 'Failed to send reset link. Please try again.';
+      resetStatus.style.color = 'var(--brand)';
+    } finally {
+      resetBtn.disabled = false;
+      resetBtn.textContent = 'Send Reset Link';
+    }
+  });
+  
+  // #9 Check for reset token in URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const resetToken = urlParams.get('reset');
+  if (resetToken) {
+    if (loginFormDiv) loginFormDiv.style.display = 'none';
+    if (resetForm) resetForm.style.display = 'none';
+    if (newPasscodeForm) newPasscodeForm.style.display = 'block';
+    
+    setPasscodeBtn?.addEventListener('click', async () => {
+      const newPass = (newPasscodeEl?.value || '').trim();
+      const confirmPass = (confirmPasscodeEl?.value || '').trim();
+      
+      if (newPass.length < 6) {
+        newPasscodeStatus.textContent = 'Passcode must be at least 6 characters.';
+        newPasscodeStatus.style.color = 'var(--brand)';
+        return;
+      }
+      if (newPass !== confirmPass) {
+        newPasscodeStatus.textContent = 'Passcodes do not match.';
+        newPasscodeStatus.style.color = 'var(--brand)';
+        return;
+      }
+      
+      setPasscodeBtn.disabled = true;
+      setPasscodeBtn.textContent = 'Setting…';
+      
+      try {
+        const res = await fetch(API_BASE + '/api/dealer/reset-passcode', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: resetToken, passcode: newPass }),
+        });
+        const data = await res.json();
+        
+        if (data.ok) {
+          newPasscodeStatus.textContent = 'Passcode updated! Redirecting to login…';
+          newPasscodeStatus.style.color = 'var(--ok)';
+          setTimeout(() => {
+            window.location.href = window.location.pathname;
+          }, 2000);
+        } else {
+          newPasscodeStatus.textContent = data.error || 'Failed to update passcode.';
+          newPasscodeStatus.style.color = 'var(--brand)';
+        }
+      } catch (err) {
+        newPasscodeStatus.textContent = 'Failed to update passcode. Please try again.';
+        newPasscodeStatus.style.color = 'var(--brand)';
+      } finally {
+        setPasscodeBtn.disabled = false;
+        setPasscodeBtn.textContent = 'Set New Passcode';
+      }
+    });
+  }
+
+  // #11 Session Timeout - Auto logout after 30 minutes of inactivity
+  let sessionTimeout;
+  const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+  
+  function resetSessionTimeout() {
+    clearTimeout(sessionTimeout);
+    if (STATE.token) {
+      sessionTimeout = setTimeout(() => {
+        alert('Session expired due to inactivity. Please log in again.');
+        logoutBtn.click();
+      }, SESSION_TIMEOUT_MS);
+    }
+  }
+  
+  // Reset timeout on user activity
+  ['click', 'keypress', 'scroll', 'mousemove'].forEach(event => {
+    document.addEventListener(event, resetSessionTimeout, { passive: true });
+  });
+
   refreshBtn.addEventListener('click', async () => {
     try{
       refreshBtn.disabled = true;
