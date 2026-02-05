@@ -263,6 +263,7 @@ async function provisionDealerFromStripe({ session, subscription, passcodeOverri
   const email = cleanStr(metadata.email || session.customer_details?.email, 120);
   const name = cleanStr(metadata.business_name || metadata.businessName || session.customer_details?.name, 120);
   const whatsapp = normalizePhone(metadata.whatsapp);
+  const referralCode = cleanStr(metadata.referral_code, 20);
 
   let dealer =
     (customerId ? await getProfileByStripeCustomerId(customerId) : null) ||
@@ -279,6 +280,8 @@ async function provisionDealerFromStripe({ session, subscription, passcodeOverri
   if (!dealer) {
     const dealerId = await generateNextDealerId();
     const passcode = passcodeOverride || generatePasscode();
+    const newReferralCode = generateReferralCode(dealerId);
+    
     dealer = await upsertProfile({
       dealer_id: dealerId,
       name: name || "Dealer",
@@ -291,7 +294,26 @@ async function provisionDealerFromStripe({ session, subscription, passcodeOverri
       stripe_customer_id: customerId || undefined,
       stripe_subscription_id: subscriptionId || undefined,
       stripe_subscription_status: status,
+      referral_code: newReferralCode,
+      referred_by: referralCode || undefined,
     });
+    
+    // #1 Send Welcome Email
+    if (email) {
+      sendWelcomeEmail({
+        email,
+        dealerName: name || "Dealer",
+        dealerId,
+        passcode,
+        plan: plan || "Tier 1",
+      }).catch(err => console.error("Welcome email error:", err));
+    }
+    
+    // #8 Process Referral - Give referrer a free month credit
+    if (referralCode) {
+      processReferralReward(referralCode).catch(err => console.error("Referral reward error:", err));
+    }
+    
     return { dealer, passcode };
   }
 
