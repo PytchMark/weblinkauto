@@ -2172,6 +2172,7 @@
     STATE.dealer = null;
     STATE.vehicles = [];
     STATE.requests = [];
+    clearTimeout(sessionTimeout); // #11 Clear session timeout on logout
     showLogin();
   });
 
@@ -2188,6 +2189,7 @@
       STATE.token = token;
       showApp();
       setTab('dashboard');
+      resetSessionTimeout(); // #11 Start session timeout
       refreshAll().catch(() => {
         // token invalid, fall back to login
         STATE.token = '';
