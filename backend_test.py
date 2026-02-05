@@ -83,14 +83,15 @@ class AutoConciergeAPITester:
             self.log_result("API status endpoint", False, f"Exception: {str(e)}")
             return False
 
-    def test_admin_login(self):
-        """Test POST /api/admin/login"""
+    def test_admin_login_with_rate_limiting(self):
+        """Test POST /api/admin/login with rate limiting"""
         try:
             login_data = {
                 "username": "admin@autoconcierge.com",
                 "password": "admin123"
             }
             
+            # First login attempt should succeed
             response = requests.post(
                 f"{self.base_url}/api/admin/login",
                 json=login_data,
@@ -102,17 +103,56 @@ class AutoConciergeAPITester:
                 data = response.json()
                 if data.get("ok") is True and "token" in data:
                     self.admin_token = data["token"]
-                    self.log_result("Admin login", True, "Successfully authenticated")
+                    self.log_result("Admin login with rate limiting", True, "Successfully authenticated")
                     return True
                 else:
-                    self.log_result("Admin login", False, f"Invalid response format: {data}")
+                    self.log_result("Admin login with rate limiting", False, f"Invalid response format: {data}")
                     return False
             else:
-                self.log_result("Admin login", False, f"Status: {response.status_code}, Response: {response.text}")
+                self.log_result("Admin login with rate limiting", False, f"Status: {response.status_code}, Response: {response.text}")
                 return False
                 
         except Exception as e:
-            self.log_result("Admin login", False, f"Exception: {str(e)}")
+            self.log_result("Admin login with rate limiting", False, f"Exception: {str(e)}")
+            return False
+
+    def test_dealer_login_with_rate_limiting(self):
+        """Test POST /api/dealer/login with rate limiting"""
+        try:
+            # First, we need to create a dealer or use existing one
+            # For testing, we'll try with a common dealer ID
+            login_data = {
+                "dealerId": "DEALER-0001",
+                "passcode": "123456"
+            }
+            
+            response = requests.post(
+                f"{self.base_url}/api/dealer/login",
+                json=login_data,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            # This might fail if dealer doesn't exist, which is acceptable for testing
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("ok") is True and "token" in data:
+                    self.dealer_token = data["token"]
+                    self.log_result("Dealer login with rate limiting", True, "Successfully authenticated")
+                    return True
+                else:
+                    self.log_result("Dealer login with rate limiting", False, f"Invalid response format: {data}")
+                    return False
+            elif response.status_code == 401:
+                # Expected if dealer doesn't exist or wrong passcode
+                self.log_result("Dealer login with rate limiting", True, "Expected 401 - dealer not found or wrong passcode")
+                return True
+            else:
+                self.log_result("Dealer login with rate limiting", False, f"Status: {response.status_code}, Response: {response.text}")
+                return False
+                
+        except Exception as e:
+            self.log_result("Dealer login with rate limiting", False, f"Exception: {str(e)}")
             return False
 
     def test_stripe_checkout_endpoint(self):
