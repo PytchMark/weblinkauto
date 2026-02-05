@@ -834,6 +834,98 @@
     });
 
       ui.btnLoadSummary.addEventListener("click", () => loadSummary().catch(()=>{}));
+      
+      // #23 Export CSV event listeners
+      ui.btnExportDealers?.addEventListener("click", () => downloadCSV("/api/admin/export/dealers", "dealers"));
+      ui.btnExportVehicles?.addEventListener("click", () => downloadCSV("/api/admin/export/vehicles", "vehicles"));
+      ui.btnExportRequests?.addEventListener("click", () => downloadCSV("/api/admin/export/requests", "requests"));
+      
+      // #24 Bulk Update event listener
+      ui.btnBulkUpdate?.addEventListener("click", bulkUpdateVehicles);
+      
+      // #4 #6 #7 Check Alerts event listener
+      ui.btnCheckAlerts?.addEventListener("click", checkAndSendAlerts);
+    }
+    
+    // #23 Download CSV helper
+    async function downloadCSV(endpoint, filename) {
+      try {
+        const res = await fetch(API_BASE + endpoint, { headers: authHeaders() });
+        if (!res.ok) throw new Error("Export failed");
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename + "_" + Date.now() + ".csv";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+        toast("Downloaded " + filename + ".csv", "success");
+      } catch (err) {
+        toast("Export failed: " + err.message, "error");
+      }
+    }
+    
+    // #24 Bulk Update Vehicles
+    async function bulkUpdateVehicles() {
+      const newStatus = ui.bulkStatusSelect?.value;
+      if (!newStatus) {
+        toast("Select a status first", "error");
+        return;
+      }
+      
+      // Get selected vehicle IDs from checkboxes in table
+      const checkboxes = document.querySelectorAll('input[type="checkbox"][data-vehicle-id]:checked');
+      const vehicleIds = Array.from(checkboxes).map(cb => cb.dataset.vehicleId);
+      
+      if (!vehicleIds.length) {
+        toast("No vehicles selected. Click checkboxes in the table.", "error");
+        return;
+      }
+      
+      try {
+        const res = await fetch(API_BASE + "/api/admin/vehicles/bulk-update", {
+          method: "POST",
+          headers: { ...authHeaders(), "Content-Type": "application/json" },
+          body: JSON.stringify({ vehicleIds, status: newStatus }),
+        });
+        const data = await res.json();
+        
+        if (data.ok) {
+          toast("Updated " + data.updated + " vehicles to " + newStatus, "success");
+          refresh().catch(() => {});
+        } else {
+          toast(data.error || "Bulk update failed", "error");
+        }
+      } catch (err) {
+        toast("Bulk update failed: " + err.message, "error");
+      }
+    }
+    
+    // #4 #6 #7 Check and Send Alert Emails
+    async function checkAndSendAlerts() {
+      try {
+        ui.btnCheckAlerts.disabled = true;
+        ui.btnCheckAlerts.textContent = "Sending...";
+        
+        const res = await fetch(API_BASE + "/api/admin/check-alerts", {
+          method: "POST",
+          headers: authHeaders(),
+        });
+        const data = await res.json();
+        
+        if (data.ok) {
+          toast("Sent " + data.alertsSent + " alert emails", "success");
+        } else {
+          toast(data.error || "Alert check failed", "error");
+        }
+      } catch (err) {
+        toast("Alert check failed: " + err.message, "error");
+      } finally {
+        ui.btnCheckAlerts.disabled = false;
+        ui.btnCheckAlerts.textContent = "🔔 Send Alert Emails";
+      }
     }
 
     // ========= Auth =========
