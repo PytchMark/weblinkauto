@@ -30,6 +30,11 @@ alter table profiles add column if not exists stripe_customer_id text;
 alter table profiles add column if not exists stripe_subscription_id text;
 alter table profiles add column if not exists stripe_subscription_status text;
 
+-- NEW: Referral program fields
+alter table profiles add column if not exists referral_code text unique;
+alter table profiles add column if not exists referred_by text;
+alter table profiles add column if not exists referral_credits int default 0;
+
 -- Vehicles inventory
 create table if not exists vehicles (
   id uuid primary key default gen_random_uuid(),
