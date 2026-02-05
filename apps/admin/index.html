@@ -479,6 +479,30 @@
             </div>
 
             <div class="statusline" id="dealerActionStatus"></div>
+            
+            <!-- #23 Export Buttons & #24 Bulk Actions -->
+            <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--line)">
+              <h4 style="margin:0 0 12px;font-size:14px;color:var(--muted)">Export & Bulk Actions</h4>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="btn btn-ghost" id="btnExportDealers" type="button" data-testid="export-dealers-btn">📥 Export Dealers CSV</button>
+                <button class="btn btn-ghost" id="btnExportVehicles" type="button" data-testid="export-vehicles-btn">📥 Export Vehicles CSV</button>
+                <button class="btn btn-ghost" id="btnExportRequests" type="button" data-testid="export-requests-btn">📥 Export Requests CSV</button>
+              </div>
+              <div style="margin-top:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                <select id="bulkStatusSelect" class="select" style="width:auto">
+                  <option value="">Bulk status...</option>
+                  <option value="available">Mark Available</option>
+                  <option value="sold">Mark Sold</option>
+                  <option value="archived">Archive</option>
+                </select>
+                <button class="btn btn-ghost" id="btnBulkUpdate" type="button" data-testid="bulk-update-btn">Apply to Selected</button>
+                <span class="hint" id="bulkHint" style="font-size:12px">Select vehicles in table first</span>
+              </div>
+              <div style="margin-top:12px">
+                <button class="btn btn-ghost" id="btnCheckAlerts" type="button" data-testid="check-alerts-btn">🔔 Send Alert Emails</button>
+                <span class="hint" style="font-size:12px;margin-left:8px">Sends low inventory & upgrade prompts</span>
+              </div>
+            </div>
           </div>
         </div>
 
