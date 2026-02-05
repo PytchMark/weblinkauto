@@ -176,6 +176,17 @@ Admin auth
 - `ADMIN_API_KEY` (optional)
 - `JWT_SECRET`
 
+Email notifications (Gmail SMTP)
+- `GMAIL_USER` - Your Gmail address (e.g., `autoconcierge@gmail.com`)
+- `GMAIL_APP_PASSWORD` - Gmail App Password (NOT your regular password)
+- `EMAIL_FROM_NAME` - Display name (e.g., `Auto Concierge Jamaica`)
+
+> **How to get a Gmail App Password:**
+> 1. Go to Google Account → Security → 2-Step Verification (enable if not already)
+> 2. Go to Google Account → Security → App passwords
+> 3. Select "Mail" and your device, then generate
+> 4. Copy the 16-character password (no spaces)
+
 Supabase schema setup:
 - Apply `supabase_schema.sql` in the Supabase SQL editor before running the API.
 
