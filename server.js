@@ -1320,7 +1320,9 @@ app.get("/api/dealer/summary", requireActiveDealer, async (req, res) => {
 });
 
 /** ========= Admin API ========= */
-app.post("/api/admin/login", async (req, res) => {
+
+// Apply rate limiter to admin login (#12)
+app.post("/api/admin/login", authRateLimiter, async (req, res) => {
   try {
     const username = cleanStr(req.body.username, 120);
     const password = cleanStr(req.body.password, 200);
