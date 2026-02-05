@@ -1245,8 +1245,31 @@
       `;
 
       const vehiclePayload = { ...v, vehicleId, dealerId };
-      card.querySelector("button").addEventListener("click", ()=>{
+      card.querySelector("button[data-testid='make-request-btn']").addEventListener("click", ()=>{
         openModal(vehiclePayload);
+      });
+      
+      // #26 Social Share Button Handlers
+      const shareUrl = window.location.origin + "/" + dealerId + "?v=" + vehicleId;
+      const shareText = title + " - " + price + " | Auto Concierge Jamaica";
+      
+      card.querySelectorAll(".share-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const type = btn.dataset.share;
+          if (type === "whatsapp") {
+            window.open("https://wa.me/?text=" + encodeURIComponent(shareText + " " + shareUrl), "_blank");
+          } else if (type === "facebook") {
+            window.open("https://www.facebook.com/sharer/sharer.php?u=" + encodeURIComponent(shareUrl), "_blank");
+          } else if (type === "copy") {
+            navigator.clipboard.writeText(shareUrl).then(() => {
+              btn.innerHTML = "✓ Copied!";
+              setTimeout(() => {
+                btn.innerHTML = '<svg style="width:16px;height:16px;fill:currentColor;vertical-align:middle" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>';
+              }, 2000);
+            });
+          }
+        });
       });
 
       ui.grid.appendChild(card);
