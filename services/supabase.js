@@ -24,9 +24,10 @@ async function upsertProfile(fields) {
   return unwrap(result, "profiles upsert");
 }
 
-async function listProfiles({ status } = {}) {
+async function listProfiles({ status, referral_code } = {}) {
   let query = supabase.from("profiles").select("*");
   if (status) query = query.eq("status", status);
+  if (referral_code) query = query.eq("referral_code", referral_code);
   const result = await query.order("created_at", { ascending: false });
   return unwrap(result, "profiles list") || [];
 }
