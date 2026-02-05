@@ -793,6 +793,34 @@ app.post("/api/public/dealer/:dealerId/requests", async (req, res) => {
 
     const created = await createViewingRequest(fields);
 
+    // #2 Send New Request Email Alert to Dealer
+    if (dealer.profile_email) {
+      let vehicle = null;
+      if (safeVehicleId) {
+        vehicle = await getVehicleByVehicleId(safeVehicleId);
+      }
+      
+      sendNewRequestAlert({
+        dealerEmail: dealer.profile_email,
+        dealerName: dealer.name,
+        dealerId,
+        request: {
+          type: typeEnum,
+          name,
+          phone,
+          email,
+          preferred_date: preferredDate,
+          preferred_time: preferredTime,
+          notes,
+        },
+        vehicle: vehicle ? {
+          title: vehicle.title,
+          vehicle_id: vehicle.vehicle_id,
+          price: vehicle.price,
+        } : null,
+      }).catch(err => console.error("New request email error:", err));
+    }
+
     return res.status(201).json({
       ok: true,
       request: mapViewingRequestRow(created),
