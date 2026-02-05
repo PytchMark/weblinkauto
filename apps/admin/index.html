@@ -901,10 +901,10 @@
         : tab==="requests" ? "View all viewing requests."
         : "Env-driven settings.";
 
-      ui.dealerActions.classList.toggle("hidden", tab!=="dealers");
-      ui.summaryControls.classList.toggle("hidden", tab!=="summary");
-      ui.summaryPanel.classList.toggle("hidden", tab!=="summary");
-      ui.mainTable.classList.toggle("hidden", tab==="summary");
+      ui.dealerActions?.classList.toggle("hidden", tab!=="dealers");
+      ui.summaryControls?.classList.toggle("hidden", tab!=="summary");
+      ui.summaryPanel?.classList.toggle("hidden", tab!=="summary");
+      ui.mainTable?.classList.toggle("hidden", tab==="summary");
 
       buildStatusFilterOptions(tab);
       buildTableHeaders(tab);
