@@ -1,6 +1,6 @@
-# Carsales Platform
+# Auto Concierge Jamaica
 
-A multi-dealer car inventory and viewing-request platform built with:
+A multi-dealer car inventory and viewing-request SaaS platform built with:
 
 - **Google Cloud Run** (Express API)
 - **Supabase (Postgres)** (single source of truth database)
@@ -9,6 +9,30 @@ A multi-dealer car inventory and viewing-request platform built with:
 - **Stripe** (SaaS subscriptions + dealer provisioning)
 
 This system installs a **sales process**, not just a website.
+
+---
+
+## 🚀 Production Readiness Checklist
+
+### ✅ Completed
+- [x] JWT-based authentication for dealer & admin portals
+- [x] Stripe integration for SaaS subscriptions (Tier 1-3)
+- [x] 14-day free trial support
+- [x] Cloudinary media uploads (7 images + 3 videos per vehicle)
+- [x] WhatsApp integration for lead routing
+- [x] Request management system (Video Viewing, Walk-In, WhatsApp)
+- [x] Admin dashboard with dealer drill-down
+- [x] Landing page with pricing and CTA animations
+- [x] Crimson branding (#DC143C) applied throughout
+- [x] Auto Concierge logo integrated across all pages
+
+### 🔧 Before Go-Live
+1. Add real Supabase credentials to Cloud Run environment
+2. Add real Stripe API keys and create products/prices
+3. Configure Stripe webhook endpoint
+4. Update ADMIN_EMAIL and ADMIN_PASSWORD for production
+5. Set a strong JWT_SECRET (at least 32 random characters)
+6. Configure Cloudinary API keys
 
 ---
 
