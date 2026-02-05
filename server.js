@@ -1524,6 +1524,219 @@ app.get("/api/admin/dealers/summary", requireAdmin, async (req, res) => {
   }
 });
 
+// #23 Export to CSV - Dealers
+app.get("/api/admin/export/dealers", requireAdmin, async (req, res) => {
+  try {
+    const dealers = await listProfiles({});
+    
+    const headers = ["Dealer ID", "Name", "Email", "WhatsApp", "Status", "Plan", "Created At"];
+    const rows = dealers.map(d => [
+      d.dealer_id || "",
+      d.name || "",
+      d.profile_email || "",
+      d.whatsapp || "",
+      d.status || "",
+      d.plan || "",
+      d.created_at || "",
+    ]);
+    
+    const csv = [headers.join(","), ...rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(","))].join("\n");
+    
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader("Content-Disposition", `attachment; filename="dealers_${Date.now()}.csv"`);
+    return res.send(csv);
+  } catch (err) {
+    console.error("GET /api/admin/export/dealers error:", err);
+    return res.status(500).json({ ok: false, error: "Export failed" });
+  }
+});
+
+// #23 Export to CSV - Vehicles
+app.get("/api/admin/export/vehicles", requireAdmin, async (req, res) => {
+  try {
+    const vehicles = await listVehicles({});
+    
+    const headers = ["Vehicle ID", "Dealer ID", "Title", "Make", "Model", "Year", "Price", "Status", "Created At"];
+    const rows = vehicles.map(v => [
+      v.vehicle_id || "",
+      v.dealer_id || "",
+      v.title || "",
+      v.make || "",
+      v.model || "",
+      v.year || "",
+      v.price || "",
+      v.status || "",
+      v.created_at || "",
+    ]);
+    
+    const csv = [headers.join(","), ...rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(","))].join("\n");
+    
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader("Content-Disposition", `attachment; filename="vehicles_${Date.now()}.csv"`);
+    return res.send(csv);
+  } catch (err) {
+    console.error("GET /api/admin/export/vehicles error:", err);
+    return res.status(500).json({ ok: false, error: "Export failed" });
+  }
+});
+
+// #23 Export to CSV - Requests
+app.get("/api/admin/export/requests", requireAdmin, async (req, res) => {
+  try {
+    const requests = await listViewingRequests({});
+    
+    const headers = ["Request ID", "Dealer ID", "Vehicle ID", "Type", "Name", "Phone", "Email", "Status", "Preferred Date", "Created At"];
+    const rows = requests.map(r => [
+      r.request_id || "",
+      r.dealer_id || "",
+      r.vehicle_id || "",
+      r.type || "",
+      r.name || "",
+      r.phone || "",
+      r.email || "",
+      r.status || "",
+      r.preferred_date || "",
+      r.created_at || "",
+    ]);
+    
+    const csv = [headers.join(","), ...rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(","))].join("\n");
+    
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader("Content-Disposition", `attachment; filename="requests_${Date.now()}.csv"`);
+    return res.send(csv);
+  } catch (err) {
+    console.error("GET /api/admin/export/requests error:", err);
+    return res.status(500).json({ ok: false, error: "Export failed" });
+  }
+});
+
+// #24 Bulk Status Update - Vehicles
+app.post("/api/admin/vehicles/bulk-update", requireAdmin, async (req, res) => {
+  try {
+    const vehicleIds = req.body.vehicleIds;
+    const newStatus = cleanStr(req.body.status, 40).toLowerCase();
+    
+    if (!Array.isArray(vehicleIds) || vehicleIds.length === 0) {
+      return res.status(400).json({ ok: false, error: "vehicleIds array is required" });
+    }
+    if (!["available", "pending", "sold", "archived"].includes(newStatus)) {
+      return res.status(400).json({ ok: false, error: "Invalid status. Use: available, pending, sold, archived" });
+    }
+    
+    const results = [];
+    for (const vehicleId of vehicleIds.slice(0, 50)) { // Limit to 50 at a time
+      const vid = cleanStr(vehicleId, 60);
+      if (!vid) continue;
+      
+      try {
+        await updateVehicleByVehicleId(vid, { status: newStatus });
+        results.push({ vehicleId: vid, success: true });
+      } catch (err) {
+        results.push({ vehicleId: vid, success: false, error: err.message });
+      }
+    }
+    
+    return res.json({ ok: true, updated: results.filter(r => r.success).length, results });
+  } catch (err) {
+    console.error("POST /api/admin/vehicles/bulk-update error:", err);
+    return res.status(500).json({ ok: false, error: "Bulk update failed" });
+  }
+});
+
+// #28 QR Code Generator - Get QR code data URL for dealer storefront
+app.get("/api/public/qrcode/:dealerId", async (req, res) => {
+  try {
+    const dealerId = cleanStr(req.params.dealerId, 60);
+    
+    if (!isValidDealerId(dealerId)) {
+      return res.status(400).json({ ok: false, error: "Invalid dealerId" });
+    }
+    
+    const QRCode = require("qrcode");
+    const storefrontUrl = `${process.env.APP_BASE_URL || 'https://autoconciergeja.com'}/${dealerId}`;
+    
+    const qrDataUrl = await QRCode.toDataURL(storefrontUrl, {
+      width: 300,
+      margin: 2,
+      color: {
+        dark: "#000000",
+        light: "#ffffff",
+      },
+    });
+    
+    return res.json({ ok: true, qrCode: qrDataUrl, url: storefrontUrl });
+  } catch (err) {
+    console.error("GET /api/public/qrcode/:dealerId error:", err);
+    return res.status(500).json({ ok: false, error: "QR code generation failed" });
+  }
+});
+
+// #4 Low Inventory Alert & #6/#7 Upgrade Prompts - Check and notify (called by cron or admin)
+app.post("/api/admin/check-alerts", requireAdmin, async (req, res) => {
+  try {
+    const dealers = await listProfiles({ status: "active" });
+    const alerts = [];
+    
+    for (const dealer of dealers) {
+      if (!dealer.profile_email) continue;
+      
+      const vehicles = await getVehiclesForDealer(dealer.dealer_id);
+      const available = vehicles.filter(v => v.status === "available").length;
+      const requests = await listViewingRequests({ dealer_id: dealer.dealer_id });
+      const thisMonthRequests = requests.filter(r => {
+        const created = new Date(r.created_at);
+        const now = new Date();
+        return created.getMonth() === now.getMonth() && created.getFullYear() === now.getFullYear();
+      }).length;
+      
+      // #4 Low Inventory Alert (threshold: 3)
+      if (available <= 3 && available > 0) {
+        await sendLowInventoryAlert({
+          dealerEmail: dealer.profile_email,
+          dealerName: dealer.name,
+          dealerId: dealer.dealer_id,
+          availableCount: available,
+          threshold: 3,
+        });
+        alerts.push({ dealerId: dealer.dealer_id, type: "low_inventory", available });
+      }
+      
+      // #6/#7 Upgrade Prompts (based on usage)
+      const plan = (dealer.plan || "").toLowerCase();
+      if (plan === "tier1" && (vehicles.length >= 20 || thisMonthRequests >= 30)) {
+        await sendUpgradePromptEmail({
+          dealerEmail: dealer.profile_email,
+          dealerName: dealer.name,
+          dealerId: dealer.dealer_id,
+          currentPlan: "Tier 1",
+          suggestedPlan: "Tier 2",
+          reason: vehicles.length >= 20 
+            ? "You're approaching your vehicle limit!" 
+            : "You've had an amazing month with lots of requests!",
+          stats: { vehicles: vehicles.length, requests: thisMonthRequests },
+        });
+        alerts.push({ dealerId: dealer.dealer_id, type: "upgrade_prompt", plan: "tier2" });
+      } else if (plan === "tier2" && (vehicles.length >= 100 || thisMonthRequests >= 100)) {
+        await sendUpgradePromptEmail({
+          dealerEmail: dealer.profile_email,
+          dealerName: dealer.name,
+          dealerId: dealer.dealer_id,
+          currentPlan: "Tier 2",
+          suggestedPlan: "Tier 3",
+          reason: "You're a power seller! Unlock unlimited listings.",
+          stats: { vehicles: vehicles.length, requests: thisMonthRequests },
+        });
+        alerts.push({ dealerId: dealer.dealer_id, type: "upgrade_prompt", plan: "tier3" });
+      }
+    }
+    
+    return res.json({ ok: true, alertsSent: alerts.length, alerts });
+  } catch (err) {
+    console.error("POST /api/admin/check-alerts error:", err);
+    return res.status(500).json({ ok: false, error: "Alert check failed" });
+  }
+});
+
 /** ========= 404 ========= */
 app.use((req, res) => {
   res.status(404).json({ ok: false, error: "Not Found" });
