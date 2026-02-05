@@ -881,11 +881,11 @@
     function setTab(tab){
       state.tab = tab;
 
-      ui.tabDealers.classList.toggle("active", tab==="dealers");
-      ui.tabSummary.classList.toggle("active", tab==="summary");
-      ui.tabInventory.classList.toggle("active", tab==="inventory");
-      ui.tabRequests.classList.toggle("active", tab==="requests");
-      ui.tabSettings.classList.toggle("active", tab==="settings");
+      ui.tabDealers?.classList.toggle("active", tab==="dealers");
+      ui.tabSummary?.classList.toggle("active", tab==="summary");
+      ui.tabInventory?.classList.toggle("active", tab==="inventory");
+      ui.tabRequests?.classList.toggle("active", tab==="requests");
+      ui.tabSettings?.classList.toggle("active", tab==="settings");
 
       ui.tableTitle.textContent =
         tab==="dealers" ? "Dealers"
