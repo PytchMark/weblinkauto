@@ -933,7 +933,47 @@ app.post("/api/stripe/webhook", async (req, res) => {
               stripe_subscription_id: subscription.id,
               stripe_customer_id: subscription.customer || dealer.stripe_customer_id,
             });
+            
+            // #22 Dealer Suspension Flow - handle subscription deletion/cancellation
+            if (subscription.status === "canceled" || subscription.status === "unpaid") {
+              await upsertProfile({
+                dealer_id: dealer.dealer_id,
+                status: "paused",
+              });
+              
+              if (dealer.profile_email) {
+                sendSuspensionNoticeEmail({
+                  dealerEmail: dealer.profile_email,
+                  dealerName: dealer.name,
+                  dealerId: dealer.dealer_id,
+                  reason: subscription.status === "canceled" 
+                    ? "Your subscription has been canceled." 
+                    : "Payment failed after multiple attempts.",
+                  reactivateLink: `${process.env.APP_BASE_URL || ''}/landing`,
+                }).catch(err => console.error("Suspension email error:", err));
+              }
+            }
           }
+        }
+        break;
+      }
+      // #5 Failed Payment Recovery
+      case "invoice.payment_failed": {
+        const invoice = event.data.object;
+        const customerId = invoice.customer;
+        const dealer = customerId ? await getProfileByStripeCustomerId(customerId) : null;
+        
+        if (dealer && dealer.profile_email) {
+          const nextAttempt = invoice.next_payment_attempt 
+            ? new Date(invoice.next_payment_attempt * 1000).toLocaleDateString()
+            : null;
+          
+          sendFailedPaymentEmail({
+            dealerEmail: dealer.profile_email,
+            dealerName: dealer.name,
+            dealerId: dealer.dealer_id,
+            nextAttemptDate: nextAttempt,
+          }).catch(err => console.error("Failed payment email error:", err));
         }
         break;
       }
