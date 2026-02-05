@@ -7,6 +7,7 @@ A multi-dealer car inventory and viewing-request SaaS platform built with:
 - **Cloudinary** (media hosting)
 - **Static HTML apps** (storefront, dealer portal, admin)
 - **Stripe** (SaaS subscriptions + dealer provisioning)
+- **Gmail SMTP** (email notifications)
 
 This system installs a **sales process**, not just a website.
 
@@ -14,7 +15,7 @@ This system installs a **sales process**, not just a website.
 
 ## 🚀 Production Readiness Checklist
 
-### ✅ Completed
+### ✅ Completed Features
 - [x] JWT-based authentication for dealer & admin portals
 - [x] Stripe integration for SaaS subscriptions (Tier 1-3)
 - [x] 14-day free trial support
@@ -26,6 +27,23 @@ This system installs a **sales process**, not just a website.
 - [x] Crimson branding (#DC143C) applied throughout
 - [x] Auto Concierge logo integrated across all pages
 
+### ✅ NEW - Production Features (v2.0)
+- [x] **#1 Automated Welcome Email** - Sends dealer credentials after signup
+- [x] **#2 New Request Email Alerts** - Notifies dealers instantly on new requests
+- [x] **#4 Low Inventory Alert** - Warns dealers when stock is low
+- [x] **#5 Failed Payment Recovery** - Email when subscription payment fails
+- [x] **#6 & #7 Upgrade Prompts** - Smart upsell emails based on usage
+- [x] **#8 Referral Program** - Earn free months by referring dealers
+- [x] **#9 Passcode Reset Flow** - Email-based password recovery
+- [x] **#11 Session Timeout** - Auto-logout after 30min inactivity
+- [x] **#12 Rate Limiting** - Protects login endpoints from brute force
+- [x] **#22 Dealer Suspension Flow** - Graceful handling of lapsed subscriptions
+- [x] **#23 Export to CSV** - Download dealers/vehicles/requests data
+- [x] **#24 Bulk Status Update** - Mass update vehicle statuses
+- [x] **#26 Social Share Buttons** - Share vehicles to WhatsApp/Facebook
+- [x] **#27 SEO Meta Tags** - Open Graph & Twitter Card support
+- [x] **#28 QR Code Generator** - API endpoint for dealer storefront QR codes
+
 ### 🔧 Before Go-Live
 1. Add real Supabase credentials to Cloud Run environment
 2. Add real Stripe API keys and create products/prices
@@ -33,6 +51,7 @@ This system installs a **sales process**, not just a website.
 4. Update ADMIN_EMAIL and ADMIN_PASSWORD for production
 5. Set a strong JWT_SECRET (at least 32 random characters)
 6. Configure Cloudinary API keys
+7. **NEW**: Configure Gmail SMTP for email notifications
 
 ---
 
