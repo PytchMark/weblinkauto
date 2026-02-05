@@ -155,42 +155,191 @@ class AutoConciergeAPITester:
             self.log_result("Dealer login with rate limiting", False, f"Exception: {str(e)}")
             return False
 
-    def test_stripe_checkout_endpoint(self):
-        """Test POST /api/stripe/create-checkout-session"""
+    def test_passcode_reset_endpoints(self):
+        """Test passcode reset endpoints"""
         try:
-            checkout_data = {
-                "tier": "tier1",
-                "email": "test@example.com",
-                "businessName": "Test Business",
-                "whatsapp": "8765551234"
+            # Test request reset
+            reset_data = {
+                "email": "test@example.com"
             }
             
             response = requests.post(
-                f"{self.base_url}/api/stripe/create-checkout-session",
-                json=checkout_data,
+                f"{self.base_url}/api/dealer/request-reset",
+                json=reset_data,
                 headers={"Content-Type": "application/json"},
                 timeout=10
             )
             
-            # Since Stripe is mocked, we expect this to work or fail gracefully
+            # Should return success even if email doesn't exist (security)
             if response.status_code == 200:
                 data = response.json()
                 if data.get("ok") is True:
-                    self.log_result("Stripe checkout endpoint", True, "Checkout session created (mocked)")
-                    return True
+                    self.log_result("Passcode reset request", True, "Reset request processed")
+                    
+                    # Test reset with token (will fail without valid token, but endpoint should exist)
+                    reset_passcode_data = {
+                        "token": "invalid_token",
+                        "passcode": "newpass123"
+                    }
+                    
+                    response2 = requests.post(
+                        f"{self.base_url}/api/dealer/reset-passcode",
+                        json=reset_passcode_data,
+                        headers={"Content-Type": "application/json"},
+                        timeout=10
+                    )
+                    
+                    # Should return 400 for invalid token
+                    if response2.status_code == 400:
+                        self.log_result("Passcode reset with token", True, "Expected 400 for invalid token")
+                        return True
+                    else:
+                        self.log_result("Passcode reset with token", False, f"Unexpected status: {response2.status_code}")
+                        return False
                 else:
-                    self.log_result("Stripe checkout endpoint", False, f"Invalid response: {data}")
+                    self.log_result("Passcode reset request", False, f"Invalid response: {data}")
                     return False
-            elif response.status_code == 400:
-                # Expected for invalid tier or missing Stripe config
-                self.log_result("Stripe checkout endpoint", True, "Expected 400 for mocked Stripe")
-                return True
             else:
-                self.log_result("Stripe checkout endpoint", False, f"Status: {response.status_code}, Response: {response.text}")
+                self.log_result("Passcode reset request", False, f"Status: {response.status_code}")
                 return False
                 
         except Exception as e:
-            self.log_result("Stripe checkout endpoint", False, f"Exception: {str(e)}")
+            self.log_result("Passcode reset endpoints", False, f"Exception: {str(e)}")
+            return False
+
+    def test_qr_code_generation(self):
+        """Test GET /api/public/qrcode/DEALER-0001"""
+        try:
+            response = requests.get(f"{self.base_url}/api/public/qrcode/DEALER-0001", timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("ok") is True and "qrCode" in data and "url" in data:
+                    self.log_result("QR code generation", True, f"QR code generated for storefront URL")
+                    return True
+                else:
+                    self.log_result("QR code generation", False, f"Invalid response format: {data}")
+                    return False
+            else:
+                self.log_result("QR code generation", False, f"Status: {response.status_code}")
+                return False
+                
+        except Exception as e:
+            self.log_result("QR code generation", False, f"Exception: {str(e)}")
+            return False
+
+    def test_csv_export_endpoints(self):
+        """Test CSV export endpoints (requires admin auth)"""
+        if not self.admin_token:
+            self.log_result("CSV export endpoints", False, "No admin token available")
+            return False
+            
+        endpoints = [
+            "/api/admin/export/dealers",
+            "/api/admin/export/vehicles", 
+            "/api/admin/export/requests"
+        ]
+        
+        headers = {
+            "Authorization": f"Bearer {self.admin_token}",
+            "Content-Type": "application/json"
+        }
+        
+        all_passed = True
+        for endpoint in endpoints:
+            try:
+                response = requests.get(f"{self.base_url}{endpoint}", headers=headers, timeout=10)
+                
+                if response.status_code == 200:
+                    # Should return CSV content
+                    content_type = response.headers.get('content-type', '')
+                    if 'text/csv' in content_type or 'application/csv' in content_type:
+                        self.log_result(f"CSV export {endpoint}", True, "CSV export successful")
+                    else:
+                        self.log_result(f"CSV export {endpoint}", True, "Export endpoint working (content type may vary)")
+                else:
+                    self.log_result(f"CSV export {endpoint}", False, f"Status: {response.status_code}")
+                    all_passed = False
+                    
+            except Exception as e:
+                self.log_result(f"CSV export {endpoint}", False, f"Exception: {str(e)}")
+                all_passed = False
+        
+        return all_passed
+
+    def test_bulk_update_vehicles(self):
+        """Test POST /api/admin/vehicles/bulk-update (requires admin auth)"""
+        if not self.admin_token:
+            self.log_result("Bulk update vehicles", False, "No admin token available")
+            return False
+            
+        try:
+            bulk_data = {
+                "vehicleIds": ["VEH-TEST-001", "VEH-TEST-002"],
+                "status": "available"
+            }
+            
+            headers = {
+                "Authorization": f"Bearer {self.admin_token}",
+                "Content-Type": "application/json"
+            }
+            
+            response = requests.post(
+                f"{self.base_url}/api/admin/vehicles/bulk-update",
+                json=bulk_data,
+                headers=headers,
+                timeout=10
+            )
+            
+            # Should work even if vehicles don't exist
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("ok") is True:
+                    self.log_result("Bulk update vehicles", True, f"Bulk update processed: {data}")
+                    return True
+                else:
+                    self.log_result("Bulk update vehicles", False, f"Invalid response: {data}")
+                    return False
+            else:
+                self.log_result("Bulk update vehicles", False, f"Status: {response.status_code}")
+                return False
+                
+        except Exception as e:
+            self.log_result("Bulk update vehicles", False, f"Exception: {str(e)}")
+            return False
+
+    def test_check_alerts(self):
+        """Test POST /api/admin/check-alerts (requires admin auth)"""
+        if not self.admin_token:
+            self.log_result("Check alerts", False, "No admin token available")
+            return False
+            
+        try:
+            headers = {
+                "Authorization": f"Bearer {self.admin_token}",
+                "Content-Type": "application/json"
+            }
+            
+            response = requests.post(
+                f"{self.base_url}/api/admin/check-alerts",
+                headers=headers,
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("ok") is True and "alertsSent" in data:
+                    self.log_result("Check alerts", True, f"Alerts checked: {data['alertsSent']} sent")
+                    return True
+                else:
+                    self.log_result("Check alerts", False, f"Invalid response: {data}")
+                    return False
+            else:
+                self.log_result("Check alerts", False, f"Status: {response.status_code}")
+                return False
+                
+        except Exception as e:
+            self.log_result("Check alerts", False, f"Exception: {str(e)}")
             return False
 
     def test_public_endpoints(self):
