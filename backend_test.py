@@ -1,18 +1,20 @@
 #!/usr/bin/env python3
 """
 Backend API Testing for Auto Concierge Jamaica
-Tests all required endpoints with proper authentication
+Tests all required endpoints with proper authentication and rate limiting
 """
 
 import requests
 import json
 import sys
+import time
 from datetime import datetime
 
 class AutoConciergeAPITester:
     def __init__(self, base_url="http://localhost:8001"):
         self.base_url = base_url
         self.admin_token = None
+        self.dealer_token = None
         self.tests_run = 0
         self.tests_passed = 0
         self.results = []
