@@ -2083,7 +2083,8 @@
   const urlParams = new URLSearchParams(window.location.search);
   const resetToken = urlParams.get('reset');
   if (resetToken) {
-    if (loginFormDiv) loginFormDiv.style.display = 'none';
+    const loginFormDiv2 = document.querySelector('#loginSection .form');
+    if (loginFormDiv2) loginFormDiv2.style.display = 'none';
     if (resetForm) resetForm.style.display = 'none';
     if (newPasscodeForm) newPasscodeForm.style.display = 'block';
     
