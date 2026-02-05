@@ -1046,6 +1046,88 @@ app.post("/api/dealer/login", authRateLimiter, async (req, res) => {
   }
 });
 
+// #9 Passcode Reset - Request reset token
+app.post("/api/dealer/request-reset", passcodeResetLimiter, async (req, res) => {
+  try {
+    const email = cleanStr(req.body.email, 120);
+    
+    if (!email || !isValidEmail(email)) {
+      return res.status(400).json({ ok: false, error: "Valid email is required" });
+    }
+    
+    const dealer = await getProfileByEmail(email);
+    
+    // Always return success to prevent email enumeration
+    if (!dealer) {
+      return res.json({ ok: true, message: "If an account exists, a reset link has been sent." });
+    }
+    
+    const resetToken = generateResetToken();
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+    
+    resetTokens.set(resetToken, {
+      dealerId: dealer.dealer_id,
+      email: dealer.profile_email,
+      expiresAt,
+    });
+    
+    // Clean up expired tokens
+    for (const [token, data] of resetTokens) {
+      if (data.expiresAt < new Date()) resetTokens.delete(token);
+    }
+    
+    await sendPasscodeResetEmail({
+      dealerEmail: dealer.profile_email,
+      dealerName: dealer.name,
+      resetToken,
+      expiresAt: expiresAt.toLocaleString(),
+    });
+    
+    return res.json({ ok: true, message: "If an account exists, a reset link has been sent." });
+  } catch (err) {
+    console.error("POST /api/dealer/request-reset error:", err);
+    return res.status(500).json({ ok: false, error: "Internal Server Error" });
+  }
+});
+
+// #9 Passcode Reset - Verify token and set new passcode
+app.post("/api/dealer/reset-passcode", async (req, res) => {
+  try {
+    const token = cleanStr(req.body.token, 100);
+    const newPasscode = cleanStr(req.body.passcode, 120);
+    
+    if (!token) {
+      return res.status(400).json({ ok: false, error: "Reset token is required" });
+    }
+    if (!newPasscode || newPasscode.length < 6) {
+      return res.status(400).json({ ok: false, error: "Passcode must be at least 6 characters" });
+    }
+    
+    const resetData = resetTokens.get(token);
+    
+    if (!resetData) {
+      return res.status(400).json({ ok: false, error: "Invalid or expired reset token" });
+    }
+    
+    if (resetData.expiresAt < new Date()) {
+      resetTokens.delete(token);
+      return res.status(400).json({ ok: false, error: "Reset token has expired" });
+    }
+    
+    await upsertProfile({
+      dealer_id: resetData.dealerId,
+      password: newPasscode,
+    });
+    
+    resetTokens.delete(token);
+    
+    return res.json({ ok: true, message: "Passcode updated successfully" });
+  } catch (err) {
+    console.error("POST /api/dealer/reset-passcode error:", err);
+    return res.status(500).json({ ok: false, error: "Internal Server Error" });
+  }
+});
+
 app.get("/api/dealer/me", requireActiveDealer, async (req, res) => {
   try {
     const dealerId = cleanStr(req.user?.dealerId, 60);
