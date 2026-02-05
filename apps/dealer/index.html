@@ -449,8 +449,41 @@
         <input class="field" id="passcode" placeholder="••••••••" type="password" autocomplete="current-password" />
         <div class="help">This passcode grants editing rights for your inventory.</div>
       </div>
-      <button class="btn btn-primary" id="loginBtn" type="button">Sign in</button>
+      <button class="btn btn-primary" id="loginBtn" type="button" data-testid="dealer-login-btn">Sign in</button>
       <div class="statusline" id="loginStatus"></div>
+      
+      <!-- #9 Forgot Passcode Link -->
+      <div style="margin-top:16px;text-align:center">
+        <a href="#" id="forgotPasscodeLink" style="color:var(--brand);font-size:14px;text-decoration:underline">Forgot your passcode?</a>
+      </div>
+    </div>
+    
+    <!-- #9 Passcode Reset Form (hidden by default) -->
+    <div id="resetForm" style="display:none">
+      <div>
+        <label for="resetEmail">Email Address</label>
+        <input class="field" id="resetEmail" placeholder="your@email.com" type="email" />
+        <div class="help">Enter the email associated with your dealer account.</div>
+      </div>
+      <button class="btn btn-primary" id="resetBtn" type="button">Send Reset Link</button>
+      <div class="statusline" id="resetStatus"></div>
+      <div style="margin-top:16px;text-align:center">
+        <a href="#" id="backToLogin" style="color:var(--brand);font-size:14px;text-decoration:underline">← Back to login</a>
+      </div>
+    </div>
+    
+    <!-- #9 New Passcode Form (hidden by default) -->
+    <div id="newPasscodeForm" style="display:none">
+      <div>
+        <label for="newPasscode">New Passcode</label>
+        <input class="field" id="newPasscode" placeholder="Enter new passcode (min 6 chars)" type="password" />
+      </div>
+      <div>
+        <label for="confirmPasscode">Confirm Passcode</label>
+        <input class="field" id="confirmPasscode" placeholder="Confirm new passcode" type="password" />
+      </div>
+      <button class="btn btn-primary" id="setPasscodeBtn" type="button">Set New Passcode</button>
+      <div class="statusline" id="newPasscodeStatus"></div>
     </div>
 
     <div class="foot">
