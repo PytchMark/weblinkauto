@@ -106,6 +106,23 @@ app.use(
   })
 );
 
+// Stricter rate limits for sensitive endpoints (#12 Rate Limiting)
+const authRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // 10 attempts per window
+  message: { ok: false, error: "Too many login attempts. Please try again later." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const passcodeResetLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 3, // 3 reset requests per hour
+  message: { ok: false, error: "Too many reset requests. Please try again later." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 app.use(morgan(NODE_ENV === "production" ? "combined" : "dev"));
 
 /** ========= Static apps ========= */
