@@ -215,6 +215,48 @@ function generatePasscode() {
   return String(Math.floor(100000 + Math.random() * 900000));
 }
 
+// #8 Referral Code Generator
+function generateReferralCode(dealerId) {
+  const suffix = crypto.randomBytes(3).toString("hex").toUpperCase();
+  return `REF-${suffix}`;
+}
+
+// #8 Process Referral Reward
+async function processReferralReward(referralCode) {
+  // Find the dealer who owns this referral code
+  const profiles = await listProfiles({ referral_code: referralCode });
+  if (!profiles || profiles.length === 0) return null;
+  
+  const referrer = profiles[0];
+  const currentCredits = parseInt(referrer.referral_credits || "0", 10);
+  
+  // Add 1 month credit (30 days worth)
+  await upsertProfile({
+    dealer_id: referrer.dealer_id,
+    referral_credits: currentCredits + 1,
+  });
+  
+  // Send email to referrer about successful referral
+  if (referrer.profile_email) {
+    sendReferralInviteEmail({
+      dealerEmail: referrer.profile_email,
+      dealerName: referrer.name,
+      referralCode: referrer.referral_code,
+      referralLink: `${process.env.APP_BASE_URL || ''}/landing?ref=${referrer.referral_code}`,
+    }).catch(err => console.error("Referral email error:", err));
+  }
+  
+  return referrer;
+}
+
+// #9 Passcode Reset Token Generator
+function generateResetToken() {
+  return crypto.randomBytes(32).toString("hex");
+}
+
+// Store reset tokens in memory (in production, use Redis or DB)
+const resetTokens = new Map();
+
 function getAppBaseUrl(req) {
   const envBase = cleanStr(process.env.APP_BASE_URL, 200).replace(/\/+$/, "");
   if (envBase) return envBase;
