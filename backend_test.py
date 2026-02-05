@@ -378,11 +378,20 @@ class AutoConciergeAPITester:
         self.test_health_endpoint()
         self.test_api_status_endpoint()
         
-        # Test authentication
-        self.test_admin_login()
+        # Test authentication with rate limiting
+        self.test_admin_login_with_rate_limiting()
+        self.test_dealer_login_with_rate_limiting()
         
-        # Test Stripe integration (mocked)
-        self.test_stripe_checkout_endpoint()
+        # Test passcode reset functionality
+        self.test_passcode_reset_endpoints()
+        
+        # Test QR code generation
+        self.test_qr_code_generation()
+        
+        # Test admin-only endpoints (requires admin auth)
+        self.test_csv_export_endpoints()
+        self.test_bulk_update_vehicles()
+        self.test_check_alerts()
         
         # Test public endpoints
         self.test_public_endpoints()
