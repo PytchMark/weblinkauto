@@ -250,7 +250,51 @@ npm run dev
 
 ## Cloud Run deployment notes
 
-- Ensure all required environment variables are configured in Cloud Run.
-- Deploy the Express server (`server.js`) as the container entrypoint.
-- Confirm the Stripe webhook endpoint is reachable:
-  - `https://<your-domain>/api/stripe/webhook`
+### Environment Variables for Production
+Set these in Google Cloud Run > Edit & Deploy > Variables & Secrets:
+
+```bash
+# Supabase
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+# Stripe
+STRIPE_SECRET_KEY=sk_live_xxxx
+STRIPE_WEBHOOK_SECRET=whsec_xxxx
+STRIPE_PRICE_TIER1=price_xxxTier1
+STRIPE_PRICE_TIER2=price_xxxTier2
+STRIPE_PRICE_TIER3=price_xxxTier3
+
+# App
+APP_BASE_URL=https://autoconciergeja.com
+JWT_SECRET=your-strong-random-secret-32-chars-minimum
+
+# Admin
+ADMIN_EMAIL=your-admin@email.com
+ADMIN_PASSWORD=your-secure-password
+
+# Cloudinary
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-api-key
+CLOUDINARY_API_SECRET=your-api-secret
+```
+
+### Deployment Steps
+1. Push code to GitHub
+2. Connect Cloud Run to your repository
+3. Set environment variables
+4. Deploy and verify health endpoint: `GET /health`
+5. Configure Stripe webhook to point to: `https://your-domain/api/stripe/webhook`
+6. Test complete flow: Landing → Checkout → Dealer creation
+
+### Stripe Webhook Events to Enable
+- `checkout.session.completed`
+- `customer.subscription.created`
+- `customer.subscription.updated`
+- `customer.subscription.deleted`
+
+---
+
+## Support
+
+For assistance, contact the Auto Concierge Jamaica team.
