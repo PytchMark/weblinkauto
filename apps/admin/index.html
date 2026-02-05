@@ -921,7 +921,7 @@
       else if(tab==="inventory"){ add("available","Available"); add("pending","Pending"); add("sold","Sold"); }
       else if(tab==="requests"){ add("new","New"); add("booked","Booked"); add("closed","Closed"); }
 
-      ui.statusFilterWrap.classList.toggle("hidden", tab==="settings" || tab==="summary");
+      ui.statusFilterWrap?.classList.toggle("hidden", tab==="settings" || tab==="summary");
     }
 
     function buildTableHeaders(tab){
