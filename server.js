@@ -20,6 +20,16 @@ const multer = require("multer");
 
 const { signToken, verifyToken } = require("./services/auth");
 const {
+  sendWelcomeEmail,
+  sendNewRequestAlert,
+  sendLowInventoryAlert,
+  sendFailedPaymentEmail,
+  sendUpgradePromptEmail,
+  sendReferralInviteEmail,
+  sendPasscodeResetEmail,
+  sendSuspensionNoticeEmail,
+} = require("./services/email");
+const {
   getProfileByDealerId,
   getProfileByEmail,
   getProfileByStripeCustomerId,
