@@ -862,6 +862,7 @@
       state.vehicles = [];
       state.requests = [];
       state.selectedDealer = null;
+      clearTimeout(adminSessionTimeout); // #11 Clear session timeout
 
       ui.dashView.classList.add("hidden");
       ui.loginView.classList.remove("hidden");
@@ -869,6 +870,25 @@
       setApi("Login", "err");
       toast("Logged out.", "success");
     }
+    
+    // #11 Session Timeout - Auto logout after 30 minutes of inactivity
+    let adminSessionTimeout;
+    const ADMIN_SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+    
+    function resetAdminSessionTimeout() {
+      clearTimeout(adminSessionTimeout);
+      if (state.token) {
+        adminSessionTimeout = setTimeout(() => {
+          alert('Session expired due to inactivity. Please log in again.');
+          logout();
+        }, ADMIN_SESSION_TIMEOUT_MS);
+      }
+    }
+    
+    // Reset timeout on user activity
+    ['click', 'keypress', 'scroll', 'mousemove'].forEach(event => {
+      document.addEventListener(event, resetAdminSessionTimeout, { passive: true });
+    });
 
     function authHeaders(){
       return {
