@@ -989,7 +989,9 @@ app.post("/api/stripe/webhook", async (req, res) => {
 });
 
 /** ========= Dealer API ========= */
-app.post("/api/dealer/login", async (req, res) => {
+
+// Apply rate limiter to login endpoint (#12)
+app.post("/api/dealer/login", authRateLimiter, async (req, res) => {
   try {
     const rawIdentity = cleanStr(req.body.dealerId, 120);
     const emailInput = cleanStr(req.body.email, 120);
