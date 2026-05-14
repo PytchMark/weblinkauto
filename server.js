@@ -9,52 +9,6 @@
 
 require("dotenv").config();
 
-// #region agent log
-fetch("http://127.0.0.1:7704/ingest/275b8acc-69ab-4955-a590-eb40b3dcbad0", {
-  method: "POST",
-  headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "0650e8" },
-  body: JSON.stringify({
-    sessionId: "0650e8",
-    runId: "pre-fix",
-    hypothesisId: "B",
-    location: "server.js:boot",
-    message: "Server boot started",
-    data: { port: process.env.PORT || "8080", nodeEnv: process.env.NODE_ENV || "development" },
-    timestamp: Date.now(),
-  }),
-}).catch(() => {});
-process.on("uncaughtException", (error) => {
-  fetch("http://127.0.0.1:7704/ingest/275b8acc-69ab-4955-a590-eb40b3dcbad0", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "0650e8" },
-    body: JSON.stringify({
-      sessionId: "0650e8",
-      runId: "pre-fix",
-      hypothesisId: "C",
-      location: "server.js:uncaughtException",
-      message: "Uncaught exception during startup",
-      data: { name: error?.name, message: error?.message },
-      timestamp: Date.now(),
-    }),
-  }).catch(() => {});
-});
-process.on("unhandledRejection", (reason) => {
-  fetch("http://127.0.0.1:7704/ingest/275b8acc-69ab-4955-a590-eb40b3dcbad0", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "0650e8" },
-    body: JSON.stringify({
-      sessionId: "0650e8",
-      runId: "pre-fix",
-      hypothesisId: "C",
-      location: "server.js:unhandledRejection",
-      message: "Unhandled rejection during startup",
-      data: { reason: reason instanceof Error ? reason.message : String(reason) },
-      timestamp: Date.now(),
-    }),
-  }).catch(() => {});
-});
-// #endregion
-
 const crypto = require("crypto");
 const path = require("path");
 const express = require("express");
@@ -102,22 +56,6 @@ const {
 } = require("./services/supabase");
 const { getDealerMetrics, getDealersSummary } = require("./services/analytics");
 const { stripe } = require("./lib/stripe");
-
-// #region agent log
-fetch("http://127.0.0.1:7704/ingest/275b8acc-69ab-4955-a590-eb40b3dcbad0", {
-  method: "POST",
-  headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "0650e8" },
-  body: JSON.stringify({
-    sessionId: "0650e8",
-    runId: "pre-fix",
-    hypothesisId: "A",
-    location: "server.js:requires",
-    message: "Core modules loaded",
-    data: { supabaseConfigured: Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) },
-    timestamp: Date.now(),
-  }),
-}).catch(() => {});
-// #endregion
 
 const app = express();
 const upload = multer({
@@ -2006,36 +1944,6 @@ app.use((err, _req, res, _next) => {
 });
 
 /** ========= Start ========= */
-// #region agent log
-fetch("http://127.0.0.1:7704/ingest/275b8acc-69ab-4955-a590-eb40b3dcbad0", {
-  method: "POST",
-  headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "0650e8" },
-  body: JSON.stringify({
-    sessionId: "0650e8",
-    runId: "pre-fix",
-    hypothesisId: "B",
-    location: "server.js:listen",
-    message: "Calling app.listen",
-    data: { port: PORT, host: "0.0.0.0" },
-    timestamp: Date.now(),
-  }),
-}).catch(() => {});
-// #endregion
 app.listen(PORT, "0.0.0.0", () => {
-  // #region agent log
-  fetch("http://127.0.0.1:7704/ingest/275b8acc-69ab-4955-a590-eb40b3dcbad0", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "0650e8" },
-    body: JSON.stringify({
-      sessionId: "0650e8",
-      runId: "pre-fix",
-      hypothesisId: "B",
-      location: "server.js:listen",
-      message: "Server listening",
-      data: { port: PORT, host: "0.0.0.0" },
-      timestamp: Date.now(),
-    }),
-  }).catch(() => {});
-  // #endregion
   console.log(`✅ Server running on port ${PORT}`);
 });
