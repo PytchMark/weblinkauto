@@ -3,112 +3,191 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Auto Concierge · Dealer Onboarding</title>
-  <meta name="description" content="Upgrade to Auto Concierge — turn Instagram traffic into real dealer appointments in Jamaica." />
+  <title>Auto Concierge Jamaica · Dealer programs</title>
+  <meta name="description" content="List inventory on a premium storefront. Choose commission-based onboarding with CashClosers sales support, or the paid tier with leads and WhatsApp to your own team." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet" />
   <style>
     :root{
-      --bg:#f7f7f8;
+      --bg:#0c0d10;
+      --bg-soft:#14161c;
       --surface:#ffffff;
-      --ink:#0b0b0b;
-      --muted:#6b7280;
-      --muted-2:#9ca3af;
-      --brand:#DC143C;
-      --brand-2:#E53935;
-      --line:#e5e7eb;
-      --shadow:0 20px 50px rgba(15,23,42,.12);
-      --radius:18px;
-      --gutter:clamp(16px,4vw,24px);
+      --surface2:#f4f4f5;
+      --ink:#0a0a0b;
+      --ink-soft:#e4e4e7;
+      --muted:#71717a;
+      --muted2:#a1a1aa;
+      --brand:#c41e3a;
+      --brand-2:#e11d48;
+      --line:rgba(255,255,255,.08);
+      --line2:#e4e4e7;
+      --shadow:0 24px 60px rgba(0,0,0,.35);
+      --radius:20px;
+      --gutter:clamp(18px,4vw,32px);
+      --font-display:"Playfair Display", Georgia, serif;
+      --font-body:"DM Sans",system-ui,sans-serif;
     }
     *{box-sizing:border-box}
     body{
       margin:0;
-      font-family: system-ui,-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,sans-serif;
+      font-family:var(--font-body);
       color:var(--ink);
-      background:
-        radial-gradient(circle at 10% 10%, rgba(220,38,38,.08), transparent 45%),
-        radial-gradient(circle at 90% 10%, rgba(239,68,68,.08), transparent 45%),
-        var(--bg);
+      background:var(--surface2);
+      -webkit-font-smoothing:antialiased;
     }
     a{text-decoration:none;color:inherit}
-    .wrap{max-width:1100px;margin:0 auto;padding:0 var(--gutter)}
-    header{
-      position:sticky;top:0;z-index:20;
-      background:rgba(255,255,255,.9);
+    .wrap{max-width:1120px;margin:0 auto;padding:0 var(--gutter)}
+    .marquee{
+      background:#050506;
+      color:rgba(255,255,255,.72);
+      font-size:10px;
+      letter-spacing:.28em;
+      text-transform:uppercase;
       border-bottom:1px solid var(--line);
-      backdrop-filter:blur(10px);
     }
-    .head-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;gap:12px}
-    .brand{display:flex;align-items:center;gap:10px;font-weight:900}
+    .marquee-track{
+      display:flex;gap:32px;padding:9px 0;white-space:nowrap;
+      animation:marquee 22s linear infinite;
+    }
+    @keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+    header{
+      position:sticky;top:0;z-index:30;
+      background:rgba(12,13,16,.88);
+      backdrop-filter:blur(14px);
+      border-bottom:1px solid var(--line);
+    }
+    .head-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;gap:14px}
+    .brand{display:flex;align-items:center;gap:12px;font-weight:700;font-size:14px;color:var(--ink-soft);letter-spacing:.02em}
     .brand-badge{
-      width:42px;height:42px;border-radius:12px;background:rgba(220,38,38,.12);
-      border:1px solid rgba(220,38,38,.25);display:grid;place-items:center;color:var(--brand);
+      width:40px;height:40px;border-radius:12px;overflow:hidden;
+      border:1px solid rgba(255,255,255,.12);
+      box-shadow:0 8px 20px rgba(0,0,0,.35);
     }
     .btn{
       appearance:none;border:none;cursor:pointer;
       display:inline-flex;align-items:center;justify-content:center;gap:8px;
-      height:40px;padding:0 18px;border-radius:999px;
-      font-size:13px;font-weight:900;
+      min-height:42px;padding:0 20px;border-radius:999px;
+      font-size:13px;font-weight:700;font-family:var(--font-body);
+      transition:transform .15s ease, box-shadow .15s ease;
     }
+    .btn:active{transform:scale(.98)}
     .btn-primary{
       background:linear-gradient(135deg,var(--brand-2),var(--brand));
-      color:#fff;box-shadow:0 18px 36px rgba(220,38,38,.25);
+      color:#fff;
+      box-shadow:0 16px 40px rgba(196,30,58,.35);
     }
-    .btn-outline{
-      background:#fff;border:1px solid var(--line);color:var(--ink);
-      box-shadow:0 8px 16px rgba(15,23,42,.08);
+    .btn-primary:hover{transform:translateY(-1px)}
+    .btn-outline-light{
+      background:transparent;border:1px solid rgba(255,255,255,.22);
+      color:var(--ink-soft);
     }
-    .marquee{
-      background:#0b0b0b;color:#fff;font-size:11px;letter-spacing:.22em;text-transform:uppercase;
+    .btn-outline-dark{
+      background:#fff;border:1px solid var(--line2);color:var(--ink);
+      box-shadow:0 8px 20px rgba(15,23,42,.08);
     }
-    .marquee-track{
-      display:flex;gap:24px;padding:10px 0;white-space:nowrap;animation:marquee 20s linear infinite;
-    }
-    @keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
-    .hero{
-      padding:56px 0 28px;
+    .hero-dark{
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(196,30,58,.25), transparent),
+        linear-gradient(180deg, var(--bg) 0%, #0f1014 100%);
+      color:var(--ink-soft);
+      padding:56px 0 48px;
     }
     .hero-grid{
-      display:grid;gap:28px;grid-template-columns:1.2fr .8fr;align-items:center;
+      display:grid;gap:36px;grid-template-columns:1.15fr .85fr;align-items:start;
     }
-    .pill{
+    .eyebrow{
       display:inline-flex;align-items:center;gap:8px;
-      padding:6px 12px;border-radius:999px;border:1px solid var(--line);
-      font-size:11px;font-weight:800;color:var(--muted);
-      background:#fff;
+      font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+      color:rgba(255,255,255,.55);
     }
-    h1{font-size:clamp(30px,4vw,46px);margin:12px 0}
-    .lead{font-size:15px;color:var(--muted);line-height:1.6}
-    .hero-card{
-      background:#fff;border-radius:22px;border:1px solid var(--line);
-      box-shadow:var(--shadow);padding:22px;
-      display:grid;gap:14px;
+    .eyebrow::before{
+      content:"";width:28px;height:1px;background:rgba(255,255,255,.25);
     }
-    .list{margin:0;padding-left:18px;color:var(--muted);font-size:13px;line-height:1.6}
-    .section{padding:28px 0}
-    .grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+    h1{
+      font-family:var(--font-display);
+      font-weight:600;
+      font-size:clamp(2rem,4.2vw,3.1rem);
+      line-height:1.12;
+      margin:14px 0 16px;
+      color:#fff;
+      letter-spacing:-.02em;
+    }
+    .hero-lead{font-size:16px;line-height:1.65;color:rgba(255,255,255,.72);max-width:52ch}
+    .hero-aside{
+      background:rgba(255,255,255,.04);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:22px;
+      box-shadow:var(--shadow);
+    }
+    .hero-aside h3{margin:0 0 10px;font-family:var(--font-display);font-size:18px;color:#fff}
+    .mini-list{margin:0;padding-left:18px;color:rgba(255,255,255,.65);font-size:14px;line-height:1.65}
+    .section{padding:48px 0}
+    .section h2{
+      font-family:var(--font-display);
+      font-size:clamp(1.5rem,2.5vw,2rem);
+      margin:0 0 8px;
+      letter-spacing:-.02em;
+    }
+    .section-sub{color:var(--muted);font-size:15px;max-width:60ch;margin-bottom:22px;line-height:1.55}
+    .grid3{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
     .card{
-      background:#fff;border-radius:18px;border:1px solid var(--line);
-      box-shadow:0 12px 28px rgba(15,23,42,.08);padding:18px;
+      background:var(--surface);
+      border-radius:var(--radius);
+      border:1px solid var(--line2);
+      padding:20px;
+      box-shadow:0 14px 36px rgba(15,23,42,.06);
     }
-    .card h3{margin:0 0 8px;font-size:16px}
-    .price{font-size:22px;font-weight:900;color:var(--brand);margin-top:6px}
-    .muted{color:var(--muted);font-size:13px}
-    .cta-anim{display:inline-flex;align-items:center;gap:8px;min-height:20px}
-    .cta-anim span{transition:opacity .35s ease}
-    .faq{display:grid;gap:12px}
-    .faq-item{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px}
+    .card h3{margin:0 0 8px;font-size:16px;font-weight:700}
+    .muted{color:var(--muted);font-size:14px;line-height:1.55}
+    .pricing-grid{
+      display:grid;gap:20px;
+      grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+    }
+    .price-card{
+      background:var(--surface);
+      border-radius:22px;
+      border:1px solid var(--line2);
+      padding:24px;
+      display:flex;flex-direction:column;gap:12px;
+      box-shadow:0 20px 50px rgba(15,23,42,.08);
+    }
+    .price-card.featured{
+      border-color:rgba(196,30,58,.35);
+      box-shadow:0 24px 55px rgba(196,30,58,.12);
+    }
+    .tag{
+      display:inline-flex;align-self:flex-start;
+      font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;
+      padding:6px 10px;border-radius:999px;
+      background:rgba(196,30,58,.1);color:var(--brand);
+      border:1px solid rgba(196,30,58,.22);
+    }
+    .tag-muted{
+      background:#f4f4f5;color:var(--muted);
+      border:1px solid var(--line2);
+    }
+    .price{font-size:32px;font-weight:800;font-family:var(--font-display);color:var(--brand);margin:4px 0}
+    .price small{font-size:14px;font-weight:600;color:var(--muted);font-family:var(--font-body)}
+    .input,.textarea{
+      border-radius:14px;border:1px solid var(--line2);
+      padding:11px 14px;font-size:14px;width:100%;font-family:var(--font-body);
+      background:#fafafa;
+    }
+    .textarea{min-height:88px;resize:vertical}
     .form-grid{display:grid;gap:10px}
-    .input{
-      border-radius:14px;border:1px solid var(--line);padding:10px 12px;font-size:13px;width:100%;
+    .success{background:#ecfdf3;border:1px solid rgba(22,163,74,.25);color:#166534;padding:12px 14px;border-radius:14px;font-size:14px}
+    .warning{background:#fff7ed;border:1px solid rgba(234,88,12,.25);color:#9a3412;padding:12px 14px;border-radius:14px;font-size:14px}
+    .faq{display:grid;gap:12px}
+    .faq-item{
+      background:var(--surface);
+      border:1px solid var(--line2);
+      border-radius:16px;padding:16px 18px;
     }
-    .tiers{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
-    .tier-card{padding:18px;border-radius:20px;border:1px solid var(--line);background:#fff;box-shadow:var(--shadow);display:grid;gap:10px}
-    .tier-card strong{font-size:16px}
-    .badge{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:900;color:var(--brand)}
-    .success{background:#ecfdf3;border:1px solid rgba(22,163,74,.25);color:#166534;padding:12px;border-radius:14px;font-size:13px}
-    .warning{background:#fff7ed;border:1px solid rgba(234,88,12,.25);color:#9a3412;padding:12px;border-radius:14px;font-size:13px}
-    footer{padding:30px 0;color:var(--muted);font-size:12px;text-align:center}
-    @media(max-width:860px){
+    .faq-item strong{display:block;margin-bottom:6px;font-size:15px}
+    footer{padding:36px 0;color:var(--muted);font-size:13px;text-align:center;border-top:1px solid var(--line2);background:#fafafa}
+    @media(max-width:900px){
       .hero-grid{grid-template-columns:1fr}
     }
   </style>
@@ -117,10 +196,12 @@
   <div class="marquee" aria-hidden="true">
     <div class="wrap">
       <div class="marquee-track">
-        <span>14-Day Trial • 1–3% Commission Copy • Dealer Provisioning Included</span>
-        <span>Dealer IDs • Live Inventory • WhatsApp Routing</span>
-        <span>14-Day Trial • 1–3% Commission Copy • Dealer Provisioning Included</span>
-        <span>Dealer IDs • Live Inventory • WhatsApp Routing</span>
+        <span>Verified storefronts · Commission or paid lead ownership</span>
+        <span>CashClosers support on free tier · Your WhatsApp on paid</span>
+        <span>14-day trial on paid · Jamaica-focused dealer tooling</span>
+        <span>Verified storefronts · Commission or paid lead ownership</span>
+        <span>CashClosers support on free tier · Your WhatsApp on paid</span>
+        <span>14-day trial on paid · Jamaica-focused dealer tooling</span>
       </div>
     </div>
   </div>
@@ -129,154 +210,149 @@
     <div class="wrap">
       <div class="head-row">
         <div class="brand">
-          <div class="brand-badge"><img src="https://res.cloudinary.com/dd8pjjxsm/image/upload/v1770298701/ChatGPT_Image_Sep_6_2025_08_27_53_AM_raorxf.png" alt="AC" style="width:100%;height:100%;object-fit:cover;border-radius:10px" /></div>
+          <div class="brand-badge"><img src="https://res.cloudinary.com/dd8pjjxsm/image/upload/v1770298701/ChatGPT_Image_Sep_6_2025_08_27_53_AM_raorxf.png" alt="" width="40" height="40" style="object-fit:cover" /></div>
           Auto Concierge Jamaica
         </div>
-        <a class="btn btn-outline" href="/storefront">Back to Storefront</a>
+        <a class="btn btn-outline-light" href="/storefront">Browse storefront</a>
       </div>
     </div>
   </header>
 
-  <main class="wrap">
-    <section class="hero">
+  <section class="hero-dark">
+    <div class="wrap">
       <div class="hero-grid">
         <div>
-          <div class="pill">Dealer onboarding • 14-day trial</div>
-          <h1>Stop selling cars from posts.</h1>
-          <p class="lead">Turn Instagram traffic into real appointments with a live dealer storefront. Buyers see real availability, request viewings instantly, and your team stays in control.</p>
-          <div class="lead" style="margin-top:12px">Trusted commission copy for auctions and agents: <strong>1–3%</strong> with a clean, premium flow.</div>
+          <div class="eyebrow">Dealer platform</div>
+          <h1>List with authority. Close with clarity.</h1>
+          <p class="hero-lead">
+            A private storefront for your inventory—not a noisy marketplace. Choose the <strong>free commission program</strong>
+            with CashClosers handling buyer conversations, or the <strong>paid tier at $98/mo</strong> so leads and WhatsApp route to your own sales team and customer relationships stay yours.
+          </p>
         </div>
-        <div class="hero-card">
-          <div class="pill">What you get</div>
-          <ul class="list">
-            <li>Dealer-specific storefront (not a marketplace).</li>
-            <li>WhatsApp routing + live video bookings.</li>
-            <li>Inventory, requests, and media in one dashboard.</li>
-            <li>Automatic dealer provisioning after checkout.</li>
+        <aside class="hero-aside">
+          <h3>Why dealers use us</h3>
+          <ul class="mini-list">
+            <li>Premium presentation that builds trust with serious buyers.</li>
+            <li>Live inventory, media-rich listings, and instant viewing requests.</li>
+            <li>Clear economics: commission on the free tier, predictable subscription when you want full lead control.</li>
           </ul>
-          <div class="cta-anim">
-            <span id="ctaText">Get Listed!</span>
-            <span class="muted">• 14-day free trial</span>
-          </div>
-        </div>
+        </aside>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <section class="section">
+  <main>
+    <section class="section wrap">
       <h2>How it works</h2>
-      <div class="grid">
+      <p class="section-sub">Two paths—same storefront quality. The difference is who nurtures the buyer until the handoff.</p>
+      <div class="grid3">
         <div class="card">
-          <h3>1. Choose your tier</h3>
-          <p class="muted">Pick the plan that matches your inventory volume.</p>
+          <h3>1. Pick your program</h3>
+          <p class="muted">Free (commission) for CashClosers-led follow-up, or paid for direct lead ownership.</p>
         </div>
         <div class="card">
-          <h3>2. Complete Stripe checkout</h3>
-          <p class="muted">Secure subscription checkout with a 14-day free trial.</p>
+          <h3>2. Get provisioned</h3>
+          <p class="muted">Free tier: apply and we onboard you after approval. Paid: secure Stripe checkout with a 14-day trial.</p>
         </div>
         <div class="card">
-          <h3>3. Dealer ID provisioning</h3>
-          <p class="muted">We create your Dealer ID and prep your portal automatically.</p>
+          <h3>3. Publish inventory</h3>
+          <p class="muted">Upload vehicles, hero media, and pricing—your branded link is ready to share.</p>
         </div>
       </div>
     </section>
 
-    <section class="section">
-      <h2>Start your 14-day trial</h2>
-      <div class="tiers">
-        <div class="tier-card">
-          <div class="badge">Tier 1 • $45/mo</div>
-          <strong>Essentials</strong>
-          <div class="muted">Perfect for boutique dealers.</div>
-          <div class="price">$45<span class="muted">/mo</span></div>
-          <button class="btn btn-primary" data-tier="tier1">Get Listed!</button>
+    <section class="section wrap" id="programs">
+      <h2>Programs &amp; pricing</h2>
+      <p class="section-sub">Agreed commission rates apply on the free tier per sale facilitated by our team. Paid tier unlocks the request inbox and WhatsApp routing to your dealership.</p>
+
+      <div class="pricing-grid">
+        <div class="price-card">
+          <span class="tag tag-muted">Free · Commission</span>
+          <strong style="font-size:18px">CashClosers closes for you</strong>
+          <p class="muted">List at no monthly fee. Storefront and WhatsApp inquiries are handled by the CashClosers sales team. You focus on inventory—we help convert.</p>
+          <div class="price">0<small>/mo</small></div>
+          <div class="form-grid" style="margin-top:8px">
+            <input class="input" id="wlBusiness" placeholder="Business name" autocomplete="organization" />
+            <input class="input" id="wlEmail" type="email" placeholder="Work email" autocomplete="email" />
+            <input class="input" id="wlWhatsapp" placeholder="WhatsApp (digits)" inputmode="numeric" />
+            <textarea class="textarea" id="wlNotes" placeholder="Optional: inventory size, location, goals"></textarea>
+          </div>
+          <button class="btn btn-outline-dark" type="button" id="btnWaitlist">Submit application</button>
+          <p class="muted" id="waitlistStatus" style="display:none;margin:0"></p>
         </div>
-        <div class="tier-card">
-          <div class="badge">Tier 2 • $75/mo</div>
-          <strong>Growth</strong>
-          <div class="muted">For fast-moving inventory teams.</div>
-          <div class="price">$75<span class="muted">/mo</span></div>
-          <button class="btn btn-primary" data-tier="tier2">Get Listed!</button>
+
+        <div class="price-card featured">
+          <span class="tag">Paid · Full control</span>
+          <strong style="font-size:18px">$98/mo — leads to your team</strong>
+          <p class="muted">Includes access to viewing requests in your dealer portal. WhatsApp and follow-up go to <em>your</em> sales staff—the customer relationship stays with you.</p>
+          <div class="price">$98<small>/mo · 14-day trial</small></div>
+          <div class="form-grid" style="margin-top:8px">
+            <input class="input" id="businessName" placeholder="Business name" autocomplete="organization" />
+            <input class="input" id="email" type="email" placeholder="Billing email" autocomplete="email" />
+            <input class="input" id="whatsapp" placeholder="WhatsApp for your team (digits)" inputmode="numeric" />
+          </div>
+          <button class="btn btn-primary" type="button" id="btnPaidCheckout">Continue to secure checkout</button>
+          <p class="muted" style="font-size:12px;margin:0">You will be redirected to Stripe. Dealer ID is provisioned automatically after payment.</p>
+          <div class="warning" id="checkoutStatus" style="display:none;margin:0"></div>
         </div>
-        <div class="tier-card">
-          <div class="badge">Tier 3 • $98/mo</div>
-          <strong>Premium</strong>
-          <div class="muted">Highest volume + concierge reporting.</div>
-          <div class="price">$98<span class="muted">/mo</span></div>
-          <button class="btn btn-primary" data-tier="tier3">Get Listed!</button>
-        </div>
-      </div>
-      <div class="card" style="margin-top:16px">
-        <h3>Dealer details</h3>
-        <div class="form-grid">
-          <input class="input" id="businessName" placeholder="Business name" />
-          <input class="input" id="email" type="email" placeholder="Owner email" />
-          <input class="input" id="whatsapp" placeholder="WhatsApp number (digits only)" />
-        </div>
-        <div class="muted" style="margin-top:8px">We use this to pre-fill your dealer profile and WhatsApp routing.</div>
-        <div class="warning" id="checkoutStatus" style="display:none;margin-top:12px"></div>
       </div>
     </section>
 
-    <section class="section" id="successSection" style="display:none">
-      <h2>Setup in progress</h2>
-      <div class="success" id="successBox">We’re setting up your dealer account. This usually takes a few seconds.</div>
+    <section class="section wrap" id="successSection" style="display:none">
+      <h2>Provisioning</h2>
+      <div class="success" id="successBox">We are setting up your dealer account…</div>
     </section>
 
-    <section class="section">
+    <section class="section wrap">
       <h2>FAQ</h2>
       <div class="faq">
         <div class="faq-item">
-          <strong>What happens after I pay?</strong>
-          <p class="muted">We auto-provision your Dealer ID and activate your portal. You’ll see your Dealer ID on this page once provisioning completes.</p>
+          <strong>What is the difference between free and paid?</strong>
+          <p class="muted">On the free tier, buyer WhatsApp and lead follow-up are routed to CashClosers so we can help close under your commission agreement. On paid, those same touchpoints go to your dealership and you see every request in the portal.</p>
         </div>
         <div class="faq-item">
-          <strong>Is the trial really 14 days?</strong>
-          <p class="muted">Yes. You get full access for 14 days. Billing starts after your trial ends.</p>
+          <strong>What happens after I subscribe to paid?</strong>
+          <p class="muted">Stripe confirms payment, we provision your Dealer ID, and you receive login instructions by email. Your trial lasts 14 days before billing.</p>
         </div>
         <div class="faq-item">
-          <strong>Can I keep my inventory private?</strong>
-          <p class="muted">Yes. Only buyers with your Dealer ID can view your inventory.</p>
+          <strong>How long does a free-tier application take?</strong>
+          <p class="muted">Our team reviews applications in order. You will receive next steps by email once approved.</p>
+        </div>
+        <div class="faq-item">
+          <strong>Is my inventory public to everyone?</strong>
+          <p class="muted">Your catalog is accessed via your Dealer ID link—curated discovery, not open marketplace noise.</p>
         </div>
       </div>
     </section>
   </main>
 
-  <footer>Auto Concierge Jamaica · Premium dealer onboarding</footer>
+  <footer>Auto Concierge Jamaica · Dealer onboarding</footer>
 
   <script>
-    const buttons = Array.from(document.querySelectorAll("[data-tier]"));
-    const ctaText = document.getElementById("ctaText");
     const businessName = document.getElementById("businessName");
     const email = document.getElementById("email");
     const whatsapp = document.getElementById("whatsapp");
     const checkoutStatus = document.getElementById("checkoutStatus");
     const successSection = document.getElementById("successSection");
     const successBox = document.getElementById("successBox");
+    const btnPaidCheckout = document.getElementById("btnPaidCheckout");
 
-    const ctaOptions = ["Get Listed!", "Become a Dealer"];
-    let ctaIndex = 0;
-    setInterval(() => {
-      ctaIndex = (ctaIndex + 1) % ctaOptions.length;
-      ctaText.style.opacity = 0;
-      setTimeout(() => {
-        const nextLabel = ctaOptions[ctaIndex];
-        ctaText.textContent = nextLabel;
-        buttons.forEach((btn) => {
-          btn.textContent = nextLabel;
-        });
-        ctaText.style.opacity = 1;
-      }, 240);
-    }, 2200);
+    const wlBusiness = document.getElementById("wlBusiness");
+    const wlEmail = document.getElementById("wlEmail");
+    const wlWhatsapp = document.getElementById("wlWhatsapp");
+    const wlNotes = document.getElementById("wlNotes");
+    const btnWaitlist = document.getElementById("btnWaitlist");
+    const waitlistStatus = document.getElementById("waitlistStatus");
 
-    async function startCheckout(tier){
+    async function startCheckout(){
       checkoutStatus.style.display = "block";
-      checkoutStatus.textContent = "Redirecting to Stripe checkout…";
+      checkoutStatus.textContent = "Redirecting to Stripe…";
       try{
         const res = await fetch("/api/stripe/create-checkout-session", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            tier,
+            tier: "paid",
             businessName: businessName.value.trim(),
             email: email.value.trim(),
             whatsapp: whatsapp.value.trim(),
@@ -290,25 +366,56 @@
       }
     }
 
-    buttons.forEach((btn) => {
-      btn.addEventListener("click", () => startCheckout(btn.dataset.tier));
-    });
+    btnPaidCheckout.addEventListener("click", startCheckout);
+
+    async function submitWaitlist(){
+      waitlistStatus.style.display = "block";
+      waitlistStatus.className = "muted";
+      waitlistStatus.textContent = "Sending…";
+      try{
+        const res = await fetch("/api/public/dealer-application", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            businessName: wlBusiness.value.trim(),
+            email: wlEmail.value.trim(),
+            whatsapp: wlWhatsapp.value.trim(),
+            notes: wlNotes.value.trim(),
+          })
+        });
+        const data = await res.json();
+        if(!res.ok || !data?.ok) throw new Error(data?.error || "Could not submit");
+        waitlistStatus.textContent = data.message || "Thanks — we will be in touch shortly.";
+        waitlistStatus.className = "success";
+        waitlistStatus.style.marginTop = "8px";
+        wlBusiness.value = "";
+        wlEmail.value = "";
+        wlWhatsapp.value = "";
+        wlNotes.value = "";
+      }catch(err){
+        waitlistStatus.textContent = err.message || "Something went wrong. Please try again.";
+        waitlistStatus.className = "warning";
+        waitlistStatus.style.marginTop = "8px";
+      }
+    }
+
+    btnWaitlist.addEventListener("click", submitWaitlist);
 
     async function pollProvisioning(sessionId){
       successSection.style.display = "block";
-      successBox.textContent = "We’re setting up your dealer account. This usually takes a few seconds.";
+      successBox.textContent = "We are setting up your dealer account. This usually takes a few seconds.";
       for(let i=0;i<6;i++){
         try{
           const res = await fetch(`/api/public/checkout-session?sessionId=${encodeURIComponent(sessionId)}`);
           const data = await res.json();
           if(res.ok && data?.ok && data.status === "ready" && data.dealer?.dealerId){
-            successBox.textContent = `Dealer ID created: ${data.dealer.dealerId}. Check your email for next steps or contact support to set your passcode.`;
+            successBox.textContent = `Dealer ID created: ${data.dealer.dealerId}. Check your email for next steps.`;
             return;
           }
         }catch(_err){}
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        await new Promise(r => setTimeout(r, 3000));
       }
-      successBox.textContent = "Dealer provisioning is still running. Refresh this page in a minute.";
+      successBox.textContent = "Provisioning is still running. Refresh this page in a minute.";
     }
 
     const params = new URLSearchParams(window.location.search);

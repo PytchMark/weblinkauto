@@ -264,6 +264,7 @@
     }
     .active{background:rgba(22,163,74,.10);color:#166534;border-color:rgba(22,163,74,.30)}
     .paused{background:rgba(245,158,11,.10);color:#92400e;border-color:rgba(245,158,11,.30)}
+    .rejected{background:rgba(239,68,68,.10);color:#991b1b;border-color:rgba(239,68,68,.30)}
 
     /* Modal */
     .backdrop{
@@ -378,6 +379,7 @@
 
           <div class="tabs" role="tablist" aria-label="Admin tabs">
             <button class="tab active" id="tabDealers" data-tab="dealers" type="button">Dealers</button>
+            <button class="tab" id="tabApplications" data-tab="applications" type="button">Applications</button>
             <button class="tab" id="tabSummary" data-tab="summary" type="button">Summary</button>
             <button class="tab" id="tabInventory" data-tab="inventory" type="button">Inventory</button>
             <button class="tab" id="tabRequests" data-tab="requests" type="button">Requests</button>
@@ -451,9 +453,11 @@
               <div class="label"><span>Plan</span><span>Subscription tier</span></div>
               <select id="newDealerPlan" class="select">
                 <option value="">Select plan</option>
-                <option value="tier1">Tier 1</option>
-                <option value="tier2">Tier 2</option>
-                <option value="tier3">Tier 3</option>
+                <option value="free">Free (commission)</option>
+                <option value="paid">Paid ($98/mo)</option>
+                <option value="tier1">Legacy Tier 1</option>
+                <option value="tier2">Legacy Tier 2</option>
+                <option value="tier3">Legacy Tier 3</option>
               </select>
             </div>
 
@@ -609,9 +613,11 @@
           <div class="label"><span>Plan</span></div>
           <select id="mDealerPlan" class="select">
             <option value="">Select plan</option>
-            <option value="tier1">Tier 1</option>
-            <option value="tier2">Tier 2</option>
-            <option value="tier3">Tier 3</option>
+            <option value="free">Free (commission)</option>
+            <option value="paid">Paid ($98/mo)</option>
+            <option value="tier1">Legacy Tier 1</option>
+            <option value="tier2">Legacy Tier 2</option>
+            <option value="tier3">Legacy Tier 3</option>
           </select>
         </div>
 
@@ -662,6 +668,10 @@
     const API = {
       login: () => "/api/admin/login",
       dealers: () => "/api/admin/dealers",
+      dealerApplications: (status) => {
+        const s = (status || "").trim();
+        return s ? `/api/admin/dealer-applications?status=${encodeURIComponent(s)}` : "/api/admin/dealer-applications";
+      },
       resetPass: () => "/api/admin/reset-passcode",
       inventory: () => "/api/admin/inventory",
       requests: () => "/api/admin/requests",
@@ -686,6 +696,7 @@
       btnLogout: el("btnLogout"),
 
       tabDealers: el("tabDealers"),
+      tabApplications: el("tabApplications"),
       tabSummary: el("tabSummary"),
       tabInventory: el("tabInventory"),
       tabRequests: el("tabRequests"),
@@ -768,6 +779,7 @@
       dealers: [],
       vehicles: [],
       requests: [],
+      applications: [],
 
       selectedDealer: null,
       demoPasscodes: {}
@@ -800,12 +812,15 @@
       ui.btnLogout.addEventListener("click", logout);
       ui.btnRefresh.addEventListener("click", () => refresh().catch(()=>{}));
 
-      [ui.tabDealers, ui.tabSummary, ui.tabInventory, ui.tabRequests, ui.tabSettings].forEach(btn=>{
+      [ui.tabDealers, ui.tabApplications, ui.tabSummary, ui.tabInventory, ui.tabRequests, ui.tabSettings].forEach(btn=>{
         btn.addEventListener("click", ()=> setTab(btn.dataset.tab));
       });
 
       ui.q.addEventListener("keydown", (e)=>{ if(e.key==="Enter") render(); });
-      ui.statusFilter.addEventListener("change", render);
+      ui.statusFilter.addEventListener("change", () => {
+        if (state.tab === "applications") refresh().catch(() => {});
+        else render();
+      });
 
       ui.btnCreateDealer.addEventListener("click", createDealer);
       ui.btnOpenDealerModal.addEventListener("click", () => {
@@ -820,14 +835,14 @@
     ui.btnSaveDealer.addEventListener("click", saveDealerChanges);
     ui.btnViewDealerInventory.addEventListener("click", () => {
       if(!state.selectedDealer) return;
-      switchTab("inventory");
+      setTab("inventory");
       ui.q.value = state.selectedDealer.dealerId || "";
       render();
       closeDealerModal();
     });
     ui.btnViewDealerRequests.addEventListener("click", () => {
       if(!state.selectedDealer) return;
-      switchTab("requests");
+      setTab("requests");
       ui.q.value = state.selectedDealer.dealerId || "";
       render();
       closeDealerModal();
@@ -986,6 +1001,7 @@
       state.dealers = [];
       state.vehicles = [];
       state.requests = [];
+      state.applications = [];
       state.selectedDealer = null;
       clearTimeout(adminSessionTimeout); // #11 Clear session timeout
 
@@ -1027,6 +1043,7 @@
       state.tab = tab;
 
       ui.tabDealers?.classList.toggle("active", tab==="dealers");
+      ui.tabApplications?.classList.toggle("active", tab==="applications");
       ui.tabSummary?.classList.toggle("active", tab==="summary");
       ui.tabInventory?.classList.toggle("active", tab==="inventory");
       ui.tabRequests?.classList.toggle("active", tab==="requests");
@@ -1034,6 +1051,7 @@
 
       ui.tableTitle.textContent =
         tab==="dealers" ? "Dealers"
+        : tab==="applications" ? "Dealer applications"
         : tab==="inventory" ? "Inventory"
         : tab==="requests" ? "Viewing requests"
         : tab==="settings" ? "Platform settings"
@@ -1041,6 +1059,7 @@
 
       ui.hint.textContent =
         tab==="dealers" ? "Create and manage dealer accounts. Click a row to edit."
+        : tab==="applications" ? "Waitlist from landing. Approve or reject, then create a dealer with plan “free”."
         : tab==="summary" ? "Loads KPIs for all dealers in one request."
         : tab==="inventory" ? "View all vehicles."
         : tab==="requests" ? "View all viewing requests."
@@ -1063,6 +1082,7 @@
       add("", "All");
 
       if(tab==="dealers"){ add("active","Active"); add("paused","Paused"); }
+      else if(tab==="applications"){ add("pending","Pending"); add("approved","Approved"); add("rejected","Rejected"); }
       else if(tab==="inventory"){ add("available","Available"); add("pending","Pending"); add("sold","Sold"); }
       else if(tab==="requests"){ add("new","New"); add("booked","Booked"); add("closed","Closed"); }
 
@@ -1073,6 +1093,7 @@
       ui.theadRow.innerHTML = "";
       const cols =
         tab==="dealers" ? ["Dealer", "Dealer ID", "Status", "Plan", "WhatsApp", "Logo", "Actions"]
+        : tab==="applications" ? ["Business", "Email", "WhatsApp", "Status", "Received", "Actions"]
         : tab==="inventory" ? ["Vehicle", "Dealer", "Status", "Price", "Updated"]
         : tab==="requests" ? ["Customer", "Vehicle", "Dealer", "Type", "Status", "Requested"]
         : ["Item", "Value", "Hint"];
@@ -1098,6 +1119,13 @@
           const data = await safeJson(res);
           if(!res.ok || !data?.ok) throw new Error(data?.error || "Failed to load dealers");
           state.dealers = Array.isArray(data.dealers) ? data.dealers : [];
+        }
+
+        if(state.tab==="applications"){
+          const res = await fetch(API.dealerApplications(ui.statusFilter.value), { headers: authHeaders() });
+          const data = await safeJson(res);
+          if(!res.ok || !data?.ok) throw new Error(data?.error || "Failed to load applications");
+          state.applications = Array.isArray(data.applications) ? data.applications : [];
         }
 
         // These two are optional — if you haven't built them yet, UI won't break.
@@ -1228,6 +1256,32 @@
       });
     }
 
+    async function patchApplicationStatus(id, status) {
+      try {
+        const res = await fetch(`${API_BASE}/api/admin/dealer-applications/${encodeURIComponent(id)}`, {
+          method: "PATCH",
+          headers: { ...authHeaders(), "Content-Type": "application/json" },
+          body: JSON.stringify({ status }),
+        });
+        const data = await safeJson(res);
+        if (!res.ok || !data?.ok) throw new Error(data?.error || "Update failed");
+        toast("Application updated.", "success");
+        await refresh();
+      } catch (e) {
+        toast(e?.message || "Failed", "error");
+      }
+    }
+
+    function fillCreateFromApplication(app) {
+      ui.newDealerName.value = app.businessName || "";
+      ui.newDealerWhatsApp.value = app.whatsapp || "";
+      ui.newDealerPlan.value = "free";
+      ui.newDealerId.value = "";
+      ui.newDealerPasscode.value = "";
+      setTab("dealers");
+      toast("Create-dealer form filled. Assign a Dealer ID, then Create.", "success");
+    }
+
     // ========= Render tables =========
     function render(){
       if(state.tab === "summary"){
@@ -1241,6 +1295,7 @@
 
       let rows = [];
       if(state.tab==="dealers") rows = [...state.dealers];
+      if(state.tab==="applications") rows = [...state.applications];
       if(state.tab==="inventory") rows = [...state.vehicles];
       if(state.tab==="requests") rows = [...state.requests];
       if(state.tab==="settings") rows = settingsRows();
@@ -1258,7 +1313,12 @@
       if(!rows.length){
         const tr=document.createElement("tr");
         const td=document.createElement("td");
-        td.colSpan = state.tab==="dealers" ? 7 : (state.tab==="requests" ? 6 : 5);
+        const colSpan =
+          state.tab==="dealers" ? 7
+          : state.tab==="applications" ? 6
+          : state.tab==="requests" ? 6
+          : 5;
+        td.colSpan = colSpan;
         td.style.color="var(--muted)";
         td.style.padding="14px";
         td.textContent="No rows match your filters.";
@@ -1269,6 +1329,51 @@
 
       rows.forEach(r=>{
         const tr=document.createElement("tr");
+
+        if(state.tab==="applications"){
+          tr.appendChild(cell(`<div style="font-weight:900">${esc(r.businessName||"—")}</div>`));
+          tr.appendChild(cell(`<span class="mono">${esc(r.email||"")}</span>`));
+          tr.appendChild(cell(r.whatsapp ? `<span class="badgeMini">${esc(r.whatsapp)}</span>` : `<span style="color:var(--muted)">—</span>`));
+          tr.appendChild(cell(statusPill(r.status)));
+          tr.appendChild(cell(`<span class="mono">${esc((r.createdAt||"").slice(0,19))}</span>`));
+          const tdAct = document.createElement("td");
+          tdAct.style.whiteSpace = "nowrap";
+          const wrap = document.createElement("div");
+          wrap.style.display = "flex";
+          wrap.style.flexWrap = "wrap";
+          wrap.style.gap = "6px";
+          const bFill = document.createElement("button");
+          bFill.className = "btn btn-ghost";
+          bFill.type = "button";
+          bFill.textContent = "Fill create form";
+          bFill.addEventListener("click", (e) => {
+            e.stopPropagation();
+            fillCreateFromApplication(r);
+          });
+          const bOk = document.createElement("button");
+          bOk.className = "btn btn-primary";
+          bOk.type = "button";
+          bOk.textContent = "Approve";
+          bOk.disabled = (r.status||"").toLowerCase() !== "pending";
+          bOk.addEventListener("click", (e) => {
+            e.stopPropagation();
+            patchApplicationStatus(r.id, "approved");
+          });
+          const bNo = document.createElement("button");
+          bNo.className = "btn btn-danger";
+          bNo.type = "button";
+          bNo.textContent = "Reject";
+          bNo.disabled = (r.status||"").toLowerCase() !== "pending";
+          bNo.addEventListener("click", (e) => {
+            e.stopPropagation();
+            patchApplicationStatus(r.id, "rejected");
+          });
+          wrap.appendChild(bFill);
+          wrap.appendChild(bOk);
+          wrap.appendChild(bNo);
+          tdAct.appendChild(wrap);
+          tr.appendChild(tdAct);
+        }
 
         if(state.tab==="dealers"){
           tr.style.cursor="pointer";
@@ -1318,8 +1423,9 @@
         { item:"ADMIN_USERNAME", value:"(Cloud Run env)", hint:"Admin login username" },
         { item:"ADMIN_PASSWORD", value:"(Cloud Run env)", hint:"Admin login password" },
         { item:"JWT_SECRET", value:"(Cloud Run env)", hint:"Token signing secret" },
-        { item:"AIRTABLE_API_KEY", value:"(Cloud Run env)", hint:"Airtable PAT token" },
-        { item:"AIRTABLE_BASE_ID", value:"(Cloud Run env)", hint:"Airtable base id" },
+        { item:"SALES_TEAM_INBOX_EMAIL", value:"(Cloud Run env)", hint:"Waitlist + free-tier lead notifications" },
+        { item:"CASH_CLOSERS_WHATSAPP_E164", value:"(Cloud Run env)", hint:"WhatsApp routing for free-tier storefronts" },
+        { item:"STRIPE_PRICE_PAID", value:"(Cloud Run env)", hint:"Stripe price ID for $98/mo paid tier" },
       ];
     }
 
@@ -1525,8 +1631,11 @@
     function cell(html){ const td=document.createElement("td"); td.innerHTML=html; return td; }
 
     function statusPill(s){
-      const v = (s||"active").toLowerCase();
-      const cls = v==="paused" ? "paused" : "active";
+      const v = (s||"—").toLowerCase();
+      let cls = "active";
+      if(v==="paused") cls = "paused";
+      else if(v==="pending") cls = "paused";
+      else if(v==="rejected") cls = "rejected";
       return `<span class="status ${cls}">${esc(v)}</span>`;
     }
 

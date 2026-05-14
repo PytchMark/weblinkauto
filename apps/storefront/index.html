@@ -6,7 +6,7 @@
   
   <!-- #27 SEO Meta Tags - Dynamic (updated by JS) -->
   <title>Dealer Storefront · Auto Concierge Jamaica</title>
-  <meta name="description" content="Browse verified vehicles with real-time availability. Book viewings instantly via WhatsApp, live video, or walk-in. Jamaica's premier automotive marketplace." />
+  <meta name="description" content="Browse a verified dealer storefront with real availability. Book a viewing by WhatsApp, live video, or walk-in—clear next steps and a premium, trustworthy buying experience." />
   <meta name="keywords" content="cars for sale Jamaica, used cars Jamaica, car dealership, vehicle marketplace, buy car Jamaica" />
   
   <!-- Open Graph / Social Sharing -->
@@ -28,26 +28,26 @@
 
   <style>
     :root{
-      --bg:#f7f7f8;
+      --bg:#f3f4f6;
       --surface:#ffffff;
-      --surface-soft:#fafafa;
-      --ink:#0b0b0b;
-      --muted:#6b7280;
-      --muted-2:#9ca3af;
+      --surface-soft:#f8fafc;
+      --ink:#0a0a0c;
+      --muted:#52525b;
+      --muted-2:#a1a1aa;
 
-      --brand:#DC143C;
-      --brand-2:#E53935;
+      --brand:#c41e3a;
+      --brand-2:#e11d48;
       --brand-soft:#FDECEA;
 
-      --line:#e5e7eb;
-      --shadow:0 18px 40px rgba(15,23,42,.10);
-      --shadow-soft:0 10px 24px rgba(15,23,42,.08);
+      --line:#e4e4e7;
+      --shadow:0 20px 48px rgba(15,23,42,.11);
+      --shadow-soft:0 12px 28px rgba(15,23,42,.09);
 
       --radius:18px;
       --radius-lg:26px;
 
-      --section:clamp(38px,5vw,64px);
-      --gutter:clamp(16px,4vw,22px);
+      --section:clamp(40px,5vw,68px);
+      --gutter:clamp(16px,4vw,24px);
     }
 
     *{box-sizing:border-box}
@@ -57,8 +57,8 @@
       font-family: system-ui,-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,sans-serif;
       color:var(--ink);
       background:
-        radial-gradient(circle at 0% 0%, rgba(220,38,38,.06), transparent 45%),
-        radial-gradient(circle at 80% 20%, rgba(239,68,68,.05), transparent 55%),
+        radial-gradient(circle at 0% 0%, rgba(196,30,58,.05), transparent 42%),
+        radial-gradient(circle at 85% 15%, rgba(225,29,72,.04), transparent 50%),
         var(--bg);
       -webkit-font-smoothing:antialiased;
     }
@@ -412,6 +412,44 @@
       font-size:12px;font-weight:900;color:var(--muted);
     }
 
+    .buyer-guide{
+      background:linear-gradient(180deg, rgba(255,255,255,.96), var(--surface));
+      border-top:1px solid var(--line);
+      border-bottom:1px solid var(--line);
+      padding:26px 0 32px;
+    }
+    .buyer-guide-inner{
+      display:grid;
+      gap:16px;
+      grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+    }
+    .buyer-guide h2{
+      grid-column:1/-1;
+      margin:0 0 4px;
+      font-size:11px;
+      letter-spacing:.2em;
+      text-transform:uppercase;
+      font-weight:800;
+      color:var(--muted);
+    }
+    .buyer-guide-lead{
+      grid-column:1/-1;
+      margin:0 0 8px;
+      font-size:14px;
+      color:var(--muted);
+      line-height:1.55;
+      max-width:72ch;
+    }
+    .buyer-step{
+      background:var(--surface);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:16px 18px;
+      box-shadow:var(--shadow-soft);
+    }
+    .buyer-step strong{display:block;font-size:15px;font-weight:900;margin-bottom:8px;color:var(--ink);letter-spacing:.01em}
+    .buyer-step p{margin:0;font-size:13px;color:var(--muted);line-height:1.55}
+
     .section{padding:24px 0 var(--section)}
     .section-head{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
     .section-head h2{margin:0;font-size:14px;letter-spacing:.14em;text-transform:uppercase}
@@ -668,7 +706,7 @@
             <div class="eyebrow"><span class="dot"></span> Premium dealer experience</div>
             <h1 id="heroTitle">Curated vehicles. Real availability. Book a viewing in minutes.</h1>
             <p class="lead" id="heroLead">
-              No ghost listings. No wasted trips. Only vehicles that are ready to show—managed by verified dealers.
+              A focused storefront for serious buyers: curated listings, clear pricing signals, and a booking flow designed to respect your time.
             </p>
             <div class="proofs">
               <span class="proof">Verified availability</span>
@@ -722,11 +760,30 @@
     </div>
   </section>
 
+  <section class="buyer-guide" id="buyerGuide" aria-labelledby="buyerGuideHeading">
+    <div class="wrap buyer-guide-inner">
+      <h2 id="buyerGuideHeading">For buyers</h2>
+      <p class="buyer-guide-lead">This storefront is operated by a verified dealer. Here is what happens after you express interest—no guesswork.</p>
+      <div class="buyer-step">
+        <strong>1 · Choose a vehicle</strong>
+        <p>Review photos, specs, and pricing. Availability is shown for this dealer only—no third-party reposts.</p>
+      </div>
+      <div class="buyer-step">
+        <strong>2 · Request a viewing</strong>
+        <p>Use WhatsApp for a quick chat, schedule a live video walkaround, or book a walk-in. You choose the channel that fits you.</p>
+      </div>
+      <div class="buyer-step">
+        <strong>3 · Confirm details</strong>
+        <p>The dealer team confirms timing and answers questions. You will know who you are speaking with before you travel.</p>
+      </div>
+    </div>
+  </section>
+
   <section class="section" id="inventory">
     <div class="wrap">
       <div class="section-head">
         <h2>Available Vehicles</h2>
-        <div class="trust">Real-time availability · Updated on refresh</div>
+        <div class="trust">Concierge-grade presentation · Availability checked on refresh</div>
       </div>
       <div class="grid" id="grid"></div>
     </div>
@@ -759,9 +816,9 @@
             <div style="font-size:12px;color:var(--muted)" id="modalPrice">Price on request</div>
           </div>
           <ul class="next-steps">
-            <li>Your request goes straight to the dealer concierge.</li>
-            <li>They confirm availability and a viewing window.</li>
-            <li>No spam — just a fast confirmation.</li>
+            <li>Your request is sent securely to this dealer’s concierge workflow.</li>
+            <li>They confirm availability and propose a viewing or call-back window.</li>
+            <li>You stay in control—no spam, just a direct path to the right person.</li>
           </ul>
           <div class="request-options" id="requestOptions">
             <button class="option-card" type="button" data-type="whatsapp" id="whatsAppOption">
@@ -1614,7 +1671,7 @@
   });
 
   ui.howBtn.addEventListener("click", ()=>{
-    toast("Enter a Dealer ID, browse verified vehicles, then book a viewing in minutes.");
+    document.getElementById("buyerGuide")?.scrollIntoView({ behavior: "smooth", block: "start" });
   });
 
   ui.modalClose.addEventListener("click", closeModal);

@@ -22,6 +22,8 @@ const { signToken, verifyToken } = require("./services/auth");
 const {
   sendWelcomeEmail,
   sendNewRequestAlert,
+  sendFreeTierLeadToSalesTeam,
+  sendDealerApplicationNotification,
   sendLowInventoryAlert,
   sendFailedPaymentEmail,
   sendUpgradePromptEmail,
@@ -47,6 +49,10 @@ const {
   createViewingRequest,
   updateViewingRequestByRequestId,
   listViewingRequests,
+  insertDealerApplication,
+  listDealerApplications,
+  updateDealerApplicationById,
+  getDealerApplicationById,
 } = require("./services/supabase");
 const { getDealerMetrics, getDealersSummary } = require("./services/analytics");
 const { stripe } = require("./lib/stripe");
@@ -119,6 +125,14 @@ const passcodeResetLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 3, // 3 reset requests per hour
   message: { ok: false, error: "Too many reset requests. Please try again later." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const dealerApplicationLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 8,
+  message: { ok: false, error: "Too many applications from this network. Please try again later." },
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -211,6 +225,28 @@ function isPausedDealer(dealer) {
   return status === "paused";
 }
 
+function dealerPlanKey(dealer) {
+  return cleanStr(dealer?.plan, 40).toLowerCase();
+}
+
+function isFreeTierPlan(dealer) {
+  return dealerPlanKey(dealer) === "free";
+}
+
+function isExplicitPaidPlan(dealer) {
+  const p = dealerPlanKey(dealer);
+  return p === "paid" || p === "tier1" || p === "tier2" || p === "tier3";
+}
+
+function cashClosersWhatsappDigits() {
+  const raw = cleanStr(process.env.CASH_CLOSERS_WHATSAPP_E164, 40);
+  return normalizePhone(raw).replace(/\D/g, "");
+}
+
+function salesTeamInboxEmail() {
+  return cleanStr(process.env.SALES_TEAM_INBOX_EMAIL, 200);
+}
+
 function generatePasscode() {
   return String(Math.floor(100000 + Math.random() * 900000));
 }
@@ -265,8 +301,14 @@ function getAppBaseUrl(req) {
 
 function isSubscriptionActive(dealer) {
   if (!dealer) return false;
+  if (isFreeTierPlan(dealer)) {
+    return cleanStr(dealer.status, 20).toLowerCase() === "active";
+  }
   const status = cleanStr(dealer?.stripe_subscription_status, 40).toLowerCase();
-  if (!status) return true;
+  if (!status) {
+    if (isExplicitPaidPlan(dealer)) return false;
+    return true;
+  }
   if (["active", "trialing"].includes(status)) return true;
   const trialEndsAt = dealer?.trial_ends_at ? new Date(dealer.trial_ends_at) : null;
   if (trialEndsAt && !Number.isNaN(trialEndsAt.getTime())) {
@@ -300,12 +342,11 @@ async function provisionDealerFromStripe({ session, subscription, passcodeOverri
   const customerId = session.customer || "";
   const subscriptionId = session.subscription || subscription?.id || "";
   const metadata = session.metadata || {};
-  const tier = cleanStr(metadata.tier || metadata.plan, 40).toLowerCase();
-  const plan = tier || "";
   const email = cleanStr(metadata.email || session.customer_details?.email, 120);
   const name = cleanStr(metadata.business_name || metadata.businessName || session.customer_details?.name, 120);
   const whatsapp = normalizePhone(metadata.whatsapp);
   const referralCode = cleanStr(metadata.referral_code, 20);
+  const plan = "paid";
 
   let dealer =
     (customerId ? await getProfileByStripeCustomerId(customerId) : null) ||
@@ -347,7 +388,7 @@ async function provisionDealerFromStripe({ session, subscription, passcodeOverri
         dealerName: name || "Dealer",
         dealerId,
         passcode,
-        plan: plan || "Tier 1",
+        plan: plan || "paid",
       }).catch(err => console.error("Welcome email error:", err));
     }
     
@@ -501,6 +542,16 @@ function mapProfileRow(profile) {
   };
 }
 
+function mapPublicDealerProfile(profile) {
+  const row = mapProfileRow(profile);
+  if (!row) return null;
+  if (isFreeTierPlan(profile)) {
+    const ccDigits = cashClosersWhatsappDigits();
+    if (ccDigits) return { ...row, whatsapp: ccDigits };
+  }
+  return row;
+}
+
 function mapVehicleRow(vehicle) {
   if (!vehicle) return null;
   return {
@@ -585,6 +636,20 @@ function mapViewingRequestRow(request) {
   };
 }
 
+function mapDealerApplicationRow(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    businessName: row.business_name || "",
+    email: row.email || "",
+    whatsapp: row.whatsapp || "",
+    notes: row.notes || "",
+    status: row.status || "",
+    createdAt: row.created_at || "",
+    updatedAt: row.updated_at || "",
+  };
+}
+
 function pruneUndefined(obj) {
   return Object.fromEntries(Object.entries(obj).filter(([, value]) => value !== undefined));
 }
@@ -626,7 +691,7 @@ app.get("/api/public/dealer/:dealerId", async (req, res) => {
 
     return res.json({
       ok: true,
-      dealer: mapProfileRow(dealer),
+      dealer: mapPublicDealerProfile(dealer),
     });
   } catch (err) {
     console.error("GET /api/public/dealer/:dealerId error:", err);
@@ -647,7 +712,7 @@ app.get("/api/public/dealer", async (req, res) => {
       return res.status(403).json({ ok: false, error: "Dealer storefront is paused" });
     }
 
-    return res.json({ ok: true, dealer: mapProfileRow(dealer) });
+    return res.json({ ok: true, dealer: mapPublicDealerProfile(dealer) });
   } catch (err) {
     console.error("GET /api/public/dealer error:", err);
     return res.status(500).json({ ok: false, error: "Internal Server Error" });
@@ -724,7 +789,7 @@ app.get("/api/public/vehicles", async (req, res) => {
 
     return res.json({
       ok: true,
-      dealers: activeDealers.map(mapProfileRow),
+      dealers: activeDealers.map(mapPublicDealerProfile),
       vehicles: vehicles.map(mapVehicleRow),
     });
   } catch (err) {
@@ -793,32 +858,53 @@ app.post("/api/public/dealer/:dealerId/requests", async (req, res) => {
 
     const created = await createViewingRequest(fields);
 
-    // #2 Send New Request Email Alert to Dealer
-    if (dealer.profile_email) {
-      let vehicle = null;
-      if (safeVehicleId) {
-        vehicle = await getVehicleByVehicleId(safeVehicleId);
+    let vehicle = null;
+    if (safeVehicleId) {
+      vehicle = await getVehicleByVehicleId(safeVehicleId);
+    }
+
+    const requestPayload = {
+      type: typeEnum,
+      name,
+      phone,
+      email,
+      preferred_date: preferredDate,
+      preferred_time: preferredTime,
+      notes,
+    };
+    const vehiclePayload = vehicle
+      ? {
+          title: vehicle.title,
+          vehicle_id: vehicle.vehicle_id,
+          price: vehicle.price,
+        }
+      : null;
+
+    if (isFreeTierPlan(dealer)) {
+      const salesInbox = salesTeamInboxEmail();
+      if (salesInbox) {
+        const bccOn =
+          cleanStr(process.env.BCC_DEALER_ON_FREE_LEADS, 10).toLowerCase() === "1" ||
+          cleanStr(process.env.BCC_DEALER_ON_FREE_LEADS, 10) === "true";
+        sendFreeTierLeadToSalesTeam({
+          salesTeamEmail: salesInbox,
+          bccDealerEmail: bccOn ? dealer.profile_email : "",
+          dealerName: dealer.name,
+          dealerId,
+          request: requestPayload,
+          vehicle: vehiclePayload,
+        }).catch((err) => console.error("Free-tier lead email error:", err));
+      } else {
+        console.warn("SALES_TEAM_INBOX_EMAIL not set; skipping free-tier lead email");
       }
-      
+    } else if (dealer.profile_email) {
       sendNewRequestAlert({
         dealerEmail: dealer.profile_email,
         dealerName: dealer.name,
         dealerId,
-        request: {
-          type: typeEnum,
-          name,
-          phone,
-          email,
-          preferred_date: preferredDate,
-          preferred_time: preferredTime,
-          notes,
-        },
-        vehicle: vehicle ? {
-          title: vehicle.title,
-          vehicle_id: vehicle.vehicle_id,
-          price: vehicle.price,
-        } : null,
-      }).catch(err => console.error("New request email error:", err));
+        request: requestPayload,
+        vehicle: vehiclePayload,
+      }).catch((err) => console.error("New request email error:", err));
     }
 
     return res.status(201).json({
@@ -831,6 +917,48 @@ app.post("/api/public/dealer/:dealerId/requests", async (req, res) => {
   }
 });
 
+app.post("/api/public/dealer-application", dealerApplicationLimiter, async (req, res) => {
+  try {
+    const businessName = cleanStr(req.body.businessName || req.body.business_name, 200);
+    const email = cleanStr(req.body.email, 120);
+    const whatsapp = normalizePhone(req.body.whatsapp || req.body.phone);
+    const notes = cleanStr(req.body.notes, 2000);
+
+    if (!businessName) {
+      return res.status(400).json({ ok: false, error: "Business name is required" });
+    }
+    if (!email || !isValidEmail(email)) {
+      return res.status(400).json({ ok: false, error: "Valid email is required" });
+    }
+
+    await insertDealerApplication({
+      business_name: businessName,
+      email,
+      whatsapp: whatsapp || null,
+      notes: notes || null,
+      status: "pending",
+    });
+
+    const salesInbox = salesTeamInboxEmail();
+    if (salesInbox) {
+      sendDealerApplicationNotification({
+        salesTeamEmail: salesInbox,
+        businessName,
+        email,
+        whatsapp,
+        notes,
+      }).catch((err) => console.error("Dealer application email error:", err));
+    } else {
+      console.warn("SALES_TEAM_INBOX_EMAIL not set; application saved but team not emailed");
+    }
+
+    return res.status(201).json({ ok: true, message: "Thanks — we will be in touch shortly." });
+  } catch (err) {
+    console.error("POST /api/public/dealer-application error:", err);
+    return res.status(500).json({ ok: false, error: "Unable to submit application" });
+  }
+});
+
 /** ========= Stripe API ========= */
 app.post("/api/stripe/create-checkout-session", async (req, res) => {
   try {
@@ -839,15 +967,17 @@ app.post("/api/stripe/create-checkout-session", async (req, res) => {
     const businessName = cleanStr(req.body.businessName, 120);
     const whatsapp = normalizePhone(req.body.whatsapp);
 
-    const priceMap = {
-      tier1: process.env.STRIPE_PRICE_TIER1,
-      tier2: process.env.STRIPE_PRICE_TIER2,
-      tier3: process.env.STRIPE_PRICE_TIER3,
-    };
-    const priceId = priceMap[tier];
+    const paidKey = tier === "paid" || tier === "tier3" || tier === "tier98" ? "paid" : "";
+    if (!paidKey) {
+      return res.status(400).json({ ok: false, error: "Invalid plan. Use paid checkout for the $98/mo tier." });
+    }
+
+    const priceId =
+      cleanStr(process.env.STRIPE_PRICE_PAID, 120) ||
+      cleanStr(process.env.STRIPE_PRICE_TIER3, 120);
 
     if (!priceId) {
-      return res.status(400).json({ ok: false, error: "Invalid pricing tier" });
+      return res.status(500).json({ ok: false, error: "Paid subscription price is not configured" });
     }
 
     const baseUrl = getAppBaseUrl(req);
@@ -860,11 +990,13 @@ app.post("/api/stripe/create-checkout-session", async (req, res) => {
       subscription_data: {
         trial_period_days: 14,
         metadata: {
-          tier,
+          tier: "paid",
+          plan: "paid",
         },
       },
       metadata: {
-        tier,
+        tier: "paid",
+        plan: "paid",
         email,
         business_name: businessName,
         whatsapp,
@@ -1164,7 +1296,7 @@ app.get("/api/dealer/me", requireActiveDealer, async (req, res) => {
 
     return res.json({
       ok: true,
-      dealer: mapProfileRow(dealer),
+      dealer: mapPublicDealerProfile(dealer),
     });
   } catch (err) {
     console.error("GET /api/dealer/me error:", err);
@@ -1298,8 +1430,12 @@ app.post("/api/dealer/vehicles/:vehicleId/archive", requireActiveDealer, async (
 app.get("/api/dealer/requests", requireActiveDealer, async (req, res) => {
   try {
     const dealerId = cleanStr(req.user?.dealerId, 60);
+    const dealer = await getProfileByDealerId(dealerId);
+    if (isFreeTierPlan(dealer)) {
+      return res.json({ ok: true, requests: [], requestsRestricted: true });
+    }
     const requests = await listViewingRequests({ dealerId });
-    return res.json({ ok: true, requests: requests.map(mapViewingRequestRow) });
+    return res.json({ ok: true, requests: requests.map(mapViewingRequestRow), requestsRestricted: false });
   } catch (err) {
     console.error("GET /api/dealer/requests error:", err);
     return res.status(500).json({ ok: false, error: "Internal Server Error" });
@@ -1308,6 +1444,14 @@ app.get("/api/dealer/requests", requireActiveDealer, async (req, res) => {
 
 app.post("/api/dealer/requests/:requestId/status", requireActiveDealer, async (req, res) => {
   try {
+    const dealerId = cleanStr(req.user?.dealerId, 60);
+    const dealer = await getProfileByDealerId(dealerId);
+    if (isFreeTierPlan(dealer)) {
+      return res.status(403).json({
+        ok: false,
+        error: "Lead inbox is available on the paid plan. Upgrade to update request status.",
+      });
+    }
     const requestId = cleanStr(req.params.requestId, 80);
     const status = normalizeRequestStatus(req.body.status);
 
@@ -1458,6 +1602,40 @@ app.post("/api/admin/dealers", requireAdmin, async (req, res) => {
     return res.json({ ok: true, dealer: mapProfileRow(dealer), passcode });
   } catch (err) {
     console.error("POST /api/admin/dealers error:", err);
+    return res.status(500).json({ ok: false, error: "Internal Server Error" });
+  }
+});
+
+app.get("/api/admin/dealer-applications", requireAdmin, async (req, res) => {
+  try {
+    const status = cleanStr(req.query.status, 20).toLowerCase();
+    const filter =
+      status && ["pending", "approved", "rejected"].includes(status) ? { status } : {};
+    const rows = await listDealerApplications(filter);
+    return res.json({ ok: true, applications: rows.map(mapDealerApplicationRow) });
+  } catch (err) {
+    console.error("GET /api/admin/dealer-applications error:", err);
+    return res.status(500).json({ ok: false, error: "Internal Server Error" });
+  }
+});
+
+app.patch("/api/admin/dealer-applications/:id", requireAdmin, async (req, res) => {
+  try {
+    const id = cleanStr(req.params.id, 50);
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) {
+      return res.status(400).json({ ok: false, error: "Invalid application id" });
+    }
+    const status = cleanStr(req.body.status, 20).toLowerCase();
+    if (!["pending", "approved", "rejected"].includes(status)) {
+      return res.status(400).json({ ok: false, error: "Invalid status" });
+    }
+    const existing = await getDealerApplicationById(id);
+    if (!existing) return res.status(404).json({ ok: false, error: "Application not found" });
+
+    const updated = await updateDealerApplicationById(id, { status });
+    return res.json({ ok: true, application: mapDealerApplicationRow(updated) });
+  } catch (err) {
+    console.error("PATCH /api/admin/dealer-applications/:id error:", err);
     return res.status(500).json({ ok: false, error: "Internal Server Error" });
   }
 });
@@ -1710,15 +1888,15 @@ app.post("/api/admin/check-alerts", requireAdmin, async (req, res) => {
       
       const vehicles = await getVehiclesForDealer(dealer.dealer_id);
       const available = vehicles.filter(v => v.status === "available").length;
-      const requests = await listViewingRequests({ dealer_id: dealer.dealer_id });
+      const requests = await listViewingRequests({ dealerId: dealer.dealer_id });
       const thisMonthRequests = requests.filter(r => {
         const created = new Date(r.created_at);
         const now = new Date();
         return created.getMonth() === now.getMonth() && created.getFullYear() === now.getFullYear();
       }).length;
       
-      // #4 Low Inventory Alert (threshold: 3)
-      if (available <= 3 && available > 0) {
+      // #4 Low Inventory Alert (threshold: 3) — paid / legacy dealers only
+      if (!isFreeTierPlan(dealer) && available <= 3 && available > 0) {
         await sendLowInventoryAlert({
           dealerEmail: dealer.profile_email,
           dealerName: dealer.name,
@@ -1729,32 +1907,21 @@ app.post("/api/admin/check-alerts", requireAdmin, async (req, res) => {
         alerts.push({ dealerId: dealer.dealer_id, type: "low_inventory", available });
       }
       
-      // #6/#7 Upgrade Prompts (based on usage)
-      const plan = (dealer.plan || "").toLowerCase();
-      if (plan === "tier1" && (vehicles.length >= 20 || thisMonthRequests >= 30)) {
+      // Free tier → paid upgrade prompt (usage-based)
+      if (isFreeTierPlan(dealer) && (vehicles.length >= 8 || thisMonthRequests >= 8)) {
         await sendUpgradePromptEmail({
           dealerEmail: dealer.profile_email,
           dealerName: dealer.name,
           dealerId: dealer.dealer_id,
-          currentPlan: "Tier 1",
-          suggestedPlan: "Tier 2",
-          reason: vehicles.length >= 20 
-            ? "You're approaching your vehicle limit!" 
-            : "You've had an amazing month with lots of requests!",
+          currentPlan: "Free (commission)",
+          suggestedPlan: "Paid — $98/mo (direct leads & WhatsApp to your team)",
+          reason:
+            thisMonthRequests >= 8
+              ? "You are generating strong buyer interest. Own the relationship by upgrading to the paid tier."
+              : "Your inventory footprint is growing. Unlock the full lead inbox and direct WhatsApp routing to your sales team.",
           stats: { vehicles: vehicles.length, requests: thisMonthRequests },
         });
-        alerts.push({ dealerId: dealer.dealer_id, type: "upgrade_prompt", plan: "tier2" });
-      } else if (plan === "tier2" && (vehicles.length >= 100 || thisMonthRequests >= 100)) {
-        await sendUpgradePromptEmail({
-          dealerEmail: dealer.profile_email,
-          dealerName: dealer.name,
-          dealerId: dealer.dealer_id,
-          currentPlan: "Tier 2",
-          suggestedPlan: "Tier 3",
-          reason: "You're a power seller! Unlock unlimited listings.",
-          stats: { vehicles: vehicles.length, requests: thisMonthRequests },
-        });
-        alerts.push({ dealerId: dealer.dealer_id, type: "upgrade_prompt", plan: "tier3" });
+        alerts.push({ dealerId: dealer.dealer_id, type: "upgrade_prompt", plan: "paid" });
       }
     }
     

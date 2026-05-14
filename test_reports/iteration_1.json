@@ -44,7 +44,7 @@
     "Admin login POST /api/admin/login with valid credentials",
     "Stripe checkout endpoint POST /api/stripe/create-checkout-session",
     "Public storefront page loads with logo and crimson branding",
-    "Landing page loads with pricing tiers ($45, $75, $98) and CTA buttons",
+    "Landing page shows free-tier application and paid ($98/mo) Stripe checkout paths",
     "Dealer login page loads with JWT auth form",
     "Admin portal loads and authenticates successfully",
     "Storefront shows 'Enter Dealer ID' input field",

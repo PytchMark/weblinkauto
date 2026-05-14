@@ -137,6 +137,33 @@ async function listViewingRequests({ dealerId, status, monthStart, monthEnd } = 
   return unwrap(result, "requests list") || [];
 }
 
+async function insertDealerApplication(fields) {
+  const result = await supabase.from("dealer_applications").insert(fields).select("*").single();
+  return unwrap(result, "dealer application insert");
+}
+
+async function listDealerApplications({ status } = {}) {
+  let query = supabase.from("dealer_applications").select("*");
+  if (status) query = query.eq("status", status);
+  const result = await query.order("created_at", { ascending: false });
+  return unwrap(result, "dealer applications list") || [];
+}
+
+async function updateDealerApplicationById(id, fields) {
+  const result = await supabase
+    .from("dealer_applications")
+    .update(fields)
+    .eq("id", id)
+    .select("*")
+    .single();
+  return unwrap(result, "dealer application update");
+}
+
+async function getDealerApplicationById(id) {
+  const result = await supabase.from("dealer_applications").select("*").eq("id", id).maybeSingle();
+  return unwrap(result, "dealer application lookup");
+}
+
 module.exports = {
   getProfileByDealerId,
   getProfileByEmail,
@@ -155,4 +182,8 @@ module.exports = {
   createViewingRequest,
   updateViewingRequestByRequestId,
   listViewingRequests,
+  insertDealerApplication,
+  listDealerApplications,
+  updateDealerApplicationById,
+  getDealerApplicationById,
 };

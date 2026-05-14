@@ -101,6 +101,28 @@ begin
 end;
 $$ language plpgsql;
 
+-- Dealer waitlist / free-tier applications (public apply → admin approves)
+create table if not exists dealer_applications (
+  id uuid primary key default gen_random_uuid(),
+  business_name text not null,
+  email text not null,
+  whatsapp text,
+  notes text,
+  status text not null default 'pending' check (status in ('pending', 'approved', 'rejected')),
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+create index if not exists idx_dealer_applications_status on dealer_applications (status);
+create index if not exists idx_dealer_applications_created_at on dealer_applications (created_at desc);
+
+drop trigger if exists trg_dealer_applications_updated_at on dealer_applications;
+create trigger trg_dealer_applications_updated_at
+before update on dealer_applications
+for each row execute function set_updated_at();
+
+alter table dealer_applications disable row level security;
+
 drop trigger if exists trg_profiles_updated_at on profiles;
 create trigger trg_profiles_updated_at
 before update on profiles

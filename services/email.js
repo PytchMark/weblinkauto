@@ -1,23 +1,17 @@
 "use strict";
 
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
 
-// Gmail SMTP Configuration
-const GMAIL_USER = process.env.GMAIL_USER || "";
-const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD || "";
+const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
+const EMAIL_FROM = process.env.EMAIL_FROM || "";
 const EMAIL_FROM_NAME = process.env.EMAIL_FROM_NAME || "Auto Concierge Jamaica";
+const EMAIL_REPLY_TO = process.env.EMAIL_REPLY_TO || "";
 
-let transporter = null;
+let resend = null;
 
-if (GMAIL_USER && GMAIL_APP_PASSWORD) {
-  transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: GMAIL_USER,
-      pass: GMAIL_APP_PASSWORD,
-    },
-  });
-  console.log("✅ Email service configured with Gmail SMTP");
+if (RESEND_API_KEY && EMAIL_FROM) {
+  resend = new Resend(RESEND_API_KEY);
+  console.log("✅ Email service configured with Resend");
 } else {
   console.warn("⚠️  Email service not configured - emails will be logged only");
 }
@@ -72,25 +66,54 @@ function wrapEmail(content, subject) {
   `;
 }
 
-async function sendEmail({ to, subject, html, text }) {
-  const mailOptions = {
-    from: `"${EMAIL_FROM_NAME}" <${GMAIL_USER}>`,
-    to,
-    subject,
-    html,
-    text: text || subject,
-  };
+function resolveFromAddress() {
+  const from = String(EMAIL_FROM || "").trim();
+  if (!from) return "";
+  if (from.includes("<")) return from;
+  return `${EMAIL_FROM_NAME} <${from}>`;
+}
 
-  if (!transporter) {
-    console.log("📧 [EMAIL MOCK] Would send to:", to);
+function normalizeRecipients(value) {
+  if (!value) return [];
+  if (Array.isArray(value)) {
+    return value.map((entry) => String(entry || "").trim()).filter(Boolean);
+  }
+  return String(value)
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
+
+async function sendEmail({ to, subject, html, text, bcc }) {
+  const from = resolveFromAddress();
+  const toList = normalizeRecipients(to);
+  const bccList = normalizeRecipients(bcc);
+
+  if (!resend || !from || !toList.length) {
+    console.log("📧 [EMAIL MOCK] Would send to:", toList.join(", ") || to);
+    if (bccList.length) console.log("📧 [EMAIL MOCK] BCC:", bccList.join(", "));
     console.log("📧 [EMAIL MOCK] Subject:", subject);
     return { success: true, mock: true };
   }
 
+  const payload = {
+    from,
+    to: toList,
+    subject,
+    html,
+    text: text || subject,
+  };
+  if (bccList.length) payload.bcc = bccList;
+  if (EMAIL_REPLY_TO) payload.reply_to = EMAIL_REPLY_TO;
+
   try {
-    const info = await transporter.sendMail(mailOptions);
-    console.log("📧 Email sent:", info.messageId);
-    return { success: true, messageId: info.messageId };
+    const { data, error } = await resend.emails.send(payload);
+    if (error) {
+      console.error("📧 Email error:", error.message || error);
+      return { success: false, error: error.message || String(error) };
+    }
+    console.log("📧 Email sent:", data?.id || "ok");
+    return { success: true, messageId: data?.id };
   } catch (error) {
     console.error("📧 Email error:", error.message);
     return { success: false, error: error.message };
@@ -185,6 +208,85 @@ async function sendNewRequestAlert({ dealerEmail, dealerName, dealerId, request,
   });
 }
 
+// 2b. Free-tier storefront lead — sales team (commission program)
+async function sendFreeTierLeadToSalesTeam({
+  salesTeamEmail,
+  bccDealerEmail,
+  dealerName,
+  dealerId,
+  request,
+  vehicle,
+}) {
+  const requestTypeLabel = {
+    whatsapp: "WhatsApp Chat",
+    live_video: "Live Video Viewing",
+    walk_in: "Walk-In Booking",
+  }[request.type] || request.type;
+
+  const subject = `🔔 Commission-tier lead — ${dealerName} (${dealerId})`;
+  const content = `
+    <h1>New lead (free / commission tier)</h1>
+    <p>This request is from a dealer on the <strong>commission program</strong>. Route to CashClosers sales to qualify and close.</p>
+
+    <div class="highlight">
+      <h3 style="margin-top: 0;">Dealer</h3>
+      <p><strong>Name:</strong> ${dealerName}</p>
+      <p><strong>Dealer ID:</strong> ${dealerId}</p>
+    </div>
+
+    <div class="highlight">
+      <h3 style="margin-top: 0;">Request</h3>
+      <p><strong>Type:</strong> ${requestTypeLabel}</p>
+      <p><strong>Vehicle:</strong> ${vehicle?.title || "N/A"} (${vehicle?.vehicle_id || "N/A"})</p>
+      <p><strong>Price:</strong> $${vehicle?.price?.toLocaleString() || "N/A"}</p>
+    </div>
+
+    <div class="info-box">
+      <h3 style="margin-top: 0;">Customer</h3>
+      <p><strong>Name:</strong> ${request.name || "Not provided"}</p>
+      <p><strong>Phone:</strong> ${request.phone || "Not provided"}</p>
+      <p><strong>Email:</strong> ${request.email || "Not provided"}</p>
+      ${request.preferred_date ? `<p><strong>Preferred Date:</strong> ${request.preferred_date}</p>` : ""}
+      ${request.preferred_time ? `<p><strong>Preferred Time:</strong> ${request.preferred_time}</p>` : ""}
+      ${request.notes ? `<p><strong>Notes:</strong> ${request.notes}</p>` : ""}
+    </div>
+
+    <a href="${APP_BASE_URL}/admin" class="button">Open admin →</a>
+  `;
+
+  const opts = {
+    to: salesTeamEmail,
+    subject,
+    html: wrapEmail(content, subject),
+    text: `Commission-tier lead for ${dealerName} (${dealerId}). ${requestTypeLabel}. Customer: ${request.name}, ${request.phone}`,
+  };
+  if (bccDealerEmail) opts.bcc = bccDealerEmail;
+  return sendEmail(opts);
+}
+
+async function sendDealerApplicationNotification({ salesTeamEmail, businessName, email, whatsapp, notes }) {
+  const subject = `📋 New dealer waitlist application — ${businessName}`;
+  const content = `
+    <h1>New dealer application</h1>
+    <p>Someone applied for the <strong>free commission tier</strong> from the landing page.</p>
+    <div class="info-box">
+      <p><strong>Business:</strong> ${businessName}</p>
+      <p><strong>Email:</strong> ${email}</p>
+      <p><strong>WhatsApp:</strong> ${whatsapp || "—"}</p>
+      ${notes ? `<p><strong>Notes:</strong> ${notes}</p>` : ""}
+    </div>
+    <p>Review in the admin portal under <strong>Applications</strong>, then create a dealer with plan <code>free</code> when approved.</p>
+    <a href="${APP_BASE_URL}/admin" class="button">Open admin →</a>
+  `;
+
+  return sendEmail({
+    to: salesTeamEmail,
+    subject,
+    html: wrapEmail(content, subject),
+    text: `New dealer application: ${businessName}, ${email}, WhatsApp: ${whatsapp || "n/a"}`,
+  });
+}
+
 // 4. Low Inventory Alert
 async function sendLowInventoryAlert({ dealerEmail, dealerName, dealerId, availableCount, threshold }) {
   const subject = `⚠️ Low Inventory Alert - Only ${availableCount} vehicles available`;
@@ -246,33 +348,33 @@ async function sendFailedPaymentEmail({ dealerEmail, dealerName, dealerId, nextA
 
 // 6 & 7. Upgrade Prompt / Usage-Based Upsell
 async function sendUpgradePromptEmail({ dealerEmail, dealerName, dealerId, currentPlan, suggestedPlan, reason, stats }) {
-  const subject = `🚀 Time to Upgrade? You're Growing!`;
+  const subject = `🚀 Unlock direct leads — upgrade to Paid ($98/mo)`;
   const content = `
-    <h1>You're Doing Great, ${dealerName}!</h1>
+    <h1>Hi ${dealerName},</h1>
     <p>${reason}</p>
-    
+
     <div class="info-box">
-      <h3 style="margin-top: 0;">Your Stats This Month</h3>
-      ${stats.requests ? `<p><strong>Viewing Requests:</strong> ${stats.requests}</p>` : ''}
-      ${stats.vehicles ? `<p><strong>Active Vehicles:</strong> ${stats.vehicles}</p>` : ''}
-      ${stats.sold ? `<p><strong>Vehicles Sold:</strong> ${stats.sold}</p>` : ''}
+      <h3 style="margin-top: 0;">Your activity</h3>
+      ${stats.requests != null ? `<p><strong>Viewing requests (month):</strong> ${stats.requests}</p>` : ""}
+      ${stats.vehicles != null ? `<p><strong>Vehicles:</strong> ${stats.vehicles}</p>` : ""}
+      ${stats.sold != null ? `<p><strong>Vehicles sold:</strong> ${stats.sold}</p>` : ""}
     </div>
-    
+
     <div class="highlight">
-      <h3 style="margin-top: 0;">Upgrade to ${suggestedPlan}</h3>
-      <p>Get more listings, priority support, and advanced features to grow your sales even faster.</p>
+      <h3 style="margin-top: 0;">${suggestedPlan}</h3>
+      <p>With the <strong>paid</strong> plan, storefront and WhatsApp leads go straight to <em>your</em> sales team. You see every request in the dealer portal and own the customer relationship.</p>
     </div>
-    
-    <a href="${APP_BASE_URL}/landing" class="button">View Upgrade Options →</a>
-    
-    <p style="font-size: 13px; color: #666;">Current Plan: ${currentPlan}</p>
+
+    <a href="${APP_BASE_URL}/landing" class="button">View paid plan →</a>
+
+    <p style="font-size: 13px; color: #666;">Current: ${currentPlan}</p>
   `;
-  
+
   return sendEmail({
     to: dealerEmail,
     subject,
     html: wrapEmail(content, subject),
-    text: `You're growing! Consider upgrading from ${currentPlan} to ${suggestedPlan}. ${reason}`,
+    text: `${reason} Upgrade from ${currentPlan} to ${suggestedPlan} at ${APP_BASE_URL}/landing`,
   });
 }
 
@@ -375,6 +477,8 @@ module.exports = {
   sendEmail,
   sendWelcomeEmail,
   sendNewRequestAlert,
+  sendFreeTierLeadToSalesTeam,
+  sendDealerApplicationNotification,
   sendLowInventoryAlert,
   sendFailedPaymentEmail,
   sendUpgradePromptEmail,

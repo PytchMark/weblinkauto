@@ -619,6 +619,10 @@
             <div>
               <h1>Viewing Requests</h1>
               <p>Leads coming from the storefront. Update status as you follow up.</p>
+              <p id="requestsRestrictedBanner" class="hint" style="display:none;margin-top:12px;padding:12px 14px;border-radius:12px;background:rgba(234,179,8,.12);border:1px solid rgba(180,83,9,.28);max-width:68ch;line-height:1.45">
+                On the <strong>free commission</strong> program, storefront leads are handled by CashClosers—this inbox unlocks on the <strong>paid</strong> plan.
+                <a href="/landing#programs" style="color:inherit;font-weight:800;text-decoration:underline;margin-left:4px">View plans</a>
+              </p>
             </div>
           </div>
           <div class="panel-body">
@@ -1031,6 +1035,7 @@
     dealer: null,
     vehicles: [],
     requests: [],
+    requestsRestricted: false,
     invFilter: { q:'', status:'all' },
     reqFilter: { q:'', status:'all', from:'', to:'' },
     month: '',
@@ -1872,11 +1877,15 @@
 
     STATE.vehicles = veh.vehicles || [];
     STATE.requests = req.requests || [];
+    STATE.requestsRestricted = Boolean(req.requestsRestricted);
     STATE.dailyRequests = summary.dailyRequests || [];
+
+    const reqBanner = document.getElementById('requestsRestrictedBanner');
+    if(reqBanner) reqBanner.style.display = STATE.requestsRestricted ? 'block' : 'none';
 
     // Update hints
     navInv.textContent = `${STATE.vehicles.length} total`;
-    navReq.textContent = `${STATE.requests.length} total`;
+    navReq.textContent = STATE.requestsRestricted ? 'Paid plan' : `${STATE.requests.length} total`;
 
     // Render
     renderInventory();
