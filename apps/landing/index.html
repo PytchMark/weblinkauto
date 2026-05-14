@@ -5,9 +5,19 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Auto Concierge Jamaica · Dealer programs</title>
   <meta name="description" content="List inventory on a premium storefront. Choose commission-based onboarding with CashClosers sales support, or the paid tier with leads and WhatsApp to your own team." />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Auto Concierge Jamaica · Dealer programs" />
+  <meta property="og:description" content="Premium dealer storefronts with free commission onboarding or paid lead ownership at $98/mo." />
+  <meta property="og:image" content="https://res.cloudinary.com/dd8pjjxsm/image/upload/v1770298701/ChatGPT_Image_Sep_6_2025_08_27_53_AM_raorxf.png" />
+  <meta property="og:url" content="https://autoconciergeja.com/landing" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Auto Concierge Jamaica · Dealer programs" />
+  <meta name="twitter:description" content="Premium dealer storefronts with free commission onboarding or paid lead ownership at $98/mo." />
+  <meta name="twitter:image" content="https://res.cloudinary.com/dd8pjjxsm/image/upload/v1770298701/ChatGPT_Image_Sep_6_2025_08_27_53_AM_raorxf.png" />
+  <link rel="canonical" href="https://autoconciergeja.com/landing" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/assets/css/acj-brand.css" />
   <style>
     :root{
       --bg:#0c0d10;
@@ -17,7 +27,6 @@
       --ink:#0a0a0b;
       --ink-soft:#e4e4e7;
       --muted:#71717a;
-      --muted2:#a1a1aa;
       --brand:#c41e3a;
       --brand-2:#e11d48;
       --line:rgba(255,255,255,.08);
@@ -25,174 +34,70 @@
       --shadow:0 24px 60px rgba(0,0,0,.35);
       --radius:20px;
       --gutter:clamp(18px,4vw,32px);
-      --font-display:"Playfair Display", Georgia, serif;
-      --font-body:"DM Sans",system-ui,sans-serif;
     }
-    *{box-sizing:border-box}
-    body{
-      margin:0;
-      font-family:var(--font-body);
-      color:var(--ink);
-      background:var(--surface2);
-      -webkit-font-smoothing:antialiased;
-    }
+    body{margin:0;font-family:var(--acj-font-body);color:var(--ink);background:var(--surface2);-webkit-font-smoothing:antialiased}
     a{text-decoration:none;color:inherit}
     .wrap{max-width:1120px;margin:0 auto;padding:0 var(--gutter)}
-    .marquee{
-      background:#050506;
-      color:rgba(255,255,255,.72);
-      font-size:10px;
-      letter-spacing:.28em;
-      text-transform:uppercase;
-      border-bottom:1px solid var(--line);
-    }
-    .marquee-track{
-      display:flex;gap:32px;padding:9px 0;white-space:nowrap;
-      animation:marquee 22s linear infinite;
-    }
+    .marquee{background:#050506;color:rgba(255,255,255,.72);font-size:10px;letter-spacing:.28em;text-transform:uppercase;border-bottom:1px solid var(--line)}
+    .marquee-track{display:flex;gap:32px;padding:9px 0;white-space:nowrap;animation:marquee 22s linear infinite}
     @keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
-    header{
-      position:sticky;top:0;z-index:30;
-      background:rgba(12,13,16,.88);
-      backdrop-filter:blur(14px);
-      border-bottom:1px solid var(--line);
-    }
+    header{position:sticky;top:0;z-index:30;background:rgba(12,13,16,.88);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
     .head-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;gap:14px}
-    .brand{display:flex;align-items:center;gap:12px;font-weight:700;font-size:14px;color:var(--ink-soft);letter-spacing:.02em}
-    .brand-badge{
-      width:40px;height:40px;border-radius:12px;overflow:hidden;
-      border:1px solid rgba(255,255,255,.12);
-      box-shadow:0 8px 20px rgba(0,0,0,.35);
-    }
-    .btn{
-      appearance:none;border:none;cursor:pointer;
-      display:inline-flex;align-items:center;justify-content:center;gap:8px;
-      min-height:42px;padding:0 20px;border-radius:999px;
-      font-size:13px;font-weight:700;font-family:var(--font-body);
-      transition:transform .15s ease, box-shadow .15s ease;
-    }
-    .btn:active{transform:scale(.98)}
-    .btn-primary{
-      background:linear-gradient(135deg,var(--brand-2),var(--brand));
-      color:#fff;
-      box-shadow:0 16px 40px rgba(196,30,58,.35);
-    }
-    .btn-primary:hover{transform:translateY(-1px)}
-    .btn-outline-light{
-      background:transparent;border:1px solid rgba(255,255,255,.22);
-      color:var(--ink-soft);
-    }
-    .btn-outline-dark{
-      background:#fff;border:1px solid var(--line2);color:var(--ink);
-      box-shadow:0 8px 20px rgba(15,23,42,.08);
-    }
-    .hero-dark{
-      background:
-        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(196,30,58,.25), transparent),
-        linear-gradient(180deg, var(--bg) 0%, #0f1014 100%);
-      color:var(--ink-soft);
-      padding:56px 0 48px;
-    }
-    .hero-grid{
-      display:grid;gap:36px;grid-template-columns:1.15fr .85fr;align-items:start;
-    }
-    .eyebrow{
-      display:inline-flex;align-items:center;gap:8px;
-      font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
-      color:rgba(255,255,255,.55);
-    }
-    .eyebrow::before{
-      content:"";width:28px;height:1px;background:rgba(255,255,255,.25);
-    }
-    h1{
-      font-family:var(--font-display);
-      font-weight:600;
-      font-size:clamp(2rem,4.2vw,3.1rem);
-      line-height:1.12;
-      margin:14px 0 16px;
-      color:#fff;
-      letter-spacing:-.02em;
-    }
+    .brand{display:flex;align-items:center;gap:12px;font-weight:700;font-size:14px;color:var(--ink-soft)}
+    .brand-badge{width:40px;height:40px;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,.12);box-shadow:0 8px 20px rgba(0,0,0,.35)}
+    .head-actions{display:flex;gap:8px;flex-wrap:wrap}
+    .hero-dark{background:radial-gradient(ellipse 80% 50% at 50% -20%, rgba(196,30,58,.25), transparent),linear-gradient(180deg, var(--bg) 0%, #0f1014 100%);color:var(--ink-soft);padding:56px 0 48px;position:relative;overflow:hidden}
+  .hero-drift{position:absolute;inset:-20% -10%;background:radial-gradient(circle at 30% 20%, rgba(225,29,72,.18), transparent 55%);pointer-events:none}
+    .hero-grid{display:grid;gap:36px;grid-template-columns:1.15fr .85fr;align-items:start;position:relative;z-index:1}
+    .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.55)}
+    .eyebrow::before{content:"";width:28px;height:1px;background:rgba(255,255,255,.25)}
+    h1{font-family:var(--acj-font-display);font-weight:600;font-size:clamp(2rem,4.2vw,3.1rem);line-height:1.12;margin:14px 0 16px;color:#fff}
     .hero-lead{font-size:16px;line-height:1.65;color:rgba(255,255,255,.72);max-width:52ch}
-    .hero-aside{
-      background:rgba(255,255,255,.04);
-      border:1px solid var(--line);
-      border-radius:var(--radius);
-      padding:22px;
-      box-shadow:var(--shadow);
-    }
-    .hero-aside h3{margin:0 0 10px;font-family:var(--font-display);font-size:18px;color:#fff}
+    .hero-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}
+    .hero-aside{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow)}
+    .hero-aside h3{margin:0 0 10px;font-family:var(--acj-font-display);font-size:18px;color:#fff}
     .mini-list{margin:0;padding-left:18px;color:rgba(255,255,255,.65);font-size:14px;line-height:1.65}
     .section{padding:48px 0}
-    .section h2{
-      font-family:var(--font-display);
-      font-size:clamp(1.5rem,2.5vw,2rem);
-      margin:0 0 8px;
-      letter-spacing:-.02em;
-    }
+    .section h2{font-family:var(--acj-font-display);font-size:clamp(1.5rem,2.5vw,2rem);margin:0 0 8px}
     .section-sub{color:var(--muted);font-size:15px;max-width:60ch;margin-bottom:22px;line-height:1.55}
     .grid3{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
-    .card{
-      background:var(--surface);
-      border-radius:var(--radius);
-      border:1px solid var(--line2);
-      padding:20px;
-      box-shadow:0 14px 36px rgba(15,23,42,.06);
-    }
+    .card{background:var(--surface);border-radius:var(--radius);border:1px solid var(--line2);padding:20px;box-shadow:0 14px 36px rgba(15,23,42,.06)}
     .card h3{margin:0 0 8px;font-size:16px;font-weight:700}
     .muted{color:var(--muted);font-size:14px;line-height:1.55}
-    .pricing-grid{
-      display:grid;gap:20px;
-      grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
-    }
-    .price-card{
-      background:var(--surface);
-      border-radius:22px;
-      border:1px solid var(--line2);
-      padding:24px;
-      display:flex;flex-direction:column;gap:12px;
-      box-shadow:0 20px 50px rgba(15,23,42,.08);
-    }
-    .price-card.featured{
-      border-color:rgba(196,30,58,.35);
-      box-shadow:0 24px 55px rgba(196,30,58,.12);
-    }
-    .tag{
-      display:inline-flex;align-self:flex-start;
-      font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;
-      padding:6px 10px;border-radius:999px;
-      background:rgba(196,30,58,.1);color:var(--brand);
-      border:1px solid rgba(196,30,58,.22);
-    }
-    .tag-muted{
-      background:#f4f4f5;color:var(--muted);
-      border:1px solid var(--line2);
-    }
-    .price{font-size:32px;font-weight:800;font-family:var(--font-display);color:var(--brand);margin:4px 0}
-    .price small{font-size:14px;font-weight:600;color:var(--muted);font-family:var(--font-body)}
-    .input,.textarea{
-      border-radius:14px;border:1px solid var(--line2);
-      padding:11px 14px;font-size:14px;width:100%;font-family:var(--font-body);
-      background:#fafafa;
-    }
-    .textarea{min-height:88px;resize:vertical}
+    .trust-grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin-bottom:22px}
+    .quote-grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));margin:22px 0}
+    .cash-explainer{background:linear-gradient(135deg,#fff,#fdf2f4);border:1px solid rgba(196,30,58,.18);border-radius:18px;padding:18px;margin-top:18px}
+    .compare-wrap{background:var(--surface);border:1px solid var(--line2);border-radius:22px;padding:22px;box-shadow:0 20px 50px rgba(15,23,42,.08)}
+    .compare-table{width:100%;border-collapse:collapse;font-size:14px}
+    .compare-table th,.compare-table td{padding:12px 10px;border-bottom:1px solid var(--line2);text-align:left;vertical-align:top}
+    .compare-table th{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+    .compare-table td:first-child{font-weight:600}
+    .compare-yes{color:#166534;font-weight:800}
+    .compare-note{color:var(--muted);font-size:12px}
+    .pricing-grid{display:grid;gap:20px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+    .price-card{background:var(--surface);border-radius:22px;border:1px solid var(--line2);padding:24px;display:flex;flex-direction:column;gap:12px;box-shadow:0 20px 50px rgba(15,23,42,.08)}
+    .price-card.featured{border-color:rgba(196,30,58,.35);box-shadow:0 24px 55px rgba(196,30,58,.12)}
+    .price{font-size:32px;font-weight:800;font-family:var(--acj-font-display);color:var(--brand);margin:4px 0}
+    .price small{font-size:14px;font-weight:600;color:var(--muted);font-family:var(--acj-font-body)}
     .form-grid{display:grid;gap:10px}
     .success{background:#ecfdf3;border:1px solid rgba(22,163,74,.25);color:#166534;padding:12px 14px;border-radius:14px;font-size:14px}
     .warning{background:#fff7ed;border:1px solid rgba(234,88,12,.25);color:#9a3412;padding:12px 14px;border-radius:14px;font-size:14px}
+    .checkout-trust{display:grid;gap:8px;font-size:12px;color:var(--muted);margin-top:4px}
+    .checkout-trust strong{color:var(--ink)}
     .faq{display:grid;gap:12px}
-    .faq-item{
-      background:var(--surface);
-      border:1px solid var(--line2);
-      border-radius:16px;padding:16px 18px;
-    }
-    .faq-item strong{display:block;margin-bottom:6px;font-size:15px}
+    .faq-item{background:var(--surface);border:1px solid var(--line2);border-radius:16px;overflow:hidden}
+    .faq-item button{width:100%;text-align:left;background:#fff;border:none;padding:16px 18px;font-size:15px;font-weight:700;cursor:pointer;display:flex;justify-content:space-between;gap:12px}
+    .faq-panel{display:none;padding:0 18px 16px}
+    .faq-item.open .faq-panel{display:block}
+    .faq-item.open button{color:var(--brand)}
     footer{padding:36px 0;color:var(--muted);font-size:13px;text-align:center;border-top:1px solid var(--line2);background:#fafafa}
-    @media(max-width:900px){
-      .hero-grid{grid-template-columns:1fr}
-    }
+    .mobile-cta{position:fixed;left:0;right:0;bottom:0;z-index:40;padding:12px var(--gutter);background:rgba(255,255,255,.94);border-top:1px solid var(--line2);backdrop-filter:blur(12px);display:none}
+    .mobile-cta .acj-btn{width:100%}
+    @media(max-width:900px){.hero-grid{grid-template-columns:1fr}.mobile-cta{display:block}body{padding-bottom:76px}}
+    @media (prefers-reduced-motion: reduce){.marquee-track{animation:none}}
   </style>
 </head>
-<body>
+<body class="acj-body">
   <div class="marquee" aria-hidden="true">
     <div class="wrap">
       <div class="marquee-track">
@@ -210,26 +115,34 @@
     <div class="wrap">
       <div class="head-row">
         <div class="brand">
-          <div class="brand-badge"><img src="https://res.cloudinary.com/dd8pjjxsm/image/upload/v1770298701/ChatGPT_Image_Sep_6_2025_08_27_53_AM_raorxf.png" alt="" width="40" height="40" style="object-fit:cover" /></div>
+          <div class="brand-badge"><img src="https://res.cloudinary.com/dd8pjjxsm/image/upload/v1770298701/ChatGPT_Image_Sep_6_2025_08_27_53_AM_raorxf.png" alt="Auto Concierge Jamaica logo" width="40" height="40" style="object-fit:cover" /></div>
           Auto Concierge Jamaica
         </div>
-        <a class="btn btn-outline-light" href="/storefront">Browse storefront</a>
+        <div class="head-actions">
+          <a class="acj-btn acj-btn-outline-light" href="/storefront">Browse storefront</a>
+          <a class="acj-btn acj-btn-primary" href="#programs">Choose program</a>
+        </div>
       </div>
     </div>
   </header>
 
   <section class="hero-dark">
+    <div class="hero-drift" data-parallax></div>
     <div class="wrap">
       <div class="hero-grid">
         <div>
-          <div class="eyebrow">Dealer platform</div>
-          <h1>List with authority. Close with clarity.</h1>
-          <p class="hero-lead">
+          <div class="eyebrow hero-line">Dealer platform</div>
+          <h1 class="hero-line">List with authority. Close with clarity.</h1>
+          <p class="hero-lead hero-line">
             A private storefront for your inventory—not a noisy marketplace. Choose the <strong>free commission program</strong>
-            with CashClosers handling buyer conversations, or the <strong>paid tier at $98/mo</strong> so leads and WhatsApp route to your own sales team and customer relationships stay yours.
+            with CashClosers handling buyer conversations, or the <strong>paid tier at $98/mo</strong> so leads and WhatsApp route to your own sales team.
           </p>
+          <div class="hero-actions hero-line">
+            <a class="acj-btn acj-btn-primary" href="#programs">Compare programs</a>
+            <a class="acj-btn acj-btn-outline-light" href="/storefront">See buyer experience</a>
+          </div>
         </div>
-        <aside class="hero-aside">
+        <aside class="hero-aside hero-line">
           <h3>Why dealers use us</h3>
           <ul class="mini-list">
             <li>Premium presentation that builds trust with serious buyers.</li>
@@ -243,56 +156,89 @@
 
   <main>
     <section class="section wrap">
-      <h2>How it works</h2>
-      <p class="section-sub">Two paths—same storefront quality. The difference is who nurtures the buyer until the handoff.</p>
-      <div class="grid3">
-        <div class="card">
-          <h3>1. Pick your program</h3>
-          <p class="muted">Free (commission) for CashClosers-led follow-up, or paid for direct lead ownership.</p>
-        </div>
-        <div class="card">
-          <h3>2. Get provisioned</h3>
-          <p class="muted">Free tier: apply and we onboard you after approval. Paid: secure Stripe checkout with a 14-day trial.</p>
-        </div>
-        <div class="card">
-          <h3>3. Publish inventory</h3>
-          <p class="muted">Upload vehicles, hero media, and pricing—your branded link is ready to share.</p>
-        </div>
+      <h2 class="acj-reveal">How it works</h2>
+      <p class="section-sub acj-reveal">Two paths—same storefront quality. The difference is who nurtures the buyer until the handoff.</p>
+      <div class="grid3" id="howSteps">
+        <div class="card acj-reveal"><h3>1. Pick your program</h3><p class="muted">Free (commission) for CashClosers-led follow-up, or paid for direct lead ownership.</p></div>
+        <div class="card acj-reveal"><h3>2. Get provisioned</h3><p class="muted">Free tier: apply and we onboard you after approval. Paid: secure Stripe checkout with a 14-day trial.</p></div>
+        <div class="card acj-reveal"><h3>3. Publish inventory</h3><p class="muted">Upload vehicles, hero media, and pricing—your branded link is ready to share.</p></div>
+      </div>
+    </section>
+
+    <section class="section wrap" id="trustProof">
+      <h2 class="acj-reveal">Built for trust before the first lead</h2>
+      <p class="section-sub acj-reveal">Placeholder proof points you can swap for live metrics, partner logos, and dealer quotes when marketing assets are ready.</p>
+      <div class="trust-grid">
+        <div class="acj-trust-stat acj-reveal"><div class="value acj-data">24h</div><div class="label">Typical review window for free-tier applications</div></div>
+        <div class="acj-trust-stat acj-reveal"><div class="value acj-data">$98</div><div class="label">Flat monthly paid tier with 14-day trial</div></div>
+        <div class="acj-trust-stat acj-reveal"><div class="value acj-data">1 link</div><div class="label">Dealer-specific storefront per account</div></div>
+        <div class="acj-trust-stat acj-reveal"><div class="value acj-data">3</div><div class="label">Buyer request channels: WhatsApp, live video, walk-in</div></div>
+      </div>
+      <div class="quote-grid">
+        <div class="acj-quote acj-reveal"><blockquote>“Placeholder quote from an approved dealer about how the storefront feels more credible than posting on general marketplaces.”</blockquote><cite>Dealer principal · Kingston (placeholder)</cite></div>
+        <div class="acj-quote acj-reveal"><blockquote>“Placeholder quote about CashClosers handling follow-up while the team focuses on sourcing inventory.”</blockquote><cite>Sales lead · St. Andrew (placeholder)</cite></div>
+      </div>
+      <div class="acj-logo-strip acj-reveal" aria-label="Partner logo placeholders">
+        <div class="acj-logo-slot">Logo</div><div class="acj-logo-slot">Logo</div><div class="acj-logo-slot">Logo</div><div class="acj-logo-slot">Logo</div>
+      </div>
+      <div class="cash-explainer acj-reveal">
+        <strong>CashClosers on the free tier</strong>
+        <p class="muted" style="margin:8px 0 0">Buyer WhatsApp and lead follow-up can route to CashClosers so your team stays focused on inventory while commission terms are confirmed during approval.</p>
+      </div>
+    </section>
+
+    <section class="section wrap" id="tierCompare">
+      <h2 class="acj-reveal">Program comparison</h2>
+      <p class="section-sub acj-reveal">Scan what changes between commission onboarding and paid lead ownership.</p>
+      <div class="compare-wrap acj-reveal" id="comparePin">
+        <table class="compare-table">
+          <thead><tr><th>Capability</th><th>Free · Commission</th><th>Paid · $98/mo</th></tr></thead>
+          <tbody>
+            <tr><td>Dealer portal &amp; inventory</td><td class="compare-yes">Included</td><td class="compare-yes">Included</td></tr>
+            <tr><td>Branded storefront link</td><td class="compare-yes">Included</td><td class="compare-yes">Included</td></tr>
+            <tr><td>Lead inbox in dealer portal</td><td class="compare-note">Handled by CashClosers</td><td class="compare-yes">Included</td></tr>
+            <tr><td>WhatsApp routing</td><td class="compare-note">CashClosers concierge</td><td class="compare-yes">Your sales team</td></tr>
+            <tr><td>Stripe trial</td><td>—</td><td class="compare-yes">14 days</td></tr>
+            <tr><td>Commission</td><td class="compare-note">Confirmed on approval</td><td>—</td></tr>
+          </tbody>
+        </table>
       </div>
     </section>
 
     <section class="section wrap" id="programs">
-      <h2>Programs &amp; pricing</h2>
-      <p class="section-sub">Agreed commission rates apply on the free tier per sale facilitated by our team. Paid tier unlocks the request inbox and WhatsApp routing to your dealership.</p>
-
+      <h2 class="acj-reveal">Programs &amp; pricing</h2>
+      <p class="section-sub acj-reveal">Agreed commission rates apply on the free tier per sale facilitated by our team. Paid tier unlocks the request inbox and WhatsApp routing to your dealership.</p>
       <div class="pricing-grid">
-        <div class="price-card">
-          <span class="tag tag-muted">Free · Commission</span>
+        <div class="price-card acj-reveal">
+          <span class="acj-tag acj-tag-muted">Free · Commission</span>
           <strong style="font-size:18px">CashClosers closes for you</strong>
-          <p class="muted">List at no monthly fee. Storefront and WhatsApp inquiries are handled by the CashClosers sales team. You focus on inventory—we help convert.</p>
+          <p class="muted">List at no monthly fee. Storefront and WhatsApp inquiries are handled by the CashClosers sales team.</p>
           <div class="price">0<small>/mo</small></div>
-          <div class="form-grid" style="margin-top:8px">
-            <input class="input" id="wlBusiness" placeholder="Business name" autocomplete="organization" />
-            <input class="input" id="wlEmail" type="email" placeholder="Work email" autocomplete="email" />
-            <input class="input" id="wlWhatsapp" placeholder="WhatsApp (digits)" inputmode="numeric" />
-            <textarea class="textarea" id="wlNotes" placeholder="Optional: inventory size, location, goals"></textarea>
+          <div class="form-grid">
+            <div><input class="acj-input" id="wlBusiness" placeholder="Business name" autocomplete="organization" /><p class="acj-field-error" id="wlBusinessError" hidden></p></div>
+            <div><input class="acj-input" id="wlEmail" type="email" placeholder="Work email" autocomplete="email" /><p class="acj-field-error" id="wlEmailError" hidden></p></div>
+            <div><input class="acj-input" id="wlWhatsapp" placeholder="WhatsApp (digits)" inputmode="numeric" /></div>
+            <textarea class="acj-textarea" id="wlNotes" placeholder="Optional: inventory size, location, goals"></textarea>
           </div>
-          <button class="btn btn-outline-dark" type="button" id="btnWaitlist">Submit application</button>
+          <button class="acj-btn acj-btn-outline-dark" type="button" id="btnWaitlist">Submit application</button>
           <p class="muted" id="waitlistStatus" style="display:none;margin:0"></p>
         </div>
-
-        <div class="price-card featured">
-          <span class="tag">Paid · Full control</span>
+        <div class="price-card featured acj-reveal">
+          <span class="acj-tag">Paid · Full control</span>
           <strong style="font-size:18px">$98/mo — leads to your team</strong>
-          <p class="muted">Includes access to viewing requests in your dealer portal. WhatsApp and follow-up go to <em>your</em> sales staff—the customer relationship stays with you.</p>
+          <p class="muted">Includes access to viewing requests in your dealer portal. WhatsApp and follow-up go to your sales staff.</p>
           <div class="price">$98<small>/mo · 14-day trial</small></div>
-          <div class="form-grid" style="margin-top:8px">
-            <input class="input" id="businessName" placeholder="Business name" autocomplete="organization" />
-            <input class="input" id="email" type="email" placeholder="Billing email" autocomplete="email" />
-            <input class="input" id="whatsapp" placeholder="WhatsApp for your team (digits)" inputmode="numeric" />
+          <div class="form-grid">
+            <div><input class="acj-input" id="businessName" placeholder="Business name" autocomplete="organization" /><p class="acj-field-error" id="businessNameError" hidden></p></div>
+            <div><input class="acj-input" id="email" type="email" placeholder="Billing email" autocomplete="email" /><p class="acj-field-error" id="emailError" hidden></p></div>
+            <div><input class="acj-input" id="whatsapp" placeholder="WhatsApp for your team (digits)" inputmode="numeric" /></div>
           </div>
-          <button class="btn btn-primary" type="button" id="btnPaidCheckout">Continue to secure checkout</button>
-          <p class="muted" style="font-size:12px;margin:0">You will be redirected to Stripe. Dealer ID is provisioned automatically after payment.</p>
+          <button class="acj-btn acj-btn-primary" type="button" id="btnPaidCheckout">Continue to secure checkout</button>
+          <div class="checkout-trust">
+            <strong>Secure checkout via Stripe</strong>
+            <span>14-day trial, then $98/mo unless cancelled in the Stripe customer portal.</span>
+            <span>Policy placeholders: <a href="#footer">Privacy</a> · <a href="#footer">Terms</a></span>
+          </div>
           <div class="warning" id="checkoutStatus" style="display:none;margin:0"></div>
         </div>
       </div>
@@ -301,33 +247,40 @@
     <section class="section wrap" id="successSection" style="display:none">
       <h2>Provisioning</h2>
       <div class="success" id="successBox">We are setting up your dealer account…</div>
+      <p class="muted" id="successNext" style="margin-top:12px"></p>
+      <a class="acj-btn acj-btn-primary" id="successPortalLink" href="/dealer" style="display:none;margin-top:12px">Open dealer portal</a>
+    </section>
+
+    <section class="section wrap" id="cancelBanner" style="display:none">
+      <div class="warning">Checkout was cancelled. You can restart paid signup or apply for the free commission program below.</div>
     </section>
 
     <section class="section wrap">
-      <h2>FAQ</h2>
-      <div class="faq">
-        <div class="faq-item">
-          <strong>What is the difference between free and paid?</strong>
-          <p class="muted">On the free tier, buyer WhatsApp and lead follow-up are routed to CashClosers so we can help close under your commission agreement. On paid, those same touchpoints go to your dealership and you see every request in the portal.</p>
-        </div>
-        <div class="faq-item">
-          <strong>What happens after I subscribe to paid?</strong>
-          <p class="muted">Stripe confirms payment, we provision your Dealer ID, and you receive login instructions by email. Your trial lasts 14 days before billing.</p>
-        </div>
-        <div class="faq-item">
-          <strong>How long does a free-tier application take?</strong>
-          <p class="muted">Our team reviews applications in order. You will receive next steps by email once approved.</p>
-        </div>
-        <div class="faq-item">
-          <strong>Is my inventory public to everyone?</strong>
-          <p class="muted">Your catalog is accessed via your Dealer ID link—curated discovery, not open marketplace noise.</p>
-        </div>
+      <h2 class="acj-reveal">FAQ</h2>
+      <div class="faq" id="faqList">
+        <div class="faq-item"><button type="button">What is the difference between free and paid?<span>+</span></button><div class="faq-panel"><p class="muted">On the free tier, buyer WhatsApp and lead follow-up are routed to CashClosers. On paid, those touchpoints go to your dealership and you see every request in the portal.</p></div></div>
+        <div class="faq-item"><button type="button">What happens after I subscribe to paid?<span>+</span></button><div class="faq-panel"><p class="muted">Stripe confirms payment, we provision your Dealer ID, and you receive login instructions by email. Your trial lasts 14 days before billing.</p></div></div>
+        <div class="faq-item"><button type="button">How long does a free-tier application take?<span>+</span></button><div class="faq-panel"><p class="muted">Applications are reviewed in order. You will receive next steps by email once approved.</p></div></div>
+        <div class="faq-item"><button type="button">Is my inventory public to everyone?<span>+</span></button><div class="faq-panel"><p class="muted">Your catalog is accessed via your Dealer ID link—curated discovery, not open marketplace noise.</p></div></div>
       </div>
     </section>
   </main>
 
-  <footer>Auto Concierge Jamaica · Dealer onboarding</footer>
+  <footer id="footer">
+    <p>Auto Concierge Jamaica · Dealer onboarding</p>
+    <div class="acj-policy-row" style="margin-top:10px">
+      <a href="mailto:support@autoconciergeja.com">Contact</a>
+      <a href="/landing#footer">Privacy (placeholder)</a>
+      <a href="/landing#footer">Terms (placeholder)</a>
+    </div>
+  </footer>
 
+  <div class="mobile-cta"><a class="acj-btn acj-btn-primary" href="#programs">Choose program</a></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/ScrollTrigger.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+  <script src="/assets/js/acj-motion.js"></script>
   <script>
     const businessName = document.getElementById("businessName");
     const email = document.getElementById("email");
@@ -335,18 +288,51 @@
     const checkoutStatus = document.getElementById("checkoutStatus");
     const successSection = document.getElementById("successSection");
     const successBox = document.getElementById("successBox");
+    const successNext = document.getElementById("successNext");
+    const successPortalLink = document.getElementById("successPortalLink");
     const btnPaidCheckout = document.getElementById("btnPaidCheckout");
-
     const wlBusiness = document.getElementById("wlBusiness");
     const wlEmail = document.getElementById("wlEmail");
     const wlWhatsapp = document.getElementById("wlWhatsapp");
     const wlNotes = document.getElementById("wlNotes");
     const btnWaitlist = document.getElementById("btnWaitlist");
     const waitlistStatus = document.getElementById("waitlistStatus");
+    const cancelBanner = document.getElementById("cancelBanner");
+
+    function isValidEmail(value){
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
+    }
+
+    function setFieldError(input, errorNode, message){
+      if(message){
+        input.classList.add("is-invalid");
+        errorNode.hidden = false;
+        errorNode.textContent = message;
+        return false;
+      }
+      input.classList.remove("is-invalid");
+      errorNode.hidden = true;
+      errorNode.textContent = "";
+      return true;
+    }
+
+    function validateWaitlist(){
+      const businessOk = setFieldError(wlBusiness, document.getElementById("wlBusinessError"), wlBusiness.value.trim() ? "" : "Business name is required.");
+      const emailOk = setFieldError(wlEmail, document.getElementById("wlEmailError"), isValidEmail(wlEmail.value) ? "" : "Valid email is required.");
+      return businessOk && emailOk;
+    }
+
+    function validateCheckout(){
+      const businessOk = setFieldError(businessName, document.getElementById("businessNameError"), businessName.value.trim() ? "" : "Business name is required.");
+      const emailOk = setFieldError(email, document.getElementById("emailError"), isValidEmail(email.value) ? "" : "Valid billing email is required.");
+      return businessOk && emailOk;
+    }
 
     async function startCheckout(){
+      if(!validateCheckout()) return;
       checkoutStatus.style.display = "block";
       checkoutStatus.textContent = "Redirecting to Stripe…";
+      btnPaidCheckout.disabled = true;
       try{
         const res = await fetch("/api/stripe/create-checkout-session", {
           method: "POST",
@@ -363,15 +349,18 @@
         window.location.href = data.url;
       }catch(err){
         checkoutStatus.textContent = err.message || "Unable to start checkout.";
+        btnPaidCheckout.disabled = false;
       }
     }
 
     btnPaidCheckout.addEventListener("click", startCheckout);
 
     async function submitWaitlist(){
+      if(!validateWaitlist()) return;
       waitlistStatus.style.display = "block";
       waitlistStatus.className = "muted";
       waitlistStatus.textContent = "Sending…";
+      btnWaitlist.disabled = true;
       try{
         const res = await fetch("/api/public/dealer-application", {
           method: "POST",
@@ -387,7 +376,6 @@
         if(!res.ok || !data?.ok) throw new Error(data?.error || "Could not submit");
         waitlistStatus.textContent = data.message || "Thanks — we will be in touch shortly.";
         waitlistStatus.className = "success";
-        waitlistStatus.style.marginTop = "8px";
         wlBusiness.value = "";
         wlEmail.value = "";
         wlWhatsapp.value = "";
@@ -395,7 +383,8 @@
       }catch(err){
         waitlistStatus.textContent = err.message || "Something went wrong. Please try again.";
         waitlistStatus.className = "warning";
-        waitlistStatus.style.marginTop = "8px";
+      }finally{
+        btnWaitlist.disabled = false;
       }
     }
 
@@ -403,6 +392,7 @@
 
     async function pollProvisioning(sessionId){
       successSection.style.display = "block";
+      successSection.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
       successBox.textContent = "We are setting up your dealer account. This usually takes a few seconds.";
       for(let i=0;i<6;i++){
         try{
@@ -410,6 +400,8 @@
           const data = await res.json();
           if(res.ok && data?.ok && data.status === "ready" && data.dealer?.dealerId){
             successBox.textContent = `Dealer ID created: ${data.dealer.dealerId}. Check your email for next steps.`;
+            successNext.textContent = "Your storefront link and portal access will arrive by email. You can open the dealer portal once credentials are confirmed.";
+            successPortalLink.style.display = "inline-flex";
             return;
           }
         }catch(_err){}
@@ -423,6 +415,29 @@
       const sessionId = params.get("session_id");
       if(sessionId) pollProvisioning(sessionId);
     }
+    if(params.get("status") === "cancel"){
+      cancelBanner.style.display = "block";
+      document.getElementById("programs")?.scrollIntoView({ behavior: "smooth" });
+    }
+
+    document.querySelectorAll(".faq-item button").forEach((button) => {
+      button.addEventListener("click", () => {
+        const item = button.closest(".faq-item");
+        const open = item.classList.contains("open");
+        document.querySelectorAll(".faq-item").forEach((node) => node.classList.remove("open"));
+        if(!open) item.classList.add("open");
+      });
+    });
+
+    ACJMotion.whenReady(() => {
+      ACJMotion.initLenis();
+      ACJMotion.heroIntro([".hero-line"]);
+      ACJMotion.revealOnScroll(".acj-reveal");
+      ACJMotion.staggerChildren("#howSteps", ".card");
+      ACJMotion.pinSection("#comparePin", { end: "+=90%" });
+      ACJMotion.pulseOnce("#btnPaidCheckout");
+      ACJMotion.parallaxLayer("[data-parallax]", -8);
+    });
   </script>
 </body>
 </html>

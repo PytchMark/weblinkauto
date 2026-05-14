@@ -25,6 +25,9 @@
   
   <!-- Canonical URL -->
   <link rel="canonical" href="https://autoconciergeja.com" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="/assets/css/acj-brand.css" />
 
   <style>
     :root{
@@ -54,7 +57,7 @@
     html,body{height:100%}
     body{
       margin:0;
-      font-family: system-ui,-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,sans-serif;
+      font-family:var(--acj-font-body);
       color:var(--ink);
       background:
         radial-gradient(circle at 0% 0%, rgba(196,30,58,.05), transparent 42%),
@@ -362,7 +365,75 @@
       border-radius:16px;padding:12px;background:rgba(10,10,12,.5)
     }
     .stat .t{font-size:11px;color:rgba(255,255,255,.68)}
-    .stat .v{font-size:18px;font-weight:900}
+    .stat .v{font-size:18px;font-weight:900;font-family:var(--acj-font-data)}
+
+    .buyer-assurance{margin:18px 0 8px;max-width:58ch}
+    .buyer-assurance li{color:rgba(255,255,255,.82)}
+
+    .discovery-panel{
+      display:none;
+      margin:18px auto 0;
+      max-width:1180px;
+      padding:0 var(--gutter);
+    }
+    .discovery-panel.show{display:block}
+    .discovery-card{
+      background:var(--surface);
+      border:1px solid var(--line);
+      border-radius:22px;
+      padding:20px;
+      box-shadow:var(--shadow-soft);
+    }
+    .discovery-card h2{margin:0 0 8px;font-size:18px;font-family:var(--acj-font-display)}
+    .discovery-card p{margin:0 0 12px;color:var(--muted);font-size:14px;line-height:1.55}
+
+    .share-buttons{display:flex;gap:8px;margin-top:10px;justify-content:flex-start;flex-wrap:wrap}
+    .share-btn{
+      appearance:none;border:none;cursor:pointer;
+      display:inline-flex;align-items:center;justify-content:center;
+      min-width:42px;min-height:38px;padding:8px 12px;border-radius:10px;
+      color:#fff;font-size:12px;font-weight:800;
+      box-shadow:var(--shadow-soft);
+    }
+    .share-btn.share-whatsapp{background:#25d366}
+    .share-btn.share-facebook{background:#1877f2}
+    .share-btn.share-copy{background:#6b7280}
+
+    .detail-drawer{
+      position:fixed;inset:0;z-index:60;display:none;
+    }
+    .detail-drawer.show{display:block}
+    .detail-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.45)}
+    .detail-panel{
+      position:absolute;top:0;right:0;height:100%;width:min(480px,100%);
+      background:var(--surface);border-left:1px solid var(--line);
+      box-shadow:-20px 0 60px rgba(0,0,0,.2);
+      display:flex;flex-direction:column;
+    }
+    .detail-head{padding:16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;align-items:center}
+    .detail-body{padding:16px;overflow:auto;flex:1;display:grid;gap:14px}
+    .detail-gallery{display:grid;gap:8px}
+    .detail-gallery img{width:100%;border-radius:14px;border:1px solid var(--line)}
+    .detail-specs{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .detail-spec{background:var(--surface-soft);border:1px solid var(--line);border-radius:12px;padding:10px;font-size:12px}
+    .detail-spec strong{display:block;font-size:11px;color:var(--muted);margin-bottom:4px}
+
+    .support-panel{
+      position:fixed;inset:0;z-index:70;display:none;place-items:center;padding:18px;
+      background:rgba(0,0,0,.45);
+    }
+    .support-panel.show{display:grid}
+    .support-card{
+      width:min(560px,100%);background:var(--surface);border-radius:22px;
+      border:1px solid var(--line);padding:20px;box-shadow:var(--shadow);
+    }
+    .support-card h2{margin:0 0 8px;font-size:18px}
+    .support-card p{margin:0 0 12px;color:var(--muted);font-size:14px;line-height:1.55}
+    .support-faq{display:grid;gap:10px;margin-top:12px}
+    .support-faq details{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--surface-soft)}
+    .support-faq summary{cursor:pointer;font-weight:800;font-size:13px}
+
+    .refresh-note{font-size:12px;color:var(--muted)}
 
     .tip{
       border:1px dashed rgba(255,255,255,.3);
@@ -631,7 +702,7 @@
     }
   </style>
 </head>
-<body>
+<body class="acj-body">
 
 <div class="marquee" aria-hidden="true">
   <div class="wrap">
@@ -708,16 +779,11 @@
             <p class="lead" id="heroLead">
               A focused storefront for serious buyers: curated listings, clear pricing signals, and a booking flow designed to respect your time.
             </p>
-            <div class="proofs">
-              <span class="proof">Verified availability</span>
-              <span class="proof">Fast response</span>
-              <span class="proof">Secure requests</span>
-            </div>
-            <div class="trust-row">
-              <span class="trust-chip">✔ Verified availability</span>
-              <span class="trust-chip">⚡ Fast response</span>
-              <span class="trust-chip">🔒 Secure requests</span>
-            </div>
+            <ul class="acj-assurance-list buyer-assurance acj-reveal">
+              <li>Verified availability reflects this dealer’s live inventory feed</li>
+              <li>Secure requests route to the dealer team or CashClosers concierge when configured</li>
+              <li>Clear next steps before you travel or share payment details</li>
+            </ul>
             <div class="hero-actions">
               <button class="btn btn-primary btn-gloss" id="heroPrimaryCta">View available vehicles</button>
               <button class="btn btn-ghost" id="howBtn">How it works</button>
@@ -760,6 +826,17 @@
     </div>
   </section>
 
+  <section class="discovery-panel" id="discoveryPanel">
+    <div class="discovery-card acj-reveal">
+      <h2>Find a dealer storefront</h2>
+      <p>Paste the Dealer ID from your link, or ask the dealer for their branded URL. Example: <span class="acj-data">DEALER-0001</span>.</p>
+      <div class="hero-actions" style="margin-top:12px">
+        <a class="btn btn-outline" href="/landing">Become a dealer</a>
+        <button class="btn btn-ghost" type="button" id="discoveryFocusBtn">Enter dealer ID</button>
+      </div>
+    </div>
+  </section>
+
   <section class="buyer-guide" id="buyerGuide" aria-labelledby="buyerGuideHeading">
     <div class="wrap buyer-guide-inner">
       <h2 id="buyerGuideHeading">For buyers</h2>
@@ -783,7 +860,10 @@
     <div class="wrap">
       <div class="section-head">
         <h2>Available Vehicles</h2>
-        <div class="trust">Concierge-grade presentation · Availability checked on refresh</div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <div class="refresh-note" id="inventoryFreshness">Availability checked on refresh</div>
+          <button class="btn btn-ghost" type="button" id="refreshBtn">Refresh inventory</button>
+        </div>
       </div>
       <div class="grid" id="grid"></div>
     </div>
@@ -798,8 +878,43 @@
 
 <div id="toast"><span id="toastDot"></span><span id="toastMsg"></span></div>
 
+<div class="detail-drawer" id="detailDrawer" aria-hidden="true">
+  <div class="detail-backdrop" id="detailBackdrop"></div>
+  <aside class="detail-panel" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
+    <div class="detail-head">
+      <div>
+        <div id="detailTitle" style="font-weight:900;font-size:16px">Vehicle details</div>
+        <div id="detailPrice" style="font-size:13px;color:var(--muted);font-family:var(--acj-font-data)"></div>
+      </div>
+      <button class="btn btn-ghost" type="button" id="detailClose">Close</button>
+    </div>
+    <div class="detail-body">
+      <div class="detail-gallery" id="detailGallery"></div>
+      <div class="detail-specs" id="detailSpecs"></div>
+      <div class="share-buttons" id="detailShare"></div>
+      <button class="btn btn-primary btn-gloss" type="button" id="detailRequestBtn" style="width:100%">Request viewing</button>
+    </div>
+  </aside>
+</div>
+
+<div class="support-panel" id="supportPanel" aria-hidden="true">
+  <div class="support-card" role="dialog" aria-modal="true" aria-labelledby="supportTitle">
+    <div style="display:flex;justify-content:space-between;gap:10px;align-items:center">
+      <h2 id="supportTitle">Buyer support</h2>
+      <button class="btn btn-ghost" type="button" id="supportClose">Close</button>
+    </div>
+    <p id="supportIntro">Questions about a listing, WhatsApp availability, or how requests are handled? Start here.</p>
+    <div class="support-faq">
+      <details><summary>What if WhatsApp is unavailable?</summary><p class="muted">Use live video or walk-in requests. Some free-tier storefronts route WhatsApp to the CashClosers concierge team.</p></details>
+      <details><summary>How do I know inventory is current?</summary><p class="muted">Refresh inventory before you travel. Timestamps reflect the last successful load for this dealer.</p></details>
+      <details><summary>Who receives my request?</summary><p class="muted">Requests are sent to the dealer workflow. You will see next steps in the booking modal after submitting.</p></details>
+    </div>
+    <p class="muted" style="margin-top:12px">Contact placeholder: <a href="mailto:support@autoconciergeja.com">support@autoconciergeja.com</a></p>
+  </div>
+</div>
+
 <div class="overlay" id="modalOverlay" aria-hidden="true">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal" id="requestModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <div class="modal-head">
       <div class="modal-title" id="modalTitle">Book a viewing</div>
       <button class="btn btn-ghost" id="modalClose" type="button">Close</button>
@@ -883,6 +998,9 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/ScrollTrigger.min.js"></script>
+<script src="/assets/js/acj-motion.js"></script>
 <script>
   const API_BASE = "";
   const $ = (id) => document.getElementById(id);
@@ -948,6 +1066,23 @@
     reqNotes: $("reqNotes"),
     reqType: $("reqType"),
 
+    discoveryPanel: $("discoveryPanel"),
+    discoveryFocusBtn: $("discoveryFocusBtn"),
+    refreshBtn: $("refreshBtn"),
+    inventoryFreshness: $("inventoryFreshness"),
+    detailDrawer: $("detailDrawer"),
+    detailBackdrop: $("detailBackdrop"),
+    detailClose: $("detailClose"),
+    detailTitle: $("detailTitle"),
+    detailPrice: $("detailPrice"),
+    detailGallery: $("detailGallery"),
+    detailSpecs: $("detailSpecs"),
+    detailShare: $("detailShare"),
+    detailRequestBtn: $("detailRequestBtn"),
+    supportPanel: $("supportPanel"),
+    supportClose: $("supportClose"),
+    requestModal: $("requestModal"),
+
     year: $("year"),
   };
 
@@ -960,6 +1095,8 @@
     tipIndex: 0,
     activeVehicle: null,
     lastRefreshed: null,
+    lastModalTrigger: null,
+    detailVehicle: null,
   };
 
   const tips = [
@@ -999,6 +1136,37 @@
     const v = Number(n);
     if(!Number.isFinite(v) || v <= 0) return "Price on request";
     return "J$ " + v.toLocaleString(undefined,{ maximumFractionDigits:0 });
+  }
+
+  function updateMetaTags({ title, description, image, url }){
+    if(title) document.title = title;
+    const setMeta = (selector, value) => {
+      const node = document.querySelector(selector);
+      if(node && value) node.setAttribute("content", value);
+    };
+    if(description){
+      setMeta('meta[name="description"]', description);
+      setMeta('meta[property="og:description"]', description);
+      setMeta('meta[name="twitter:description"]', description);
+    }
+    if(title){
+      setMeta('meta[property="og:title"]', title);
+      setMeta('meta[name="twitter:title"]', title);
+    }
+    if(image){
+      setMeta('meta[property="og:image"]', image);
+      setMeta('meta[name="twitter:image"]', image);
+    }
+    if(url){
+      setMeta('meta[property="og:url"]', url);
+      const canonical = document.querySelector('link[rel="canonical"]');
+      if(canonical) canonical.setAttribute("href", url);
+    }
+  }
+
+  function toggleDiscoveryPanel(){
+    if(!ui.discoveryPanel) return;
+    ui.discoveryPanel.classList.toggle("show", !state.dealerIds.length);
   }
 
   function normalizeStatus(s){
@@ -1149,6 +1317,13 @@
       ui.heroLead.textContent = "Enter a Dealer ID to see what’s ready to drive today—no ghost listings, just verified availability.";
       ui.dealerLogoImg.src = "https://res.cloudinary.com/dd8pjjxsm/image/upload/v1770298701/ChatGPT_Image_Sep_6_2025_08_27_53_AM_raorxf.png";
       ui.heroLogoImg.src = ui.dealerLogoImg.src;
+      updateMetaTags({
+        title: "Dealer Storefront · Auto Concierge Jamaica",
+        description: "Browse a verified dealer storefront with real availability. Book a viewing by WhatsApp, live video, or walk-in.",
+        image: "https://res.cloudinary.com/dd8pjjxsm/image/upload/v1770298701/ChatGPT_Image_Sep_6_2025_08_27_53_AM_raorxf.png",
+        url: window.location.origin + "/storefront",
+      });
+      toggleDiscoveryPanel();
       return;
     }
 
@@ -1168,6 +1343,13 @@
         ui.heroLogoImg.src = logoUrl;
         ui.heroLogoImg.alt = name;
       }
+      updateMetaTags({
+        title: `${name} · Auto Concierge Jamaica`,
+        description: `Browse ${name}'s verified inventory and book a viewing by WhatsApp, live video, or walk-in.`,
+        image: logoUrl && String(logoUrl).startsWith("http") ? logoUrl : "https://res.cloudinary.com/dd8pjjxsm/image/upload/v1770298701/ChatGPT_Image_Sep_6_2025_08_27_53_AM_raorxf.png",
+        url: window.location.href,
+      });
+      toggleDiscoveryPanel();
     } else {
       ui.verifiedBadge.style.display = "none";
       ui.dealerName.textContent = "Dealer Storefront";
@@ -1178,6 +1360,7 @@
       ui.heroLead.textContent = "Each storefront is dealer-specific. Type a Dealer ID to browse and book viewings.";
       ui.dealerLogoImg.src = "https://res.cloudinary.com/dd8pjjxsm/image/upload/v1770298701/ChatGPT_Image_Sep_6_2025_08_27_53_AM_raorxf.png";
       ui.heroLogoImg.src = ui.dealerLogoImg.src;
+      toggleDiscoveryPanel();
     }
   }
 
@@ -1188,12 +1371,19 @@
       return;
     }
     ui.dealerBar.classList.add("show");
-    ui.dealerSummary.textContent = "Dealer loaded";
+    const dealerMap = new Map(state.dealers.map((d) => [d.dealerId || d.dealer_id, d]));
+    const primary = state.dealers[0];
+    const primaryName = primary?.dealerName || primary?.name || state.dealerIds[0];
+    ui.dealerSummary.textContent = primary ? `Verified dealer · ${primaryName}` : "Dealer loaded";
     ui.dealerStats.textContent = state.vehicles.length + " vehicles";
     ui.lastRefresh.textContent = state.lastRefreshed ? "Last refreshed " + state.lastRefreshed : "Last refreshed —";
+    if(ui.inventoryFreshness){
+      ui.inventoryFreshness.textContent = state.lastRefreshed
+        ? `Availability checked at ${state.lastRefreshed}`
+        : "Availability checked on refresh";
+    }
 
     ui.dealerTags.innerHTML = "";
-    const dealerMap = new Map(state.dealers.map((d) => [d.dealerId || d.dealer_id, d]));
     state.dealerIds.forEach((id) => {
       const dealer = dealerMap.get(id) || {};
       const name = dealer.dealerName || dealer.name || id;
@@ -1302,36 +1492,24 @@
       `;
 
       const vehiclePayload = { ...v, vehicleId, dealerId };
-      card.querySelector("button[data-testid='make-request-btn']").addEventListener("click", ()=>{
-        openModal(vehiclePayload);
+      const requestBtn = card.querySelector("button[data-testid='make-request-btn']");
+      requestBtn.addEventListener("click", (event) => {
+        openModal(vehiclePayload, event.currentTarget);
       });
-      
-      // #26 Social Share Button Handlers
-      const shareUrl = window.location.origin + "/" + dealerId + "?v=" + vehicleId;
-      const shareText = title + " - " + price + " | Auto Concierge Jamaica";
-      
-      card.querySelectorAll(".share-btn").forEach(btn => {
-        btn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          const type = btn.dataset.share;
-          if (type === "whatsapp") {
-            window.open("https://wa.me/?text=" + encodeURIComponent(shareText + " " + shareUrl), "_blank");
-          } else if (type === "facebook") {
-            window.open("https://www.facebook.com/sharer/sharer.php?u=" + encodeURIComponent(shareUrl), "_blank");
-          } else if (type === "copy") {
-            navigator.clipboard.writeText(shareUrl).then(() => {
-              btn.innerHTML = "✓ Copied!";
-              setTimeout(() => {
-                btn.innerHTML = '<svg style="width:16px;height:16px;fill:currentColor;vertical-align:middle" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>';
-              }, 2000);
-            });
-          }
-        });
-      });
+      const media = card.querySelector(".media");
+      if(media){
+        media.style.cursor = "pointer";
+        media.addEventListener("click", () => openDetailDrawer(vehiclePayload));
+      }
+      bindShareButtons(card, vehiclePayload);
 
       ui.grid.appendChild(card);
       requestAnimationFrame(() => card.classList.add("show"));
     });
+
+    if(window.ACJMotion){
+      ACJMotion.staggerChildren("#grid", ".card");
+    }
   }
 
   function applySearch(){
@@ -1439,6 +1617,87 @@
     window.__toastTimer = setTimeout(()=>ui.toast.classList.remove("show"), 3200);
   }
 
+  function bindShareButtons(root, vehicle){
+    const dealerId = vehicle.dealerId || state.dealerIds[0] || "";
+    const vehicleId = vehicle.vehicleId || "";
+    const shareUrl = window.location.origin + "/" + dealerId + "?v=" + vehicleId;
+    const shareText = (vehicle.title || "Vehicle") + " - " + money(vehicle.price) + " | Auto Concierge Jamaica";
+    root.querySelectorAll(".share-btn").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const type = btn.dataset.share;
+        if(type === "whatsapp"){
+          window.open("https://wa.me/?text=" + encodeURIComponent(shareText + " " + shareUrl), "_blank");
+        }else if(type === "facebook"){
+          window.open("https://www.facebook.com/sharer/sharer.php?u=" + encodeURIComponent(shareUrl), "_blank");
+        }else if(type === "copy" && navigator.clipboard){
+          navigator.clipboard.writeText(shareUrl).then(() => {
+            btn.textContent = "Copied";
+            setTimeout(() => { btn.textContent = "Link"; }, 1800);
+          });
+        }
+      });
+    });
+  }
+
+  function openDetailDrawer(vehicle){
+    state.detailVehicle = vehicle;
+    ui.detailTitle.textContent = vehicle.title || "Vehicle";
+    ui.detailPrice.textContent = money(vehicle.price);
+    const images = parseImageUrls(vehicle.raw?.cloudinaryImageUrls || vehicle.imageUrl || vehicle.raw?.images || []);
+    const primary = images[0] || vehicle.imageUrl || "";
+    ui.detailGallery.innerHTML = primary ? `<img src="${esc(primary)}" alt="${esc(vehicle.title || "Vehicle")}" />` : `<div class="muted">No gallery image yet</div>`;
+    const specs = [
+      ["Mileage", vehicle.mileage ? Number(vehicle.mileage).toLocaleString() + " km" : "—"],
+      ["Transmission", vehicle.transmission || "—"],
+      ["Fuel", vehicle.fuel || "—"],
+      ["Color", vehicle.color || "—"],
+      ["Body", vehicle.bodyType || "—"],
+      ["Vehicle ID", vehicle.vehicleId || "—"],
+    ];
+    ui.detailSpecs.innerHTML = specs.map(([label, value]) => `<div class="detail-spec"><strong>${esc(label)}</strong>${esc(value)}</div>`).join("");
+    ui.detailShare.innerHTML = `
+      <button class="share-btn share-whatsapp" data-share="whatsapp" type="button">WA</button>
+      <button class="share-btn share-facebook" data-share="facebook" type="button">FB</button>
+      <button class="share-btn share-copy" data-share="copy" type="button">Link</button>
+    `;
+    bindShareButtons(ui.detailShare, vehicle);
+    ui.detailDrawer.classList.add("show");
+    ui.detailDrawer.setAttribute("aria-hidden", "false");
+    ui.detailClose.focus();
+  }
+
+  function closeDetailDrawer(){
+    ui.detailDrawer.classList.remove("show");
+    ui.detailDrawer.setAttribute("aria-hidden", "true");
+    state.detailVehicle = null;
+  }
+
+  function openSupportPanel(){
+    ui.supportPanel.classList.add("show");
+    ui.supportPanel.setAttribute("aria-hidden", "false");
+    ui.supportClose.focus();
+  }
+
+  function closeSupportPanel(){
+    ui.supportPanel.classList.remove("show");
+    ui.supportPanel.setAttribute("aria-hidden", "true");
+  }
+
+  function trapFocus(container, event){
+    const focusable = container.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+    if(!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if(event.shiftKey && document.activeElement === first){
+      event.preventDefault();
+      last.focus();
+    }else if(!event.shiftKey && document.activeElement === last){
+      event.preventDefault();
+      first.focus();
+    }
+  }
+
   function openWhatsApp(vehicle, digits, dealerProfile){
     if(!digits){
       toast("WhatsApp unavailable for this dealer.", "error");
@@ -1449,8 +1708,9 @@
     window.open(url, "_blank", "noopener");
   }
 
-  function openModal(vehicle){
+  function openModal(vehicle, trigger){
     state.activeVehicle = vehicle;
+    state.lastModalTrigger = trigger || document.activeElement;
     const dealerProfile = getDealerProfile(vehicle.dealerId);
     const whatsappDigits = sanitizeWhatsAppNumber(dealerProfile?.whatsappNumber);
     const whatsappAvailable = Boolean(whatsappDigits);
@@ -1480,13 +1740,29 @@
     ui.reqType.value = "live_video";
     ui.whatsAppOption.setAttribute("data-disabled", whatsappAvailable ? "false" : "true");
 
-    ui.modalOverlay.classList.add("show");
-    ui.modalOverlay.setAttribute("aria-hidden", "false");
+    if(window.ACJMotion && ui.requestModal){
+      ACJMotion.modalTimeline(ui.modalOverlay, ui.requestModal, true);
+    }else{
+      ui.modalOverlay.classList.add("show");
+      ui.modalOverlay.setAttribute("aria-hidden", "false");
+    }
+    ui.modalClose.focus();
   }
 
   function closeModal(){
-    ui.modalOverlay.classList.remove("show");
-    ui.modalOverlay.setAttribute("aria-hidden", "true");
+    const finish = () => {
+      ui.modalOverlay.classList.remove("show");
+      ui.modalOverlay.setAttribute("aria-hidden", "true");
+      if(state.lastModalTrigger && typeof state.lastModalTrigger.focus === "function"){
+        state.lastModalTrigger.focus();
+      }
+    };
+    if(window.ACJMotion && ui.requestModal){
+      ACJMotion.modalTimeline(ui.modalOverlay, ui.requestModal, false);
+      window.setTimeout(finish, 220);
+    }else{
+      finish();
+    }
   }
 
   async function submitRequest(event){
@@ -1610,6 +1886,7 @@
       setBranding();
       updateDealerBar();
       applySearch();
+      focusVehicleFromQuery();
       scrollToInventory();
     }catch(e){
       console.error("Load error", e);
@@ -1645,6 +1922,14 @@
     render();
   }
 
+  function focusVehicleFromQuery(){
+    const params = new URLSearchParams(window.location.search);
+    const vehicleId = params.get("v");
+    if(!vehicleId) return;
+    const vehicle = state.vehicles.find((entry) => entry.vehicleId === vehicleId);
+    if(vehicle) openDetailDrawer(vehicle);
+  }
+
   function rotateTip(){
     state.tipIndex = (state.tipIndex + 1) % tips.length;
     ui.rotatingTip.textContent = tips[state.tipIndex];
@@ -1666,8 +1951,21 @@
 
   ui.scrollBtn.addEventListener("click", scrollToInventory);
   ui.heroPrimaryCta.addEventListener("click", scrollToInventory);
-  ui.headerSupportBtn.addEventListener("click", ()=>{
-    toast("Need help? Enter your Dealer ID or contact your dealer concierge for access.", "info");
+  ui.headerSupportBtn.addEventListener("click", openSupportPanel);
+  ui.supportClose.addEventListener("click", closeSupportPanel);
+  ui.supportPanel.addEventListener("click", (e) => { if(e.target === ui.supportPanel) closeSupportPanel(); });
+  ui.detailClose.addEventListener("click", closeDetailDrawer);
+  ui.detailBackdrop.addEventListener("click", closeDetailDrawer);
+  ui.detailRequestBtn.addEventListener("click", () => {
+    if(state.detailVehicle) openModal(state.detailVehicle, ui.detailRequestBtn);
+  });
+  ui.discoveryFocusBtn?.addEventListener("click", () => {
+    ui.dealerIdInput.focus();
+    ui.dealerIdInput.scrollIntoView({ behavior: "smooth", block: "center" });
+  });
+  ui.refreshBtn?.addEventListener("click", () => {
+    if(state.dealerIds.length) doLoad();
+    else toast("Load a dealer storefront first.", "info");
   });
 
   ui.howBtn.addEventListener("click", ()=>{
@@ -1676,6 +1974,18 @@
 
   ui.modalClose.addEventListener("click", closeModal);
   ui.modalOverlay.addEventListener("click", (e)=>{ if(e.target === ui.modalOverlay) closeModal(); });
+  ui.modalOverlay.addEventListener("keydown", (e) => {
+    if(e.key === "Escape") closeModal();
+    if(e.key === "Tab" && ui.requestModal) trapFocus(ui.requestModal, e);
+  });
+  ui.detailDrawer.addEventListener("keydown", (e) => {
+    if(e.key === "Escape") closeDetailDrawer();
+    if(e.key === "Tab") trapFocus(ui.detailDrawer.querySelector(".detail-panel"), e);
+  });
+  ui.supportPanel.addEventListener("keydown", (e) => {
+    if(e.key === "Escape") closeSupportPanel();
+    if(e.key === "Tab") trapFocus(ui.supportPanel.querySelector(".support-card"), e);
+  });
   ui.requestForm.addEventListener("submit", submitRequest);
   $$(".option-card", ui.requestOptions).forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -1692,9 +2002,17 @@
       doLoad();
     } else {
       setBranding();
+      toggleDiscoveryPanel();
       render();
     }
     setInterval(rotateTip, 5200);
+
+    if(window.ACJMotion){
+      ACJMotion.whenReady(() => {
+        ACJMotion.revealOnScroll(".acj-reveal");
+        ACJMotion.parallaxLayer(".hero-gradient, .hero-noise", 10);
+      });
+    }
   })();
 </script>
 

@@ -1,0 +1,306 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@500;600&family=Playfair+Display:wght@500;600;700&display=swap");
+
+:root {
+  --acj-bg: #0c0d10;
+  --acj-bg-soft: #14161c;
+  --acj-surface: #ffffff;
+  --acj-surface-2: #f4f4f5;
+  --acj-surface-soft: #f8fafc;
+  --acj-ink: #0a0a0b;
+  --acj-ink-soft: #e4e4e7;
+  --acj-muted: #71717a;
+  --acj-muted-2: #a1a1aa;
+  --acj-brand: #c41e3a;
+  --acj-brand-2: #e11d48;
+  --acj-brand-soft: #fdecea;
+  --acj-line: #e4e4e7;
+  --acj-line-dark: rgba(255, 255, 255, 0.08);
+  --acj-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+  --acj-shadow-soft: 0 14px 36px rgba(15, 23, 42, 0.08);
+  --acj-radius: 20px;
+  --acj-radius-lg: 26px;
+  --acj-gutter: clamp(18px, 4vw, 32px);
+  --acj-section: clamp(40px, 5vw, 68px);
+  --acj-font-display: "Playfair Display", Georgia, serif;
+  --acj-font-body: "DM Sans", system-ui, sans-serif;
+  --acj-font-data: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body.acj-body {
+  margin: 0;
+  font-family: var(--acj-font-body);
+  color: var(--acj-ink);
+  background: var(--acj-surface-2);
+  -webkit-font-smoothing: antialiased;
+}
+
+.acj-wrap {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 var(--acj-gutter);
+}
+
+.acj-wrap-wide {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 var(--acj-gutter);
+}
+
+.acj-display {
+  font-family: var(--acj-font-display);
+  letter-spacing: -0.02em;
+}
+
+.acj-data {
+  font-family: var(--acj-font-data);
+  letter-spacing: 0.02em;
+}
+
+.acj-btn {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 20px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: var(--acj-font-body);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  text-decoration: none;
+}
+
+.acj-btn:active {
+  transform: scale(0.98);
+}
+
+.acj-btn:focus-visible,
+.acj-input:focus-visible,
+.acj-textarea:focus-visible,
+.acj-select:focus-visible,
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--acj-brand-2);
+  outline-offset: 2px;
+}
+
+.acj-btn-primary {
+  background: linear-gradient(135deg, var(--acj-brand-2), var(--acj-brand));
+  color: #fff;
+  box-shadow: 0 16px 40px rgba(196, 30, 58, 0.35);
+}
+
+.acj-btn-primary:hover {
+  transform: translateY(-1px);
+}
+
+.acj-btn-outline-light {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: var(--acj-ink-soft);
+}
+
+.acj-btn-outline-dark {
+  background: #fff;
+  border: 1px solid var(--acj-line);
+  color: var(--acj-ink);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+}
+
+.acj-btn-ghost {
+  background: var(--acj-surface);
+  border: 1px solid var(--acj-line);
+  color: var(--acj-ink);
+  box-shadow: var(--acj-shadow-soft);
+}
+
+.acj-input,
+.acj-textarea,
+.acj-select {
+  border-radius: 14px;
+  border: 1px solid var(--acj-line);
+  padding: 11px 14px;
+  font-size: 14px;
+  width: 100%;
+  font-family: var(--acj-font-body);
+  background: #fafafa;
+}
+
+.acj-textarea {
+  min-height: 88px;
+  resize: vertical;
+}
+
+.acj-input.is-invalid,
+.acj-textarea.is-invalid {
+  border-color: rgba(220, 38, 38, 0.55);
+  background: #fff7f7;
+}
+
+.acj-field-error {
+  font-size: 12px;
+  color: #b91c1c;
+  margin: 4px 0 0;
+}
+
+.acj-tag {
+  display: inline-flex;
+  align-self: flex-start;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(196, 30, 58, 0.1);
+  color: var(--acj-brand);
+  border: 1px solid rgba(196, 30, 58, 0.22);
+}
+
+.acj-tag-muted {
+  background: #f4f4f5;
+  color: var(--acj-muted);
+  border: 1px solid var(--acj-line);
+}
+
+.acj-trust-stat {
+  background: var(--acj-surface);
+  border: 1px solid var(--acj-line);
+  border-radius: 18px;
+  padding: 18px;
+  box-shadow: var(--acj-shadow-soft);
+}
+
+.acj-trust-stat .value {
+  font-family: var(--acj-font-data);
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--acj-brand);
+}
+
+.acj-trust-stat .label {
+  font-size: 13px;
+  color: var(--acj-muted);
+  margin-top: 6px;
+  line-height: 1.45;
+}
+
+.acj-quote {
+  background: var(--acj-surface);
+  border: 1px solid var(--acj-line);
+  border-radius: 18px;
+  padding: 20px;
+  box-shadow: var(--acj-shadow-soft);
+}
+
+.acj-quote blockquote {
+  margin: 0 0 14px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--acj-ink);
+}
+
+.acj-quote cite {
+  display: block;
+  font-style: normal;
+  font-size: 13px;
+  color: var(--acj-muted);
+}
+
+.acj-logo-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.acj-logo-slot {
+  width: 112px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px dashed var(--acj-line);
+  background: #fafafa;
+  display: grid;
+  place-items: center;
+  color: var(--acj-muted-2);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.acj-assurance-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.acj-assurance-list li {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--acj-ink);
+}
+
+.acj-assurance-list li::before {
+  content: "✓";
+  color: var(--acj-brand);
+  font-weight: 800;
+  margin-top: 1px;
+}
+
+.acj-policy-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  justify-content: center;
+  font-size: 13px;
+}
+
+.acj-policy-row a {
+  color: var(--acj-muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.acj-reveal {
+  opacity: 0;
+  transform: translateY(24px);
+}
+
+.acj-reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .acj-reveal {
+    opacity: 1;
+    transform: none;
+  }
+}

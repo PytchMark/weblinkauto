@@ -141,7 +141,9 @@ app.use(morgan(NODE_ENV === "production" ? "combined" : "dev"));
 
 /** ========= Static apps ========= */
 const APPS_DIR = path.join(__dirname, "apps");
+const PUBLIC_ASSETS_DIR = path.join(__dirname, "public", "assets");
 
+app.use("/assets", express.static(PUBLIC_ASSETS_DIR));
 app.use("/storefront", express.static(path.join(APPS_DIR, "storefront")));
 app.use("/dealer", express.static(path.join(APPS_DIR, "dealer")));
 app.use("/admin", express.static(path.join(APPS_DIR, "admin")));
