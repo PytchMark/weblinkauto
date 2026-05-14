@@ -1,17 +1,15 @@
 "use strict";
 
-const { Resend } = require("resend");
-
 const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
 const EMAIL_FROM = process.env.EMAIL_FROM || "";
 const EMAIL_FROM_NAME = process.env.EMAIL_FROM_NAME || "Auto Concierge Jamaica";
 const EMAIL_REPLY_TO = process.env.EMAIL_REPLY_TO || "";
+const RESEND_API_URL = "https://api.resend.com/emails";
 
-let resend = null;
+const resendConfigured = Boolean(RESEND_API_KEY && EMAIL_FROM);
 
-if (RESEND_API_KEY && EMAIL_FROM) {
-  resend = new Resend(RESEND_API_KEY);
-  console.log("✅ Email service configured with Resend");
+if (resendConfigured) {
+  console.log("✅ Email service configured with Resend API");
 } else {
   console.warn("⚠️  Email service not configured - emails will be logged only");
 }
@@ -89,7 +87,7 @@ async function sendEmail({ to, subject, html, text, bcc }) {
   const toList = normalizeRecipients(to);
   const bccList = normalizeRecipients(bcc);
 
-  if (!resend || !from || !toList.length) {
+  if (!resendConfigured || !from || !toList.length) {
     console.log("📧 [EMAIL MOCK] Would send to:", toList.join(", ") || to);
     if (bccList.length) console.log("📧 [EMAIL MOCK] BCC:", bccList.join(", "));
     console.log("📧 [EMAIL MOCK] Subject:", subject);
@@ -107,10 +105,19 @@ async function sendEmail({ to, subject, html, text, bcc }) {
   if (EMAIL_REPLY_TO) payload.reply_to = EMAIL_REPLY_TO;
 
   try {
-    const { data, error } = await resend.emails.send(payload);
-    if (error) {
-      console.error("📧 Email error:", error.message || error);
-      return { success: false, error: error.message || String(error) };
+    const response = await fetch(RESEND_API_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const message = data?.message || data?.error || `Resend request failed (${response.status})`;
+      console.error("📧 Email error:", message);
+      return { success: false, error: message };
     }
     console.log("📧 Email sent:", data?.id || "ok");
     return { success: true, messageId: data?.id };
