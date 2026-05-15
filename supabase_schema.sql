@@ -35,6 +35,17 @@ alter table profiles add column if not exists referral_code text unique;
 alter table profiles add column if not exists referred_by text;
 alter table profiles add column if not exists referral_credits int default 0;
 
+-- Dealer public profile (storefront directory + dealer page)
+alter table profiles add column if not exists description text;
+alter table profiles add column if not exists location_label text;
+alter table profiles add column if not exists google_maps_url text;
+alter table profiles add column if not exists hero_video_url text;
+alter table profiles add column if not exists reviews_highlight text;
+alter table profiles add column if not exists social_website text;
+alter table profiles add column if not exists social_instagram text;
+alter table profiles add column if not exists social_facebook text;
+alter table profiles add column if not exists social_tiktok text;
+
 -- Vehicles inventory
 create table if not exists vehicles (
   id uuid primary key default gen_random_uuid(),

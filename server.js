@@ -240,9 +240,15 @@ function isExplicitPaidPlan(dealer) {
   return p === "paid" || p === "tier1" || p === "tier2" || p === "tier3";
 }
 
-function cashClosersWhatsappDigits() {
+function salesTeamWhatsappDigits() {
   const raw = cleanStr(process.env.CASH_CLOSERS_WHATSAPP_E164, 40);
   return normalizePhone(raw).replace(/\D/g, "");
+}
+
+function hasPublicStorefront(dealer) {
+  if (!dealer || isPausedDealer(dealer)) return false;
+  if (isFreeTierPlan(dealer)) return false;
+  return isSubscriptionActive(dealer);
 }
 
 function salesTeamInboxEmail() {
@@ -499,6 +505,22 @@ function buildCloudinaryFolder(dealerId, vehicleId) {
     .replace(/^\/+|\/+$/g, "");
 }
 
+function buildDealerProfileFolder(dealerId) {
+  const template = cleanStr(process.env.CLOUDINARY_FOLDER || process.env.CLOUDINARY_BASE_FOLDER, 200);
+  const fallback = `weblink/dealers/${dealerId}/profile`;
+  const base = (template || fallback).replaceAll("{dealerId}", dealerId).replaceAll("{vehicleId}", "profile");
+  return base.replace(/^\/+|\/+$/g, "");
+}
+
+function mapSocialLinks(profile) {
+  return pruneUndefined({
+    website: cleanStr(profile?.social_website, 200),
+    instagram: cleanStr(profile?.social_instagram, 200),
+    facebook: cleanStr(profile?.social_facebook, 200),
+    tiktok: cleanStr(profile?.social_tiktok, 200),
+  });
+}
+
 function signCloudinaryParams(params, apiSecret) {
   const entries = Object.entries(params)
     .filter(([, value]) => value !== undefined && value !== "")
@@ -541,17 +563,40 @@ function mapProfileRow(profile) {
     plan: profile.plan || "",
     trialEndsAt: profile.trial_ends_at || "",
     stripeSubscriptionStatus: profile.stripe_subscription_status || "",
+    description: profile.description || "",
+    locationLabel: profile.location_label || "",
+    googleMapsUrl: profile.google_maps_url || "",
+    heroVideoUrl: profile.hero_video_url || "",
+    reviewsHighlight: profile.reviews_highlight || "",
+    socials: mapSocialLinks(profile),
+  };
+}
+
+function mapDealerPortalProfile(profile) {
+  const row = mapProfileRow(profile);
+  if (!row) return null;
+  return {
+    ...row,
+    storefrontEnabled: hasPublicStorefront(profile),
+    requestsRestricted: isFreeTierPlan(profile),
   };
 }
 
 function mapPublicDealerProfile(profile) {
-  const row = mapProfileRow(profile);
-  if (!row) return null;
-  if (isFreeTierPlan(profile)) {
-    const ccDigits = cashClosersWhatsappDigits();
-    if (ccDigits) return { ...row, whatsapp: ccDigits };
-  }
-  return row;
+  if (!profile || !hasPublicStorefront(profile)) return null;
+  return {
+    ...mapProfileRow(profile),
+    storefrontEnabled: true,
+    verified: true,
+  };
+}
+
+function storefrontAccessError() {
+  return {
+    ok: false,
+    error: "This branded storefront is included on the paid plan. Customers can find paid dealers in the directory.",
+    storefrontRequiresPaid: true,
+  };
 }
 
 function mapVehicleRow(vehicle) {
@@ -676,6 +721,30 @@ app.get("/api", (_req, res) => {
 });
 
 /** ========= Public API ========= */
+app.get("/api/public/dealers", async (req, res) => {
+  try {
+    const q = cleanStr(req.query.q, 80).toLowerCase();
+    const dealers = await listProfiles({ status: "active" });
+    let paid = dealers.filter(hasPublicStorefront);
+    if (q) {
+      paid = paid.filter((d) => {
+        const blob = [d.dealer_id, d.name, d.location_label, d.description]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        return blob.includes(q);
+      });
+    }
+    return res.json({
+      ok: true,
+      dealers: paid.map(mapPublicDealerProfile).filter(Boolean),
+    });
+  } catch (err) {
+    console.error("GET /api/public/dealers error:", err);
+    return res.status(500).json({ ok: false, error: "Internal Server Error" });
+  }
+});
+
 app.get("/api/public/dealer/:dealerId", async (req, res) => {
   try {
     const dealerId = cleanStr(req.params.dealerId, 60);
@@ -689,6 +758,9 @@ app.get("/api/public/dealer/:dealerId", async (req, res) => {
 
     if (isPausedDealer(dealer)) {
       return res.status(403).json({ ok: false, error: "Dealer storefront is paused" });
+    }
+    if (!hasPublicStorefront(dealer)) {
+      return res.status(403).json(storefrontAccessError());
     }
 
     return res.json({
@@ -712,6 +784,9 @@ app.get("/api/public/dealer", async (req, res) => {
     if (!dealer) return res.status(404).json({ ok: false, error: "Dealer not found" });
     if (isPausedDealer(dealer)) {
       return res.status(403).json({ ok: false, error: "Dealer storefront is paused" });
+    }
+    if (!hasPublicStorefront(dealer)) {
+      return res.status(403).json(storefrontAccessError());
     }
 
     return res.json({ ok: true, dealer: mapPublicDealerProfile(dealer) });
@@ -737,6 +812,9 @@ app.get("/api/public/dealer/:dealerId/vehicles", async (req, res) => {
     if (isPausedDealer(dealer)) {
       return res.status(403).json({ ok: false, error: "Dealer storefront is paused" });
     }
+    if (!hasPublicStorefront(dealer)) {
+      return res.status(403).json(storefrontAccessError());
+    }
 
     const vehicles = await getVehiclesForDealer(dealerId, {
       includeArchived: false,
@@ -745,11 +823,7 @@ app.get("/api/public/dealer/:dealerId/vehicles", async (req, res) => {
 
     return res.json({
       ok: true,
-      dealer: {
-        dealerId: dealer.dealer_id,
-        name: dealer.name || "",
-        logoUrl: dealer.logo_url || "",
-      },
+      dealer: mapPublicDealerProfile(dealer),
       vehicles: vehicles.map(mapVehicleRow),
     });
   } catch (err) {
@@ -777,7 +851,7 @@ app.get("/api/public/vehicles", async (req, res) => {
     }
 
     const profiles = await Promise.all(dealerIds.map((id) => getProfileByDealerId(id)));
-    const activeDealers = profiles.filter((d) => d && !isPausedDealer(d));
+    const activeDealers = profiles.filter((d) => d && hasPublicStorefront(d));
 
     if (!activeDealers.length) {
       return res.status(404).json({ ok: false, error: "Dealers not found" });
@@ -832,6 +906,9 @@ app.post("/api/public/dealer/:dealerId/requests", async (req, res) => {
 
     if (isPausedDealer(dealer)) {
       return res.status(403).json({ ok: false, error: "Dealer storefront is paused" });
+    }
+    if (!hasPublicStorefront(dealer)) {
+      return res.status(403).json(storefrontAccessError());
     }
 
     let safeVehicleId = "";
@@ -1298,11 +1375,88 @@ app.get("/api/dealer/me", requireActiveDealer, async (req, res) => {
 
     return res.json({
       ok: true,
-      dealer: mapPublicDealerProfile(dealer),
+      dealer: mapDealerPortalProfile(dealer),
     });
   } catch (err) {
     console.error("GET /api/dealer/me error:", err);
     return res.status(500).json({ ok: false, error: "Internal Server Error" });
+  }
+});
+
+app.patch("/api/dealer/profile", requireActiveDealer, async (req, res) => {
+  try {
+    const dealerId = cleanStr(req.user?.dealerId, 60);
+    const fields = pruneUndefined({
+      description:
+        req.body.description !== undefined ? cleanStr(req.body.description, 2000) : undefined,
+      location_label:
+        req.body.locationLabel !== undefined ? cleanStr(req.body.locationLabel, 120) : undefined,
+      google_maps_url:
+        req.body.googleMapsUrl !== undefined ? cleanStr(req.body.googleMapsUrl, 500) : undefined,
+      reviews_highlight:
+        req.body.reviewsHighlight !== undefined ? cleanStr(req.body.reviewsHighlight, 1000) : undefined,
+      social_website:
+        req.body.socialWebsite !== undefined ? cleanStr(req.body.socialWebsite, 200) : undefined,
+      social_instagram:
+        req.body.socialInstagram !== undefined ? cleanStr(req.body.socialInstagram, 200) : undefined,
+      social_facebook:
+        req.body.socialFacebook !== undefined ? cleanStr(req.body.socialFacebook, 200) : undefined,
+      social_tiktok:
+        req.body.socialTiktok !== undefined ? cleanStr(req.body.socialTiktok, 200) : undefined,
+      whatsapp: req.body.whatsapp !== undefined ? normalizePhone(req.body.whatsapp) : undefined,
+    });
+
+    if (!Object.keys(fields).length) {
+      return res.status(400).json({ ok: false, error: "No profile fields to update" });
+    }
+
+    await upsertProfile({ dealer_id: dealerId, ...fields });
+    const dealer = await getProfileByDealerId(dealerId);
+    return res.json({ ok: true, dealer: mapDealerPortalProfile(dealer) });
+  } catch (err) {
+    console.error("PATCH /api/dealer/profile error:", err);
+    return res.status(500).json({ ok: false, error: "Profile update failed" });
+  }
+});
+
+app.post("/api/dealer/profile/upload", requireActiveDealer, upload.single("file"), async (req, res) => {
+  try {
+    const dealerId = cleanStr(req.user?.dealerId, 60);
+    const kind = cleanStr(req.body.kind, 20).toLowerCase();
+    const file = req.file;
+
+    if (!file) return res.status(400).json({ ok: false, error: "No file uploaded" });
+    if (!["logo", "hero_video"].includes(kind)) {
+      return res.status(400).json({ ok: false, error: "kind must be logo or hero_video" });
+    }
+
+    const cloudName = cleanStr(process.env.CLOUDINARY_CLOUD_NAME, 120);
+    const apiKey = cleanStr(process.env.CLOUDINARY_API_KEY, 120);
+    const apiSecret = cleanStr(process.env.CLOUDINARY_API_SECRET, 200);
+    if (!cloudName || !apiKey || !apiSecret) {
+      return res.status(500).json({ ok: false, error: "Cloudinary is not configured" });
+    }
+
+    const resourceType = kind === "hero_video" ? "video" : "image";
+    const folder = buildDealerProfileFolder(dealerId);
+    const url = await uploadToCloudinary({
+      file,
+      folder,
+      resourceType,
+      cloudName,
+      apiKey,
+      apiSecret,
+    });
+
+    const patch =
+      kind === "logo" ? { logo_url: url } : { hero_video_url: url };
+    await upsertProfile({ dealer_id: dealerId, ...patch });
+
+    const dealer = await getProfileByDealerId(dealerId);
+    return res.json({ ok: true, url, dealer: mapDealerPortalProfile(dealer) });
+  } catch (err) {
+    console.error("POST /api/dealer/profile/upload error:", err);
+    return res.status(500).json({ ok: false, error: "Profile media upload failed" });
   }
 });
 

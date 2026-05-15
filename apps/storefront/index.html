@@ -386,6 +386,28 @@
     }
     .discovery-card h2{margin:0 0 8px;font-size:18px;font-family:var(--acj-font-display)}
     .discovery-card p{margin:0 0 12px;color:var(--muted);font-size:14px;line-height:1.55}
+    .directory-search{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+    .directory-search input{flex:1 1 220px;padding:12px 14px;border-radius:12px;border:1px solid var(--line);font:inherit}
+    .directory-results{display:grid;gap:10px;margin-top:14px}
+    .directory-card{display:flex;gap:12px;align-items:center;padding:14px;border-radius:14px;border:1px solid var(--line);background:var(--surface);cursor:pointer;transition:box-shadow .2s}
+    .directory-card:hover{box-shadow:var(--shadow-soft)}
+    .directory-card img{width:52px;height:52px;border-radius:12px;object-fit:cover;background:var(--surface-soft)}
+    .directory-card .meta{flex:1;min-width:0}
+    .directory-card .meta strong{display:block;font-size:15px}
+    .directory-card .meta span{font-size:12px;color:var(--muted)}
+    .dealer-profile-section{padding:var(--section) 0;display:none}
+    .dealer-profile-section.show{display:block}
+    .dealer-profile-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:20px;align-items:start}
+    .dealer-profile-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);padding:22px;box-shadow:var(--shadow-soft)}
+    .dealer-profile-card h2{margin:0 0 8px;font-family:var(--acj-font-display);font-size:22px}
+    .dealer-profile-card p{margin:0 0 12px;color:var(--muted);line-height:1.55;font-size:14px}
+    .dealer-socials{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+    .dealer-socials a{font-size:12px;font-weight:700;padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface-soft)}
+    .dealer-maps{min-height:280px;border-radius:var(--radius);overflow:hidden;border:1px solid var(--line);background:var(--surface-soft)}
+    .dealer-maps iframe{width:100%;height:280px;border:0}
+    .reviews-note{margin-top:12px;padding:12px 14px;border-radius:12px;background:var(--brand-soft);font-size:13px;line-height:1.45}
+    @media (max-width:900px){.dealer-profile-grid{grid-template-columns:1fr}}
+
 
     .share-buttons{display:flex;gap:8px;margin-top:10px;justify-content:flex-start;flex-wrap:wrap}
     .share-btn{
@@ -781,7 +803,7 @@
             </p>
             <ul class="acj-assurance-list buyer-assurance acj-reveal">
               <li>Verified availability reflects this dealer’s live inventory feed</li>
-              <li>Secure requests route to the dealer team or CashClosers concierge when configured</li>
+              <li>Secure requests go straight to the dealer sales team on paid plans</li>
               <li>Clear next steps before you travel or share payment details</li>
             </ul>
             <div class="hero-actions">
@@ -828,8 +850,13 @@
 
   <section class="discovery-panel" id="discoveryPanel">
     <div class="discovery-card acj-reveal">
-      <h2>Find a dealer storefront</h2>
-      <p>Paste the Dealer ID from your link, or ask the dealer for their branded URL. Example: <span class="acj-data">DEALER-0001</span>.</p>
+      <h2>Find a verified dealer</h2>
+      <p>Search paid dealers by name or location, or paste a Dealer ID from your link.</p>
+      <div class="directory-search">
+        <input id="directorySearch" type="search" placeholder="Search dealer name or area…" aria-label="Search dealers" />
+        <button class="btn btn-primary btn-gloss" type="button" id="directorySearchBtn">Search</button>
+      </div>
+      <div class="directory-results" id="directoryResults" aria-live="polite"></div>
       <div class="hero-actions" style="margin-top:12px">
         <a class="btn btn-outline" href="/landing">Become a dealer</a>
         <button class="btn btn-ghost" type="button" id="discoveryFocusBtn">Enter dealer ID</button>
@@ -905,7 +932,7 @@
     </div>
     <p id="supportIntro">Questions about a listing, WhatsApp availability, or how requests are handled? Start here.</p>
     <div class="support-faq">
-      <details><summary>What if WhatsApp is unavailable?</summary><p class="muted">Use live video or walk-in requests. Some free-tier storefronts route WhatsApp to the CashClosers concierge team.</p></details>
+      <details><summary>What if WhatsApp is unavailable?</summary><p class="muted">Use live video or walk-in requests. WhatsApp connects to the dealer when they have a paid storefront.</p></details>
       <details><summary>How do I know inventory is current?</summary><p class="muted">Refresh inventory before you travel. Timestamps reflect the last successful load for this dealer.</p></details>
       <details><summary>Who receives my request?</summary><p class="muted">Requests are sent to the dealer workflow. You will see next steps in the booking modal after submitting.</p></details>
     </div>
@@ -1068,6 +1095,17 @@
 
     discoveryPanel: $("discoveryPanel"),
     discoveryFocusBtn: $("discoveryFocusBtn"),
+    directorySearch: $("directorySearch"),
+    directorySearchBtn: $("directorySearchBtn"),
+    directoryResults: $("directoryResults"),
+    dealerProfileSection: $("dealerProfileSection"),
+    dealerProfileDescription: $("dealerProfileDescription"),
+    dealerReviewsNote: $("dealerReviewsNote"),
+    dealerSocials: $("dealerSocials"),
+    dealerLocationLabel: $("dealerLocationLabel"),
+    dealerMapsEmbed: $("dealerMapsEmbed"),
+    dealerMapsLink: $("dealerMapsLink"),
+    heroVideo: document.querySelector(".hero-video"),
     refreshBtn: $("refreshBtn"),
     inventoryFreshness: $("inventoryFreshness"),
     detailDrawer: $("detailDrawer"),
@@ -1267,10 +1305,121 @@
       dealerName: profile?.dealerName || profile?.name || "",
       status: profile?.status || "",
       logoUrl: profile?.logoUrl || profile?.logo || "",
+      description: profile?.description || "",
+      locationLabel: profile?.locationLabel || profile?.location_label || "",
+      googleMapsUrl: profile?.googleMapsUrl || profile?.google_maps_url || "",
+      heroVideoUrl: profile?.heroVideoUrl || profile?.hero_video_url || "",
+      reviewsHighlight: profile?.reviewsHighlight || profile?.reviews_highlight || "",
+      socials: profile?.socials || {},
       whatsappNumber: profile?.whatsappNumber || profile?.whatsapp_number || profile?.whatsapp || profile?.whatsappPhone || profile?.whatsapp_phone || profile?.phoneWhatsapp || profile?.phone_whatsapp || "",
       whatsappDefaultMessage: profile?.whatsappDefaultMessage || profile?.whatsapp_default_message || profile?.whatsappMessage || profile?.whatsapp_message || profile?.defaultMessage || "",
       raw: profile,
     };
+  }
+
+  function mapsEmbedSrc(url){
+    const u = String(url || "").trim();
+    if(!u) return "";
+    if(u.includes("/embed")) return u;
+    if(u.includes("google.com/maps")) return u.replace("google.com/maps", "google.com/maps/embed");
+    return "https://www.google.com/maps?q=" + encodeURIComponent(u) + "&output=embed";
+  }
+
+  function renderDealerProfileBlock(profile){
+    if(!ui.dealerProfileSection) return;
+    if(!profile){
+      ui.dealerProfileSection.classList.remove("show");
+      return;
+    }
+    ui.dealerProfileSection.classList.add("show");
+    if(ui.dealerProfileDescription){
+      ui.dealerProfileDescription.textContent = profile.description || "Browse verified inventory and book a viewing with this dealer.";
+    }
+    if(ui.dealerReviewsNote){
+      const note = profile.reviewsHighlight || "";
+      if(note){
+        ui.dealerReviewsNote.textContent = note;
+        ui.dealerReviewsNote.style.display = "block";
+      }else{
+        ui.dealerReviewsNote.style.display = "none";
+      }
+    }
+    if(ui.dealerLocationLabel){
+      ui.dealerLocationLabel.textContent = profile.locationLabel || "";
+    }
+    if(ui.dealerMapsEmbed){
+      const embed = mapsEmbedSrc(profile.googleMapsUrl);
+      ui.dealerMapsEmbed.innerHTML = embed
+        ? `<iframe title="Dealer location map" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="${esc(embed)}"></iframe>`
+        : `<p class="muted" style="padding:16px">Map link not added yet.</p>`;
+    }
+    if(ui.dealerMapsLink){
+      const maps = profile.googleMapsUrl || "#";
+      ui.dealerMapsLink.href = maps;
+      ui.dealerMapsLink.style.display = profile.googleMapsUrl ? "inline" : "none";
+    }
+    if(ui.dealerSocials){
+      const socials = profile.socials || {};
+      const links = [
+        ["Website", socials.website],
+        ["Instagram", socials.instagram],
+        ["Facebook", socials.facebook],
+        ["TikTok", socials.tiktok],
+      ].filter(([, href]) => href);
+      ui.dealerSocials.innerHTML = links.length
+        ? links.map(([label, href]) => `<a href="${esc(href)}" target="_blank" rel="noopener noreferrer">${esc(label)}</a>`).join("")
+        : "";
+    }
+  }
+
+  function applyHeroVideo(url){
+    if(!ui.heroVideo) return;
+    const src = String(url || "").trim();
+    if(!src) return;
+    const sources = ui.heroVideo.querySelectorAll("source");
+    if(sources.length){
+      sources[0].src = src;
+    }else{
+      const source = document.createElement("source");
+      source.src = src;
+      source.type = "video/mp4";
+      ui.heroVideo.appendChild(source);
+    }
+    ui.heroVideo.load();
+  }
+
+  async function searchDirectory(){
+    const q = String(ui.directorySearch?.value || "").trim();
+    if(!ui.directoryResults) return;
+    ui.directoryResults.innerHTML = "<p class=\"muted\">Searching…</p>";
+    try{
+      const url = API_BASE + "/api/public/dealers" + (q ? "?q=" + encodeURIComponent(q) : "");
+      const data = await fetchOk(url, { method: "GET" });
+      const dealers = data.dealers || [];
+      if(!dealers.length){
+        ui.directoryResults.innerHTML = "<p class=\"muted\">No paid dealers matched. Try another name or ask for a Dealer ID.</p>";
+        return;
+      }
+      ui.directoryResults.innerHTML = dealers.map((d) => {
+        const id = esc(d.dealerId || "");
+        const name = esc(d.name || d.dealerId || "Dealer");
+        const loc = esc(d.locationLabel || "Verified dealer");
+        const logo = d.logoUrl && String(d.logoUrl).startsWith("http") ? esc(d.logoUrl) : "";
+        return `<button type="button" class="directory-card" data-dealer-id="${id}">
+          ${logo ? `<img src="${logo}" alt="" />` : `<div style="width:52px;height:52px;border-radius:12px;background:var(--brand-soft)"></div>`}
+          <div class="meta"><strong>${name}</strong><span>${loc}</span></div>
+        </button>`;
+      }).join("");
+      ui.directoryResults.querySelectorAll("[data-dealer-id]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const id = btn.getAttribute("data-dealer-id");
+          ui.dealerIdInput.value = id;
+          doLoad();
+        });
+      });
+    }catch(err){
+      ui.directoryResults.innerHTML = `<p class="muted">${esc(err.message || "Search failed")}</p>`;
+    }
   }
 
   function getDealerProfile(dealerId){
@@ -1323,6 +1472,7 @@
         image: "https://res.cloudinary.com/dd8pjjxsm/image/upload/v1770298701/ChatGPT_Image_Sep_6_2025_08_27_53_AM_raorxf.png",
         url: window.location.origin + "/storefront",
       });
+      renderDealerProfileBlock(null);
       toggleDiscoveryPanel();
       return;
     }
@@ -1343,6 +1493,8 @@
         ui.heroLogoImg.src = logoUrl;
         ui.heroLogoImg.alt = name;
       }
+      applyHeroVideo(primary.heroVideoUrl);
+      renderDealerProfileBlock(primary);
       updateMetaTags({
         title: `${name} · Auto Concierge Jamaica`,
         description: `Browse ${name}'s verified inventory and book a viewing by WhatsApp, live video, or walk-in.`,
@@ -1872,7 +2024,13 @@
           dealerName: profile?.dealerName || apiDealer.dealerName || apiDealer.name || dealerId,
           status: profile?.status || apiDealer.status || "",
           logoUrl: profile?.logoUrl || apiDealer.logoUrl || apiDealer.logo || "",
-          whatsappNumber: profile?.whatsappNumber || "",
+          description: profile?.description || apiDealer.description || "",
+          locationLabel: profile?.locationLabel || apiDealer.locationLabel || "",
+          googleMapsUrl: profile?.googleMapsUrl || apiDealer.googleMapsUrl || "",
+          heroVideoUrl: profile?.heroVideoUrl || apiDealer.heroVideoUrl || "",
+          reviewsHighlight: profile?.reviewsHighlight || apiDealer.reviewsHighlight || "",
+          socials: profile?.socials || apiDealer.socials || {},
+          whatsappNumber: profile?.whatsappNumber || apiDealer.whatsapp || "",
           whatsappDefaultMessage: profile?.whatsappDefaultMessage || "",
         });
       });
@@ -1895,13 +2053,18 @@
       state.filtered = [];
       state.lastRefreshed = null;
       setBranding();
+      renderDealerProfileBlock(null);
       updateDealerBar();
       ui.kpiLive.textContent = "0";
+      const msg = e?.message || "Unknown error";
+      const paidOnly = /paid plan|storefront/i.test(msg);
       renderEmptyState({
-        title:"Could not load inventory",
-        body:e?.message || "Unknown error",
+        title: paidOnly ? "Branded storefront is on the paid plan" : "Could not load inventory",
+        body: paidOnly
+          ? "This dealer is on the free commission program. Ask them for inventory directly, or search paid dealers below."
+          : msg,
       });
-      toast("Unable to load inventory. Try again.", "error");
+      toast(paidOnly ? "This dealer storefront requires the paid plan." : "Unable to load inventory. Try again.", paidOnly ? "info" : "error");
     }
   }
 
@@ -1963,6 +2126,8 @@
     ui.dealerIdInput.focus();
     ui.dealerIdInput.scrollIntoView({ behavior: "smooth", block: "center" });
   });
+  ui.directorySearchBtn?.addEventListener("click", searchDirectory);
+  ui.directorySearch?.addEventListener("keydown", (e) => { if(e.key === "Enter") searchDirectory(); });
   ui.refreshBtn?.addEventListener("click", () => {
     if(state.dealerIds.length) doLoad();
     else toast("Load a dealer storefront first.", "info");
@@ -2004,6 +2169,7 @@
       setBranding();
       toggleDiscoveryPanel();
       render();
+      searchDirectory();
     }
     setInterval(rotateTip, 5200);
 

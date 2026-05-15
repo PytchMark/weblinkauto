@@ -233,7 +233,7 @@ async function sendFreeTierLeadToSalesTeam({
   const subject = `🔔 Commission-tier lead — ${dealerName} (${dealerId})`;
   const content = `
     <h1>New lead (free / commission tier)</h1>
-    <p>This request is from a dealer on the <strong>commission program</strong>. Route to CashClosers sales to qualify and close.</p>
+    <p>This request is from a dealer on the <strong>commission program</strong>. Route to Our Sales Team to qualify and close.</p>
 
     <div class="highlight">
       <h3 style="margin-top: 0;">Dealer</h3>

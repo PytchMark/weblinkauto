@@ -620,7 +620,7 @@
               <h1>Viewing Requests</h1>
               <p>Leads coming from the storefront. Update status as you follow up.</p>
               <p id="requestsRestrictedBanner" class="hint" style="display:none;margin-top:12px;padding:12px 14px;border-radius:12px;background:rgba(234,179,8,.12);border:1px solid rgba(180,83,9,.28);max-width:68ch;line-height:1.45">
-                On the <strong>free commission</strong> program, storefront leads are handled by CashClosers—this inbox unlocks on the <strong>paid</strong> plan.
+                On the <strong>free commission</strong> program, buyer conversations are handled by <strong>Our Sales Team</strong>—your lead inbox unlocks on the <strong>paid</strong> plan with your branded storefront.
                 <a href="/landing#programs" style="color:inherit;font-weight:800;text-decoration:underline;margin-left:4px">View plans</a>
               </p>
             </div>
@@ -698,21 +698,72 @@
         <div class="tab" id="tab-settings" style="display:none">
           <div class="panel-head">
             <div>
-              <h1>Settings</h1>
-              <p>Dealer profile fields (read-only for now). Admin can update branding + WhatsApp.</p>
+              <h1>Storefront profile</h1>
+              <p>What buyers see in the directory and on your branded page. Storefront goes live on the paid plan.</p>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+              <button class="btn btn-primary" id="saveProfileBtn" type="button">Save profile</button>
             </div>
           </div>
           <div class="panel-body">
-            <div class="kpis">
-              <div class="kpi" style="grid-column:span 6"><div class="t">Dealer Name</div><div class="v" id="setName">–</div><div class="s">Shown on storefront</div></div>
-              <div class="kpi" style="grid-column:span 6"><div class="t">WhatsApp</div><div class="v" id="setWhatsapp">–</div><div class="s">Used for chat requests</div></div>
-            </div>
-
-            <div class="help">
-              If you need changes to logo or contact details, message support.
-            </div>
+            <p id="storefrontStatusBanner" class="hint" style="margin:0 0 16px;padding:12px 14px;border-radius:12px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.22);max-width:72ch;line-height:1.45"></p>
+            <form id="profileForm" class="form" novalidate>
+              <div>
+                <label for="profileDescription">About your dealership</label>
+                <textarea class="field" id="profileDescription" rows="4" placeholder="Tell buyers who you are and what you specialize in."></textarea>
+              </div>
+              <div class="row">
+                <div>
+                  <label for="profileLocation">Location label</label>
+                  <input class="field" id="profileLocation" placeholder="Kingston · Spanish Town" />
+                </div>
+                <div>
+                  <label for="profileWhatsapp">WhatsApp (sales line)</label>
+                  <input class="field" id="profileWhatsapp" placeholder="+1876…" />
+                </div>
+              </div>
+              <div>
+                <label for="profileMapsUrl">Google Maps page</label>
+                <input class="field" id="profileMapsUrl" placeholder="https://maps.google.com/…" />
+                <div class="help">Paste the link from Google Maps Share. Buyers open directions and reviews there.</div>
+              </div>
+              <div>
+                <label for="profileReviews">Reviews highlight (optional)</label>
+                <textarea class="field" id="profileReviews" rows="2" placeholder="e.g. Rated 4.8 on Google — 120+ reviews"></textarea>
+              </div>
+              <div class="row">
+                <div><label for="profileWebsite">Website</label><input class="field" id="profileWebsite" placeholder="https://…" /></div>
+                <div><label for="profileInstagram">Instagram</label><input class="field" id="profileInstagram" placeholder="https://instagram.com/…" /></div>
+              </div>
+              <div class="row">
+                <div><label for="profileFacebook">Facebook</label><input class="field" id="profileFacebook" placeholder="https://facebook.com/…" /></div>
+                <div><label for="profileTiktok">TikTok</label><input class="field" id="profileTiktok" placeholder="https://tiktok.com/@…" /></div>
+              </div>
+              <div class="row">
+                <div>
+                  <label>Logo</label>
+                  <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+                    <div class="thumb" id="profileLogoPreview" style="width:72px;height:72px;border-radius:14px;background:#f4f4f5;overflow:hidden" aria-hidden="true"></div>
+                    <div>
+                      <input type="file" id="profileLogoFile" accept="image/*" />
+                      <button class="btn btn-ghost" type="button" id="uploadLogoBtn">Upload logo</button>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <label>Hero background video</label>
+                  <div class="help" style="margin-bottom:8px">Overrides the default video on your dealer page only.</div>
+                  <input type="file" id="profileHeroFile" accept="video/*" />
+                  <button class="btn btn-ghost" type="button" id="uploadHeroBtn">Upload hero video</button>
+                  <p class="help" id="profileHeroStatus"></p>
+                </div>
+              </div>
+            </form>
+            <p id="profileSaveStatus" class="help" style="margin-top:12px"></p>
           </div>
         </div>
+
+
 
       </section>
     </div>
@@ -1017,9 +1068,25 @@
   const newVehicleBtn = $('#newVehicleBtn');
   const newVehicleBtn2 = $('#newVehicleBtn2');
 
-  // Settings
-  const setName = $('#setName');
-  const setWhatsapp = $('#setWhatsapp');
+  // Settings / profile
+  const saveProfileBtn = $('#saveProfileBtn');
+  const storefrontStatusBanner = $('#storefrontStatusBanner');
+  const profileDescription = $('#profileDescription');
+  const profileLocation = $('#profileLocation');
+  const profileWhatsapp = $('#profileWhatsapp');
+  const profileMapsUrl = $('#profileMapsUrl');
+  const profileReviews = $('#profileReviews');
+  const profileWebsite = $('#profileWebsite');
+  const profileInstagram = $('#profileInstagram');
+  const profileFacebook = $('#profileFacebook');
+  const profileTiktok = $('#profileTiktok');
+  const profileLogoPreview = $('#profileLogoPreview');
+  const profileLogoFile = $('#profileLogoFile');
+  const profileHeroFile = $('#profileHeroFile');
+  const uploadLogoBtn = $('#uploadLogoBtn');
+  const uploadHeroBtn = $('#uploadHeroBtn');
+  const profileHeroStatus = $('#profileHeroStatus');
+  const profileSaveStatus = $('#profileSaveStatus');
 
   // Month
   const monthLabel = $('#monthLabel');
@@ -1148,6 +1215,20 @@
     return res.json();
   }
 
+  async function apiPatch(url, payload){
+    const res = await fetch(url, {
+      method:'PATCH',
+      headers: authHeaders(),
+      body: JSON.stringify(payload || {}),
+      credentials:'include'
+    });
+    if(!res.ok){
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || `Request failed (${res.status})`);
+    }
+    return res.json();
+  }
+
   /** ---------------------------
    * Render
    * --------------------------*/
@@ -1174,8 +1255,88 @@
       dealerLogoBox.textContent = 'D';
     }
 
-    setName.textContent = name;
-    setWhatsapp.textContent = d?.whatsapp ? d.whatsapp : '—';
+    populateProfileForm(d);
+  }
+
+  function populateProfileForm(d){
+    if(!d) return;
+    const enabled = Boolean(d.storefrontEnabled);
+    if(storefrontStatusBanner){
+      storefrontStatusBanner.textContent = enabled
+        ? 'Your branded storefront is live. Buyers can find you in the directory and book viewings on your page.'
+        : 'Your profile is saved here. Your branded storefront goes live when you upgrade to the paid plan—finish your profile now so buyers see you on day one.';
+    }
+    if(profileDescription) profileDescription.value = d.description || '';
+    if(profileLocation) profileLocation.value = d.locationLabel || '';
+    if(profileWhatsapp) profileWhatsapp.value = d.whatsapp || '';
+    if(profileMapsUrl) profileMapsUrl.value = d.googleMapsUrl || '';
+    if(profileReviews) profileReviews.value = d.reviewsHighlight || '';
+    const socials = d.socials || {};
+    if(profileWebsite) profileWebsite.value = socials.website || '';
+    if(profileInstagram) profileInstagram.value = socials.instagram || '';
+    if(profileFacebook) profileFacebook.value = socials.facebook || '';
+    if(profileTiktok) profileTiktok.value = socials.tiktok || '';
+    if(profileHeroStatus) profileHeroStatus.textContent = d.heroVideoUrl ? 'Custom hero video uploaded.' : 'Using platform default until you upload one.';
+    if(profileLogoPreview){
+      const logo = d.logoUrl || '';
+      profileLogoPreview.innerHTML = logo
+        ? `<img src="${escapeHtml(logo)}" alt="" style="width:100%;height:100%;object-fit:cover" />`
+        : '';
+    }
+  }
+
+  async function saveProfile(){
+    profileSaveStatus.textContent = 'Saving…';
+    try{
+      const payload = {
+        description: profileDescription?.value?.trim() || '',
+        locationLabel: profileLocation?.value?.trim() || '',
+        whatsapp: profileWhatsapp?.value?.trim() || '',
+        googleMapsUrl: profileMapsUrl?.value?.trim() || '',
+        reviewsHighlight: profileReviews?.value?.trim() || '',
+        socialWebsite: profileWebsite?.value?.trim() || '',
+        socialInstagram: profileInstagram?.value?.trim() || '',
+        socialFacebook: profileFacebook?.value?.trim() || '',
+        socialTiktok: profileTiktok?.value?.trim() || '',
+      };
+      const res = await apiPatch('/api/dealer/profile', payload);
+      STATE.dealer = res.dealer;
+      applyBranding();
+      profileSaveStatus.textContent = 'Profile saved.';
+    }catch(err){
+      profileSaveStatus.textContent = err.message || 'Save failed.';
+    }
+  }
+
+  async function uploadProfileMedia(kind){
+    const input = kind === 'logo' ? profileLogoFile : profileHeroFile;
+    const file = input?.files?.[0];
+    if(!file){
+      profileSaveStatus.textContent = 'Choose a file first.';
+      return;
+    }
+    profileSaveStatus.textContent = 'Uploading…';
+    try{
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('kind', kind);
+      const headers = {};
+      if(STATE.token) headers['Authorization'] = 'Bearer ' + STATE.token;
+      const res = await fetch('/api/dealer/profile/upload', {
+        method: 'POST',
+        headers,
+        body: fd,
+        credentials: 'include',
+      });
+      const data = await res.json().catch(() => ({}));
+      if(!res.ok || !data.ok) throw new Error(data.error || 'Upload failed');
+      STATE.dealer = data.dealer;
+      applyBranding();
+      profileSaveStatus.textContent = kind === 'logo' ? 'Logo uploaded.' : 'Hero video uploaded.';
+      if(input) input.value = '';
+    }catch(err){
+      profileSaveStatus.textContent = err.message || 'Upload failed.';
+    }
   }
 
   function renderInventory(){
@@ -1920,6 +2081,9 @@
   });
 
   uploadMediaBtn.addEventListener('click', handleMediaUpload);
+  saveProfileBtn?.addEventListener('click', saveProfile);
+  uploadLogoBtn?.addEventListener('click', () => uploadProfileMedia('logo'));
+  uploadHeroBtn?.addEventListener('click', () => uploadProfileMedia('hero_video'));
   cloudinaryImageUrls.addEventListener('input', () => {
     renderImageGallery();
   });
