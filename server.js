@@ -521,6 +521,91 @@ function mapSocialLinks(profile) {
   });
 }
 
+function normalizeGoogleMapsUrl(raw) {
+  const u = cleanStr(raw, 500);
+  if (!u) return "";
+  if (/^https?:\/\//i.test(u)) return u;
+  return `https://${u}`;
+}
+
+/** Build an iframe-safe embed URL from a Google Maps share / place link (no API key). */
+function buildGoogleMapsEmbedUrl(rawUrl) {
+  const url = normalizeGoogleMapsUrl(rawUrl);
+  if (!url) return "";
+
+  if (/\/maps\/embed/i.test(url) || /[?&]output=embed/i.test(url)) {
+    return url;
+  }
+
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.replace(/^www\./, "");
+
+    if (host.includes("goo.gl") || host === "maps.app.goo.gl") {
+      return "";
+    }
+
+    const apiQuery =
+      parsed.searchParams.get("query") ||
+      parsed.searchParams.get("q") ||
+      parsed.searchParams.get("destination");
+    if (apiQuery && host.includes("google")) {
+      return `https://www.google.com/maps?q=${encodeURIComponent(apiQuery)}&output=embed`;
+    }
+
+    const placePath = url.match(/\/maps\/place\/([^/@?]+)(?:\/@(-?\d+\.?\d*),(-?\d+\.?\d*))?/);
+    if (placePath) {
+      const label = decodeURIComponent(placePath[1].replace(/\+/g, " "));
+      if (placePath[2] && placePath[3]) {
+        return `https://www.google.com/maps?q=${encodeURIComponent(`${label}@${placePath[2]},${placePath[3]}`)}&output=embed`;
+      }
+      return `https://www.google.com/maps?q=${encodeURIComponent(label)}&output=embed`;
+    }
+
+    const placeIdMatch = url.match(/(ChIJ[\w-]+)/);
+    if (placeIdMatch) {
+      return `https://www.google.com/maps?q=place_id:${placeIdMatch[1]}&output=embed`;
+    }
+
+    const bangCoord = url.match(/!3d(-?\d+\.?\d*)!4d(-?\d+\.?\d*)/);
+    if (bangCoord) {
+      return `https://www.google.com/maps?q=${bangCoord[1]},${bangCoord[2]}&output=embed`;
+    }
+
+    const atMatch = url.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)(?:,(\d+\.?\d*)z)?/);
+    if (atMatch) {
+      return `https://www.google.com/maps?q=${atMatch[1]},${atMatch[2]}&output=embed`;
+    }
+
+    const searchMatch = url.match(/\/maps\/search\/([^/?]+)/);
+    if (searchMatch) {
+      return `https://www.google.com/maps?q=${encodeURIComponent(decodeURIComponent(searchMatch[1].replace(/\+/g, " ")))}&output=embed`;
+    }
+
+    if (host.includes("google.com") && url.includes("/maps")) {
+      const sep = url.includes("?") ? "&" : "?";
+      return `${url}${sep}output=embed`;
+    }
+
+    return `https://www.google.com/maps?q=${encodeURIComponent(url)}&output=embed`;
+  } catch {
+    return `https://www.google.com/maps?q=${encodeURIComponent(url)}&output=embed`;
+  }
+}
+
+function mapProfileFields(profile) {
+  const googleMapsUrl = profile.google_maps_url || "";
+  return {
+    description: profile.description || "",
+    locationLabel: profile.location_label || "",
+    googleMapsUrl,
+    googleMapsEmbedUrl: buildGoogleMapsEmbedUrl(googleMapsUrl),
+    heroVideoUrl: profile.hero_video_url || "",
+    reviewsHighlight: profile.reviews_highlight || "",
+    socials: mapSocialLinks(profile),
+  };
+}
+
 function signCloudinaryParams(params, apiSecret) {
   const entries = Object.entries(params)
     .filter(([, value]) => value !== undefined && value !== "")
@@ -563,12 +648,7 @@ function mapProfileRow(profile) {
     plan: profile.plan || "",
     trialEndsAt: profile.trial_ends_at || "",
     stripeSubscriptionStatus: profile.stripe_subscription_status || "",
-    description: profile.description || "",
-    locationLabel: profile.location_label || "",
-    googleMapsUrl: profile.google_maps_url || "",
-    heroVideoUrl: profile.hero_video_url || "",
-    reviewsHighlight: profile.reviews_highlight || "",
-    socials: mapSocialLinks(profile),
+    ...mapProfileFields(profile),
   };
 }
 
@@ -1719,6 +1799,7 @@ app.post("/api/admin/dealers", requireAdmin, async (req, res) => {
     const status = cleanStr(req.body.status, 40).toLowerCase() || "active";
     const whatsapp = cleanStr(req.body.whatsapp, 40);
     const logoUrl = cleanStr(req.body.logoUrl, 500);
+    const heroVideoUrl = cleanStr(req.body.heroVideoUrl, 500);
     const profileEmail = cleanStr(req.body.profileEmail || req.body.email, 120);
     const plan = cleanStr(req.body.plan, 40).toLowerCase();
 
@@ -1735,9 +1816,19 @@ app.post("/api/admin/dealers", requireAdmin, async (req, res) => {
       name,
       status,
       whatsapp,
-      logo_url: logoUrl,
+      logo_url: logoUrl || undefined,
+      hero_video_url: heroVideoUrl || undefined,
       profile_email: profileEmail || undefined,
       plan: plan || undefined,
+      description: req.body.description !== undefined ? cleanStr(req.body.description, 2000) : undefined,
+      location_label: req.body.locationLabel !== undefined ? cleanStr(req.body.locationLabel, 120) : undefined,
+      google_maps_url: req.body.googleMapsUrl !== undefined ? cleanStr(req.body.googleMapsUrl, 500) : undefined,
+      reviews_highlight:
+        req.body.reviewsHighlight !== undefined ? cleanStr(req.body.reviewsHighlight, 1000) : undefined,
+      social_website: req.body.socialWebsite !== undefined ? cleanStr(req.body.socialWebsite, 200) : undefined,
+      social_instagram: req.body.socialInstagram !== undefined ? cleanStr(req.body.socialInstagram, 200) : undefined,
+      social_facebook: req.body.socialFacebook !== undefined ? cleanStr(req.body.socialFacebook, 200) : undefined,
+      social_tiktok: req.body.socialTiktok !== undefined ? cleanStr(req.body.socialTiktok, 200) : undefined,
     });
 
     const existing = await getProfileByDealerId(dealerId);
@@ -1755,10 +1846,64 @@ app.post("/api/admin/dealers", requireAdmin, async (req, res) => {
       return res.status(500).json({ ok: false, error: "Failed to save dealer" });
     }
 
-    return res.json({ ok: true, dealer: mapProfileRow(dealer), passcode });
+    return res.json({
+      ok: true,
+      dealer: { ...mapProfileRow(dealer), storefrontEnabled: hasPublicStorefront(dealer) },
+      passcode,
+    });
   } catch (err) {
     console.error("POST /api/admin/dealers error:", err);
     return res.status(500).json({ ok: false, error: "Internal Server Error" });
+  }
+});
+
+app.post("/api/admin/dealers/:dealerId/profile/upload", requireAdmin, upload.single("file"), async (req, res) => {
+  try {
+    const dealerId = cleanStr(req.params.dealerId, 60);
+    const kind = cleanStr(req.body.kind, 20).toLowerCase();
+    const file = req.file;
+
+    if (!isValidDealerId(dealerId)) {
+      return res.status(400).json({ ok: false, error: "Invalid dealerId" });
+    }
+    if (!file) return res.status(400).json({ ok: false, error: "No file uploaded" });
+    if (!["logo", "hero_video"].includes(kind)) {
+      return res.status(400).json({ ok: false, error: "kind must be logo or hero_video" });
+    }
+
+    const dealer = await getProfileByDealerId(dealerId);
+    if (!dealer) return res.status(404).json({ ok: false, error: "Dealer not found" });
+
+    const cloudName = cleanStr(process.env.CLOUDINARY_CLOUD_NAME, 120);
+    const apiKey = cleanStr(process.env.CLOUDINARY_API_KEY, 120);
+    const apiSecret = cleanStr(process.env.CLOUDINARY_API_SECRET, 200);
+    if (!cloudName || !apiKey || !apiSecret) {
+      return res.status(500).json({ ok: false, error: "Cloudinary is not configured" });
+    }
+
+    const resourceType = kind === "hero_video" ? "video" : "image";
+    const folder = buildDealerProfileFolder(dealerId);
+    const url = await uploadToCloudinary({
+      file,
+      folder,
+      resourceType,
+      cloudName,
+      apiKey,
+      apiSecret,
+    });
+
+    const patch = kind === "logo" ? { logo_url: url } : { hero_video_url: url };
+    await upsertProfile({ dealer_id: dealerId, ...patch });
+    const updated = await getProfileByDealerId(dealerId);
+
+    return res.json({
+      ok: true,
+      url,
+      dealer: { ...mapProfileRow(updated), storefrontEnabled: hasPublicStorefront(updated) },
+    });
+  } catch (err) {
+    console.error("POST /api/admin/dealers/:dealerId/profile/upload error:", err);
+    return res.status(500).json({ ok: false, error: "Profile media upload failed" });
   }
 });
 

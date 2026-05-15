@@ -1308,6 +1308,7 @@
       description: profile?.description || "",
       locationLabel: profile?.locationLabel || profile?.location_label || "",
       googleMapsUrl: profile?.googleMapsUrl || profile?.google_maps_url || "",
+      googleMapsEmbedUrl: profile?.googleMapsEmbedUrl || profile?.google_maps_embed_url || "",
       heroVideoUrl: profile?.heroVideoUrl || profile?.hero_video_url || "",
       reviewsHighlight: profile?.reviewsHighlight || profile?.reviews_highlight || "",
       socials: profile?.socials || {},
@@ -1348,7 +1349,7 @@
       ui.dealerLocationLabel.textContent = profile.locationLabel || "";
     }
     if(ui.dealerMapsEmbed){
-      const embed = mapsEmbedSrc(profile.googleMapsUrl);
+      const embed = profile.googleMapsEmbedUrl || mapsEmbedSrc(profile.googleMapsUrl);
       ui.dealerMapsEmbed.innerHTML = embed
         ? `<iframe title="Dealer location map" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="${esc(embed)}"></iframe>`
         : `<p class="muted" style="padding:16px">Map link not added yet.</p>`;

@@ -292,7 +292,12 @@
       width:34px;height:34px;border-radius:999px;
     }
     .xbtn:hover{background:rgba(220,38,38,.10);color:var(--brand)}
-    .mbody{padding:14px 16px}
+    .mbody{padding:14px 16px;max-height:min(72vh,720px);overflow-y:auto}
+    .profile-block{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+    .profile-block h4{margin:0 0 10px;font-size:13px;font-weight:900}
+    .maps-preview{margin-top:10px;border-radius:14px;border:1px solid var(--line);overflow:hidden;background:#f8fafc;min-height:200px}
+    .maps-preview iframe{width:100%;height:220px;border:0;display:block}
+    .maps-preview .maps-hint{padding:12px 14px;font-size:12px;color:var(--muted);line-height:1.45}
     .statusline{min-height:18px;font-size:12px;color:var(--muted);margin-top:8px}
     .statusline.error{color:var(--bad)}
 
@@ -629,6 +634,53 @@
         <div class="field">
           <div class="label"><span>Logo URL</span></div>
           <input id="mDealerLogo" class="input" placeholder="https://..." />
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;align-items:center">
+            <input type="file" id="mLogoFile" accept="image/*" />
+            <button class="btn btn-ghost" type="button" id="btnUploadLogo">Upload logo</button>
+          </div>
+        </div>
+
+        <div class="profile-block">
+          <h4>Storefront profile (buyer-facing)</h4>
+          <div class="field">
+            <div class="label"><span>About / description</span></div>
+            <textarea id="mDescription" class="input" rows="3" placeholder="Dealer story for the storefront"></textarea>
+          </div>
+          <div class="row two">
+            <div class="field">
+              <div class="label"><span>Location label</span></div>
+              <input id="mLocationLabel" class="input" placeholder="Kingston · Spanish Town" />
+            </div>
+            <div class="field">
+              <div class="label"><span>Reviews highlight</span></div>
+              <input id="mReviewsHighlight" class="input" placeholder="4.8 on Google · 120+ reviews" />
+            </div>
+          </div>
+          <div class="field">
+            <div class="label"><span>Google Maps share link</span></div>
+            <input id="mGoogleMapsUrl" class="input" placeholder="https://maps.google.com/…" />
+            <div class="hint">Paste the link from Google Maps Share. Short goo.gl links open in Maps but may not embed—prefer a full maps.google.com URL.</div>
+            <div class="maps-preview" id="mMapsPreview">
+              <div class="maps-hint">Map preview updates when you change the link.</div>
+            </div>
+          </div>
+          <div class="field">
+            <div class="label"><span>Hero video URL</span></div>
+            <input id="mHeroVideoUrl" class="input" placeholder="https://…mp4" />
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;align-items:center">
+              <input type="file" id="mHeroFile" accept="video/*" />
+              <button class="btn btn-ghost" type="button" id="btnUploadHero">Upload hero video</button>
+            </div>
+          </div>
+          <div class="row two">
+            <div class="field"><div class="label"><span>Website</span></div><input id="mSocialWebsite" class="input" /></div>
+            <div class="field"><div class="label"><span>Instagram</span></div><input id="mSocialInstagram" class="input" /></div>
+          </div>
+          <div class="row two">
+            <div class="field"><div class="label"><span>Facebook</span></div><input id="mSocialFacebook" class="input" /></div>
+            <div class="field"><div class="label"><span>TikTok</span></div><input id="mSocialTiktok" class="input" /></div>
+          </div>
+          <div class="hint" id="mStorefrontNote"></div>
         </div>
 
         <div class="panel" style="margin-top:10px">
@@ -759,6 +811,21 @@
       mDealerWhatsApp: el("mDealerWhatsApp"),
       mDealerPasscode: el("mDealerPasscode"),
       mDealerLogo: el("mDealerLogo"),
+      mLogoFile: el("mLogoFile"),
+      btnUploadLogo: el("btnUploadLogo"),
+      mDescription: el("mDescription"),
+      mLocationLabel: el("mLocationLabel"),
+      mReviewsHighlight: el("mReviewsHighlight"),
+      mGoogleMapsUrl: el("mGoogleMapsUrl"),
+      mMapsPreview: el("mMapsPreview"),
+      mHeroVideoUrl: el("mHeroVideoUrl"),
+      mHeroFile: el("mHeroFile"),
+      btnUploadHero: el("btnUploadHero"),
+      mSocialWebsite: el("mSocialWebsite"),
+      mSocialInstagram: el("mSocialInstagram"),
+      mSocialFacebook: el("mSocialFacebook"),
+      mSocialTiktok: el("mSocialTiktok"),
+      mStorefrontNote: el("mStorefrontNote"),
       mPasscode: el("mPasscode"),
       btnResetPasscode: el("btnResetPasscode"),
       btnSaveDealer: el("btnSaveDealer"),
@@ -833,6 +900,9 @@
 
       ui.btnResetPasscode.addEventListener("click", resetPasscode);
     ui.btnSaveDealer.addEventListener("click", saveDealerChanges);
+    ui.btnUploadLogo?.addEventListener("click", () => uploadAdminProfileMedia("logo"));
+    ui.btnUploadHero?.addEventListener("click", () => uploadAdminProfileMedia("hero_video"));
+    ui.mGoogleMapsUrl?.addEventListener("input", updateMapsPreview);
     ui.btnViewDealerInventory.addEventListener("click", () => {
       if(!state.selectedDealer) return;
       setTab("inventory");
@@ -1502,6 +1572,90 @@
       ui.newDealerPlan.value = "";
     }
 
+    // ========= Google Maps embed (mirrors server buildGoogleMapsEmbedUrl) =========
+    function buildGoogleMapsEmbedUrl(rawUrl){
+      const url = String(rawUrl || "").trim();
+      if(!url) return "";
+      const full = /^https?:\/\//i.test(url) ? url : `https://${url}`;
+      if(/\/maps\/embed/i.test(full) || /[?&]output=embed/i.test(full)) return full;
+      try{
+        const parsed = new URL(full);
+        const host = parsed.hostname.replace(/^www\./, "");
+        if(host.includes("goo.gl") || host === "maps.app.goo.gl") return "";
+        const apiQuery = parsed.searchParams.get("query") || parsed.searchParams.get("q") || parsed.searchParams.get("destination");
+        if(apiQuery && host.includes("google")){
+          return `https://www.google.com/maps?q=${encodeURIComponent(apiQuery)}&output=embed`;
+        }
+        const placePath = full.match(/\/maps\/place\/([^/@?]+)(?:\/@(-?\d+\.?\d*),(-?\d+\.?\d*))?/);
+        if(placePath){
+          const label = decodeURIComponent(placePath[1].replace(/\+/g, " "));
+          if(placePath[2] && placePath[3]){
+            return `https://www.google.com/maps?q=${encodeURIComponent(`${label}@${placePath[2]},${placePath[3]}`)}&output=embed`;
+          }
+          return `https://www.google.com/maps?q=${encodeURIComponent(label)}&output=embed`;
+        }
+        const placeIdMatch = full.match(/(ChIJ[\w-]+)/);
+        if(placeIdMatch) return `https://www.google.com/maps?q=place_id:${placeIdMatch[1]}&output=embed`;
+        const bangCoord = full.match(/!3d(-?\d+\.?\d*)!4d(-?\d+\.?\d*)/);
+        if(bangCoord) return `https://www.google.com/maps?q=${bangCoord[1]},${bangCoord[2]}&output=embed`;
+        const atMatch = full.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+        if(atMatch) return `https://www.google.com/maps?q=${atMatch[1]},${atMatch[2]}&output=embed`;
+        if(host.includes("google.com") && full.includes("/maps")){
+          return `${full}${full.includes("?") ? "&" : "?"}output=embed`;
+        }
+        return `https://www.google.com/maps?q=${encodeURIComponent(full)}&output=embed`;
+      }catch{
+        return `https://www.google.com/maps?q=${encodeURIComponent(full)}&output=embed`;
+      }
+    }
+
+    function updateMapsPreview(){
+      if(!ui.mMapsPreview) return;
+      const link = (ui.mGoogleMapsUrl?.value || "").trim();
+      const embed = buildGoogleMapsEmbedUrl(link);
+      if(!link){
+        ui.mMapsPreview.innerHTML = '<div class="maps-hint">Map preview updates when you change the link.</div>';
+        return;
+      }
+      if(!embed){
+        ui.mMapsPreview.innerHTML = '<div class="maps-hint">Short share links (maps.app.goo.gl) cannot be embedded. Open the link in Google Maps, tap Share, and copy the full maps.google.com URL.</div>';
+        return;
+      }
+      ui.mMapsPreview.innerHTML = `<iframe title="Map preview" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="${esc(embed)}"></iframe>`;
+    }
+
+    async function uploadAdminProfileMedia(kind){
+      const dealerId = (ui.mDealerId?.value || "").trim();
+      const input = kind === "logo" ? ui.mLogoFile : ui.mHeroFile;
+      const file = input?.files?.[0];
+      if(!dealerId){ ui.mStatus.textContent = "Dealer ID required."; return; }
+      if(!file){ ui.mStatus.textContent = "Choose a file first."; return; }
+      if(!state.apiOnline){ toast("Upload requires live API.", "error"); return; }
+      ui.mStatus.textContent = "Uploading…";
+      try{
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("kind", kind);
+        const res = await fetch(`/api/admin/dealers/${encodeURIComponent(dealerId)}/profile/upload`, {
+          method: "POST",
+          headers: { ...authHeaders(), Accept: "application/json" },
+          body: fd,
+        });
+        const data = await safeJson(res);
+        if(!res.ok || !data?.ok) throw new Error(data?.error || "Upload failed");
+        if(kind === "logo" && data.url) ui.mDealerLogo.value = data.url;
+        if(kind === "hero_video" && data.url) ui.mHeroVideoUrl.value = data.url;
+        if(data.dealer) openDealerModal(data.dealer);
+        ui.mStatus.textContent = "Upload complete.";
+        toast("Uploaded.", "success");
+        if(input) input.value = "";
+        await refresh();
+      }catch(e){
+        ui.mStatus.textContent = "Upload failed: " + (e?.message || "error");
+        ui.mStatus.classList.add("error");
+      }
+    }
+
     // ========= Dealer modal =========
     function openDealerModal(dealer){
       state.selectedDealer = { ...dealer };
@@ -1515,6 +1669,22 @@
       ui.mDealerWhatsApp.value = dealer.whatsapp || "";
       ui.mDealerPasscode.value = "";
       ui.mDealerLogo.value = dealer.logoUrl || "";
+      if(ui.mDescription) ui.mDescription.value = dealer.description || "";
+      if(ui.mLocationLabel) ui.mLocationLabel.value = dealer.locationLabel || "";
+      if(ui.mReviewsHighlight) ui.mReviewsHighlight.value = dealer.reviewsHighlight || "";
+      if(ui.mGoogleMapsUrl) ui.mGoogleMapsUrl.value = dealer.googleMapsUrl || "";
+      if(ui.mHeroVideoUrl) ui.mHeroVideoUrl.value = dealer.heroVideoUrl || "";
+      const socials = dealer.socials || {};
+      if(ui.mSocialWebsite) ui.mSocialWebsite.value = socials.website || "";
+      if(ui.mSocialInstagram) ui.mSocialInstagram.value = socials.instagram || "";
+      if(ui.mSocialFacebook) ui.mSocialFacebook.value = socials.facebook || "";
+      if(ui.mSocialTiktok) ui.mSocialTiktok.value = socials.tiktok || "";
+      if(ui.mStorefrontNote){
+        ui.mStorefrontNote.textContent = dealer.storefrontEnabled
+          ? "Branded storefront is live for this dealer."
+          : "Storefront is off until paid plan + active subscription (free tier uses Our Sales Team for leads).";
+      }
+      updateMapsPreview();
 
       ui.mPasscode.textContent = state.demoPasscodes[dealer.dealerId] || "••••••";
 
@@ -1539,6 +1709,15 @@
         whatsapp: digits(ui.mDealerWhatsApp.value||""),
         passcode: (ui.mDealerPasscode.value||"").trim(), // optional
         logoUrl: (ui.mDealerLogo.value||"").trim(),
+        description: (ui.mDescription?.value || "").trim(),
+        locationLabel: (ui.mLocationLabel?.value || "").trim(),
+        googleMapsUrl: (ui.mGoogleMapsUrl?.value || "").trim(),
+        reviewsHighlight: (ui.mReviewsHighlight?.value || "").trim(),
+        heroVideoUrl: (ui.mHeroVideoUrl?.value || "").trim(),
+        socialWebsite: (ui.mSocialWebsite?.value || "").trim(),
+        socialInstagram: (ui.mSocialInstagram?.value || "").trim(),
+        socialFacebook: (ui.mSocialFacebook?.value || "").trim(),
+        socialTiktok: (ui.mSocialTiktok?.value || "").trim(),
       };
 
       if(!payload.dealerId || !payload.name){
