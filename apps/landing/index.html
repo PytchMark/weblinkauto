@@ -42,8 +42,8 @@
   <header class="landing-header" id="landingHeader">
     <div class="landing-header-inner">
       <a class="landing-brand" href="/landing">
-        <div class="landing-brand-badge"><img src="https://res.cloudinary.com/dd8pjjxsm/image/upload/v1770298701/ChatGPT_Image_Sep_6_2025_08_27_53_AM_raorxf.png" alt="Auto Concierge Jamaica" width="36" height="36" /></div>
-        Auto Concierge Jamaica
+        <div class="landing-brand-badge"><img src="https://res.cloudinary.com/dd8pjjxsm/image/upload/v1770298701/ChatGPT_Image_Sep_6_2025_08_27_53_AM_raorxf.png" alt="" width="28" height="28" /></div>
+        <span class="landing-brand-name">Auto Concierge Jamaica</span>
       </a>
       <nav class="landing-nav" aria-label="Main">
         <a href="#programs">Plans</a>
@@ -52,12 +52,12 @@
         <a href="#whatsappBand">Contact</a>
       </nav>
       <div class="landing-header-actions">
-        <a href="/dealer" class="dealer-portal-link">
+        <a href="/dealer" class="dealer-portal-link landing-header-link" title="Dealer login">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          Dealer login
+          <span class="landing-header-link-label">Login</span>
         </a>
-        <a class="acj-btn acj-btn-outline-dark" href="/storefront">See storefront</a>
-        <a class="acj-btn acj-btn-primary acj-btn-luxe" href="#programs">Get started</a>
+        <a class="acj-btn acj-btn-outline-dark landing-header-btn" href="/storefront">Storefront</a>
+        <a class="acj-btn acj-btn-primary acj-btn-luxe landing-header-btn" href="#programs">Start</a>
       </div>
       <button type="button" class="landing-hamburger" id="landingNavToggle" aria-label="Open menu" aria-expanded="false">☰</button>
     </div>
@@ -156,89 +156,121 @@
       </div>
     </div></section>
     <section class="landing-section landing-section--muted" id="tierCompare"><div class="landing-wrap">
-      <div class="landing-section-head">
-        <span class="landing-section-eyebrow">Compare</span>
-        <h2>Free vs paid — at a glance</h2>
-        <p>Four things that matter when you manage inventory day to day.</p>
+      <div class="landing-section-head landing-section-head--center landing-tier-head acj-reveal">
+        <span class="landing-section-eyebrow">Choose your path</span>
+        <h2>Get listed now, or become a premium member</h2>
+        <p class="landing-tier-lead">Both plans use the same inventory hub. Start free to get sales with zero monthly cost — upgrade when you want your own page, direct leads, and priority financing.</p>
       </div>
+
       <div class="landing-plan-compare-grid acj-reveal">
-        <div class="landing-plan-column">
+        <div class="landing-plan-column landing-plan-column--free">
           <div class="landing-plan-column-head">
-            <span class="acj-tag acj-tag-muted">Free</span>
-            <h3>We help close sales</h3>
-            <p class="landing-plan-column-price">$0<small>/mo</small></p>
+            <span class="landing-plan-badge landing-plan-badge--free">Join for free</span>
+            <h3>Get listed now</h3>
+            <p class="landing-plan-tagline">Best to start selling before you commit to a monthly plan.</p>
+            <p class="landing-plan-column-price landing-plan-column-price--free">$0<small>/month</small></p>
           </div>
           <ul class="landing-plan-benefit-list">
-            <li class="landing-plan-benefit-item"><span class="landing-plan-benefit-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 12h18"/></svg></span><span>List cars in one hub — we help when buyers ask</span></li>
-            <li class="landing-plan-benefit-item"><span class="landing-plan-benefit-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg></span><span>Inquiries go to our team so none get lost</span></li>
-            <li class="landing-plan-benefit-item"><span class="landing-plan-benefit-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></span><span>We follow up; you get notified when ready to buy</span></li>
-            <li class="landing-plan-benefit-item"><span class="landing-plan-benefit-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span><span>$0 monthly; commission when you sell</span></li>
+            <li class="landing-plan-benefit-item"><span class="landing-plan-benefit-icon landing-plan-benefit-icon--free" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 12h18"/></svg></span><span><strong>Full sales team support</strong> — we handle buyer chats and follow-up</span></li>
+            <li class="landing-plan-benefit-item"><span class="landing-plan-benefit-icon landing-plan-benefit-icon--free" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span><span><strong>Sale-ready alerts</strong> — we tell you when a buyer is ready to close</span></li>
+            <li class="landing-plan-benefit-item"><span class="landing-plan-benefit-icon landing-plan-benefit-icon--free" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></span><span><strong>One inventory hub</strong> — add, update, and mark sold in one place</span></li>
+            <li class="landing-plan-benefit-item"><span class="landing-plan-benefit-icon landing-plan-benefit-icon--free" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span><span><strong>Pay when you sell</strong> — no monthly fee, commission on closed deals</span></li>
           </ul>
-          <a class="acj-btn acj-btn-outline-dark" href="#programs">Start Free Listing</a>
+          <p class="landing-plan-footnote">A strong way to prove demand and close real sales before upgrading.</p>
+          <a class="acj-btn acj-btn-outline-dark acj-btn-luxe" href="#programs">Join for free</a>
         </div>
-        <div class="landing-plan-column landing-plan-column--paid">
+
+        <div class="landing-plan-column landing-plan-column--premium">
+          <span class="landing-plan-ribbon" aria-hidden="true">More control</span>
           <div class="landing-plan-column-head">
-            <span class="acj-tag">Paid</span>
-            <h3>You own every conversation</h3>
-            <p class="landing-plan-column-price">$98<small>/mo · trial</small></p>
+            <span class="landing-plan-badge landing-plan-badge--premium">Premium</span>
+            <h3>Become a premium member</h3>
+            <p class="landing-plan-tagline">Your brand, your leads, plus backup from our team when you need it.</p>
+            <p class="landing-plan-column-price">$98<small>/month · 14-day trial</small></p>
           </div>
           <ul class="landing-plan-benefit-list">
-            <li class="landing-plan-benefit-item"><span class="landing-plan-benefit-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span><span>Your page, photos, and video — you control speed</span></li>
-            <li class="landing-plan-benefit-item"><span class="landing-plan-benefit-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg></span><span>Leads hit your WhatsApp — no handoff wait</span></li>
-            <li class="landing-plan-benefit-item"><span class="landing-plan-benefit-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></span><span>You run the chat; optional AI help on paid</span></li>
-            <li class="landing-plan-benefit-item"><span class="landing-plan-benefit-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span><span>Lower % plus tools as volume grows</span></li>
+            <li class="landing-plan-benefit-item"><span class="landing-plan-benefit-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span><span><strong>Your own storefront</strong> — logo, live stock, one shareable link</span></li>
+            <li class="landing-plan-benefit-item"><span class="landing-plan-benefit-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg></span><span><strong>Every lead to your WhatsApp</strong> — reply on your timeline</span></li>
+            <li class="landing-plan-benefit-item"><span class="landing-plan-benefit-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span><strong>Sales team backup</strong> — our team still helps when you want support</span></li>
+            <li class="landing-plan-benefit-item"><span class="landing-plan-benefit-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 7v10a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/></svg></span><span><strong>Priority buyer financing</strong> — help buyers afford cars; get paid in full</span></li>
+            <li class="landing-plan-benefit-item"><span class="landing-plan-benefit-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></span><span><strong>Walkaround video</strong> on listings — fewer wasted lot visits</span></li>
+            <li class="landing-plan-benefit-item"><span class="landing-plan-benefit-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span><span><strong>Lower commission</strong> as your volume grows</span></li>
           </ul>
-          <a class="acj-btn acj-btn-primary acj-btn-luxe" href="#programs">Start Paid Trial</a>
+          <p class="landing-plan-footnote">Everything in free, plus your page, direct leads, financing, and video.</p>
+          <a class="acj-btn acj-btn-primary acj-btn-luxe" href="#programs">Start premium trial</a>
         </div>
       </div>
-      <div class="landing-compare-accordions">
-        <details class="landing-compare-accordion">
-          <summary>List and update stock faster</summary>
-          <div class="landing-compare-accordion-panel"><p>On free, you add cars in the inventory hub and our team answers buyer questions about availability. On paid, you publish to your own storefront with photos and walkaround video, so serious buyers see the car before they visit.</p></div>
-        </details>
-        <details class="landing-compare-accordion">
-          <summary>Never lose a buyer message</summary>
-          <div class="landing-compare-accordion-panel"><p>Free-tier inquiries go to our team first in a structured flow — you are not juggling DMs. On paid, every inquiry routes to your WhatsApp or lead inbox so you can reply immediately.</p></div>
-        </details>
-        <details class="landing-compare-accordion">
-          <summary>Close more sales</summary>
-          <div class="landing-compare-accordion-panel"><p>On free, we follow up with buyers and tell you when someone is ready to purchase — you focus on stock. On paid, you own the full conversation from first message to close, with optional AI support when you want it.</p></div>
-        </details>
-        <details class="landing-compare-accordion">
-          <summary>Keep more of each sale</summary>
-          <div class="landing-compare-accordion-panel"><p>Free has no monthly fee; you pay commission when you sell. Paid is $98/month with a lower commission rate, built for dealers who want margin protection as they scale.</p></div>
-        </details>
-      </div>
-      <div class="landing-compare-wrap">
-        <table class="landing-compare-table">
-          <thead>
-            <tr>
-              <th></th>
-              <th>Free</th>
-              <th class="highlight">Paid</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td>Monthly fee</td><td><span class="landing-chip-yes">$0</span></td><td><span class="landing-chip-best">$98 · trial</span></td></tr>
-            <tr><td>Commission</td><td>Standard</td><td><span class="landing-chip-best">Lower</span></td></tr>
-            <tr><td>Your storefront page</td><td>—</td><td><span class="landing-chip-yes">Yes</span></td></tr>
-            <tr><td>Video on listings</td><td>—</td><td><span class="landing-chip-yes">Yes</span></td></tr>
-            <tr><td>Financing for buyers</td><td><span class="landing-chip-yes">Yes</span></td><td><span class="landing-chip-best">Priority</span></td></tr>
-          </tbody>
-        </table>
+
+      <div class="landing-compare-matrix acj-reveal" aria-label="Feature comparison">
+        <div class="landing-compare-matrix-head">
+          <h3>See what each path includes</h3>
+          <p>Side-by-side — no hidden details.</p>
+        </div>
+        <div class="landing-compare-matrix-grid" role="table">
+          <div class="landing-compare-matrix-row landing-compare-matrix-row--labels" role="row">
+            <div class="landing-compare-matrix-feature" role="columnheader">What you get</div>
+            <div class="landing-compare-matrix-col landing-compare-matrix-col--free" role="columnheader">Get listed now</div>
+            <div class="landing-compare-matrix-col landing-compare-matrix-col--premium" role="columnheader">Premium member</div>
+          </div>
+          <div class="landing-compare-matrix-row" role="row">
+            <div class="landing-compare-matrix-feature" role="rowheader">Monthly cost</div>
+            <div class="landing-compare-matrix-col landing-compare-matrix-col--free" role="cell"><span class="landing-compare-val landing-compare-val--highlight">$0</span></div>
+            <div class="landing-compare-matrix-col landing-compare-matrix-col--premium" role="cell"><span class="landing-compare-val">$98</span> <span class="landing-compare-val-note">14-day trial</span></div>
+          </div>
+          <div class="landing-compare-matrix-row" role="row">
+            <div class="landing-compare-matrix-feature" role="rowheader">Inventory hub</div>
+            <div class="landing-compare-matrix-col landing-compare-matrix-col--free" role="cell"><span class="landing-compare-check" aria-label="Included">✓</span></div>
+            <div class="landing-compare-matrix-col landing-compare-matrix-col--premium" role="cell"><span class="landing-compare-check" aria-label="Included">✓</span></div>
+          </div>
+          <div class="landing-compare-matrix-row" role="row">
+            <div class="landing-compare-matrix-feature" role="rowheader">Our sales team on buyer chats</div>
+            <div class="landing-compare-matrix-col landing-compare-matrix-col--free" role="cell"><span class="landing-compare-pill landing-compare-pill--free">We handle it</span></div>
+            <div class="landing-compare-matrix-col landing-compare-matrix-col--premium" role="cell"><span class="landing-compare-pill landing-compare-pill--premium">You lead · we backup</span></div>
+          </div>
+          <div class="landing-compare-matrix-row" role="row">
+            <div class="landing-compare-matrix-feature" role="rowheader">Your own storefront page</div>
+            <div class="landing-compare-matrix-col landing-compare-matrix-col--free" role="cell"><span class="landing-compare-dash" aria-label="Not included">—</span></div>
+            <div class="landing-compare-matrix-col landing-compare-matrix-col--premium" role="cell"><span class="landing-compare-check" aria-label="Included">✓</span></div>
+          </div>
+          <div class="landing-compare-matrix-row" role="row">
+            <div class="landing-compare-matrix-feature" role="rowheader">Leads straight to your WhatsApp</div>
+            <div class="landing-compare-matrix-col landing-compare-matrix-col--free" role="cell"><span class="landing-compare-val-note">Via team handoff</span></div>
+            <div class="landing-compare-matrix-col landing-compare-matrix-col--premium" role="cell"><span class="landing-compare-check" aria-label="Included">✓</span></div>
+          </div>
+          <div class="landing-compare-matrix-row" role="row">
+            <div class="landing-compare-matrix-feature" role="rowheader">Walkaround video on listings</div>
+            <div class="landing-compare-matrix-col landing-compare-matrix-col--free" role="cell"><span class="landing-compare-dash" aria-label="Not included">—</span></div>
+            <div class="landing-compare-matrix-col landing-compare-matrix-col--premium" role="cell"><span class="landing-compare-check" aria-label="Included">✓</span></div>
+          </div>
+          <div class="landing-compare-matrix-row" role="row">
+            <div class="landing-compare-matrix-feature" role="rowheader">Priority buyer financing</div>
+            <div class="landing-compare-matrix-col landing-compare-matrix-col--free" role="cell"><span class="landing-compare-dash" aria-label="Not included">—</span></div>
+            <div class="landing-compare-matrix-col landing-compare-matrix-col--premium" role="cell"><span class="landing-compare-pill landing-compare-pill--premium">Priority</span></div>
+          </div>
+          <div class="landing-compare-matrix-row" role="row">
+            <div class="landing-compare-matrix-feature" role="rowheader">Commission rate</div>
+            <div class="landing-compare-matrix-col landing-compare-matrix-col--free" role="cell"><span class="landing-compare-val-note">Standard</span></div>
+            <div class="landing-compare-matrix-col landing-compare-matrix-col--premium" role="cell"><span class="landing-compare-pill landing-compare-pill--premium">Lower</span></div>
+          </div>
+        </div>
+        <div class="landing-compare-matrix-ctas">
+          <a class="acj-btn acj-btn-outline-dark" href="#programs">Join for free</a>
+          <a class="acj-btn acj-btn-primary acj-btn-luxe" href="#programs">Start premium trial</a>
+        </div>
       </div>
     </div></section>
+
 
         <section class="landing-section landing-section--muted" aria-label="What you get">
       <div class="landing-wrap">
         <div class="landing-section-head landing-section-head--center acj-reveal">
           <span class="landing-section-eyebrow">Benefits</span>
           <h2>Everything you need to sell more cars</h2>
-          <p>Clear cards on light backgrounds — readable on every screen.</p>
+          <p>White and red cards alternate so each benefit stands out on the page.</p>
         </div>
         <div style="display:grid;gap:28px;margin-top:8px">
 
-      <article class="landing-feature-showcase acj-reveal">
+      <article class="landing-feature-showcase landing-feature-showcase--light acj-reveal">
         <div class="landing-feature-copy">
           <span class="landing-section-eyebrow">Inventory</span>
           <h2>All your cars in one hub</h2>
@@ -252,7 +284,7 @@
         </div>
         <div class="landing-feature-media"><img class="parallax-img" src="https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=800&q=80" alt="Cars in a dealership lot" width="800" height="600" loading="lazy" /></div>
       </article>
-      <article class="landing-feature-showcase landing-feature-showcase--reverse acj-reveal">
+      <article class="landing-feature-showcase landing-feature-showcase--reverse landing-feature-showcase--brand acj-reveal">
         <div class="landing-feature-copy">
           <span class="landing-section-eyebrow">Storefront</span>
           <h2>Your own page on paid</h2>
@@ -266,7 +298,7 @@
         </div>
         <div class="landing-feature-media"><img class="parallax-img" src="https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=800&q=80" alt="Dealer showroom" width="800" height="600" loading="lazy" /></div>
       </article>
-      <article class="landing-feature-showcase acj-reveal">
+      <article class="landing-feature-showcase landing-feature-showcase--light acj-reveal">
         <div class="landing-feature-copy">
           <span class="landing-section-eyebrow">Video</span>
           <h2>Walkaround video on listings</h2>
@@ -280,7 +312,7 @@
         </div>
         <div class="landing-feature-media"><img class="parallax-img" src="https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?w=800&q=80" alt="Car walkaround video" width="800" height="600" loading="lazy" /></div>
       </article>
-      <article class="landing-feature-showcase landing-feature-showcase--reverse acj-reveal">
+      <article class="landing-feature-showcase landing-feature-showcase--reverse landing-feature-showcase--brand acj-reveal">
         <div class="landing-feature-copy">
           <span class="landing-section-eyebrow">Free plan</span>
           <h2>We handle buyer chats</h2>
@@ -303,9 +335,9 @@
         <div>
           <span class="landing-section-eyebrow">Financing</span>
           <h2>Help buyers afford the car — get paid in full</h2>
-          <p class="landing-feature-lead">Many buyers need monthly payments. We connect them to financing partners so you can close the deal and get paid upfront while they repay over time.</p>
+          <p class="landing-feature-lead">Many buyers need monthly payments. Premium members get priority introductions to financing partners — close the deal and get paid upfront while they repay over time.</p>
           <div class="landing-benefit-points">
-            <div class="landing-benefit-point acj-reveal-child"><span class="landing-benefit-point-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg></span><div><strong>Partner introductions</strong><span>We route qualified buyers to trusted lenders.</span></div></div><div class="landing-benefit-point acj-reveal-child"><span class="landing-benefit-point-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 7v10a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/></svg></span><div><strong>Paid upfront</strong><span>You can receive full payment when the deal is approved.</span></div></div><div class="landing-benefit-point acj-reveal-child"><span class="landing-benefit-point-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span><div><strong>Buyer pays monthly</strong><span>The buyer repays the lender on a schedule that works for them.</span></div></div><div class="landing-benefit-point acj-reveal-child"><span class="landing-benefit-point-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span><div><strong>Both plans</strong><span>Available on free; priority handling on paid.</span></div></div>
+            <div class="landing-benefit-point acj-reveal-child"><span class="landing-benefit-point-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg></span><div><strong>Partner introductions</strong><span>We route qualified buyers to trusted lenders.</span></div></div><div class="landing-benefit-point acj-reveal-child"><span class="landing-benefit-point-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 7v10a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/></svg></span><div><strong>Paid upfront</strong><span>You can receive full payment when the deal is approved.</span></div></div><div class="landing-benefit-point acj-reveal-child"><span class="landing-benefit-point-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span><div><strong>Buyer pays monthly</strong><span>The buyer repays the lender on a schedule that works for them.</span></div></div><div class="landing-benefit-point acj-reveal-child"><span class="landing-benefit-point-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span><div><strong>Premium benefit</strong><span>Priority financing introductions for premium members.</span></div></div>
           </div>
           <div class="landing-feature-ctas landing-feature-ctas--spaced">
             <a class="acj-btn acj-btn-outline-light acj-btn-luxe" href="#" id="financingWhatsApp">Ask about financing</a>
@@ -338,14 +370,31 @@
       </div>
     </div></section>
 
-    <section class="landing-section landing-section--muted" aria-label="Trust"><div class="landing-wrap">
-      <div class="landing-trust-strip acj-reveal">
-        <div><strong>Stripe checkout</strong><span>Secure paid sign-up</span></div>
-        <div><strong>Verified dealers</strong><span>Real inventory, real IDs</span></div>
-        <div><strong>Fast setup</strong><span>Paid dealers often live same day</span></div>
-        <div><strong>Example quote</strong><span>"One link for all our stock — buyers book without endless DMs."</span></div>
+    <section class="landing-section landing-section--trust" aria-label="Why dealers trust us">
+      <div class="landing-wrap landing-trust-intro">
+        <div class="landing-section-head landing-section-head--center acj-reveal">
+          <span class="landing-section-eyebrow">Trust</span>
+          <h2>Why dealers join Auto Concierge</h2>
+          <p>Real support, verified listings, and tools that help you sell — not jargon on a gray box.</p>
+        </div>
       </div>
-    </div></section>
+      <div class="landing-trust-marquee" aria-label="Dealer trust highlights">
+        <div class="landing-trust-marquee-track">
+          <article class="landing-trust-card landing-trust-card--light"><h3>Secure premium checkout</h3><p>Start your paid trial through Stripe — safe card payment, cancel anytime during trial.</p></article>
+          <article class="landing-trust-card landing-trust-card--brand"><h3>Verified dealers only</h3><p>Every account is tied to a real business with real inventory — buyers know who they are dealing with.</p></article>
+          <article class="landing-trust-card landing-trust-card--light"><h3>Go live fast</h3><p>Many premium dealers publish their storefront and share a buyer link the same day they sign up.</p></article>
+          <article class="landing-trust-card landing-trust-card--brand"><h3>One link for your stock</h3><p>Buyers browse every car on one page instead of chasing posts and scattered messages.</p></article>
+          <article class="landing-trust-card landing-trust-card--light"><h3>Sales team on free</h3><p>On the free plan, our team handles buyer chats and tells you when someone is ready to buy.</p></article>
+          <article class="landing-trust-card landing-trust-card--brand"><h3>Priority financing</h3><p>Premium members get buyer financing introductions so you can close and get paid in full.</p></article>
+          <article class="landing-trust-card landing-trust-card--light"><h3>Secure premium checkout</h3><p>Start your paid trial through Stripe — safe card payment, cancel anytime during trial.</p></article>
+          <article class="landing-trust-card landing-trust-card--brand"><h3>Verified dealers only</h3><p>Every account is tied to a real business with real inventory — buyers know who they are dealing with.</p></article>
+          <article class="landing-trust-card landing-trust-card--light"><h3>Go live fast</h3><p>Many premium dealers publish their storefront and share a buyer link the same day they sign up.</p></article>
+          <article class="landing-trust-card landing-trust-card--brand"><h3>One link for your stock</h3><p>Buyers browse every car on one page instead of chasing posts and scattered messages.</p></article>
+          <article class="landing-trust-card landing-trust-card--light"><h3>Sales team on free</h3><p>On the free plan, our team handles buyer chats and tells you when someone is ready to buy.</p></article>
+          <article class="landing-trust-card landing-trust-card--brand"><h3>Priority financing</h3><p>Premium members get buyer financing introductions so you can close and get paid in full.</p></article>
+        </div>
+      </div>
+    </section>
 
     <section class="landing-section landing-section--white" id="whatsappBand"><div class="landing-wrap">
       <div class="landing-whatsapp-band acj-reveal">
@@ -368,15 +417,35 @@
       <div class="warning">Checkout cancelled. Pick a plan below or message us on WhatsApp.</div>
     </div></section>
 
-    <section class="landing-section landing-section--muted"><div class="landing-wrap">
-      <h2 style="font-family:var(--acj-font-display);margin:0 0 14px">Quick answers</h2>
+    <section class="landing-section landing-section--muted" id="faq"><div class="landing-wrap">
+      <div class="landing-section-head landing-faq-section-head acj-reveal">
+        <span class="landing-section-eyebrow">FAQ</span>
+        <h2>Quick answers</h2>
+        <p>What dealers ask before they list with us.</p>
+      </div>
       <div class="landing-faq">
-        <div class="landing-faq-item"><button type="button">Free vs paid?<span>+</span></button><div class="landing-faq-panel">Free: our team handles buyer chats. Paid: lower commission and every lead goes to you.</div></div>
-        <div class="landing-faq-item"><button type="button">How fast can I go live?<span>+</span></button><div class="landing-faq-panel">Paid: often same day after checkout. Free: after we approve your application.</div></div>
-        <div class="landing-faq-item"><button type="button">How does financing work?<span>+</span></button><div class="landing-faq-panel">We connect buyers to partners. You may get paid in full while they repay monthly — terms vary.</div></div>
+        <div class="landing-faq-item"><button type="button">Free vs premium?<span>+</span></button><div class="landing-faq-panel"><strong>Free:</strong> $0 monthly — our sales team handles buyer chats and you pay commission when you close. <strong>Premium:</strong> your own storefront, direct leads, lower commission, and priority buyer financing.</div></div>
+        <div class="landing-faq-item"><button type="button">How fast can I go live?<span>+</span></button><div class="landing-faq-panel"><strong>Premium:</strong> often the same day after Stripe checkout — you get portal access and can share your buyer link. <strong>Free:</strong> after we review and approve your application, usually within a few business days.</div></div>
+        <div class="landing-faq-item"><button type="button">How does financing work?<span>+</span></button><div class="landing-faq-panel">Buyer financing is a <strong>premium member</strong> benefit. We introduce qualified buyers to lending partners. When a deal is approved, you can be paid in full while the buyer repays monthly — terms depend on the partner and buyer profile.</div></div>
+        <div class="landing-faq-item"><button type="button">What does premium cost?<span>+</span></button><div class="landing-faq-panel">Premium is <strong>$98/month</strong> with a <strong>14-day free trial</strong> when you sign up by card through Stripe. Cancel during the trial if it is not the right fit. Commission on sales still applies, at a lower rate than the free tier.</div></div>
+        <div class="landing-faq-item"><button type="button">Can I start free and upgrade later?<span>+</span></button><div class="landing-faq-panel">Yes. Many dealers list on the free plan first, then move to premium when they want their own storefront, direct leads, and financing support. Message our team anytime and we will help you switch.</div></div>
+        <div class="landing-faq-item"><button type="button">Who talks to buyers?<span>+</span></button><div class="landing-faq-panel">On <strong>free</strong>, our team replies to inquiries, answers availability questions, and notifies you when someone is ready to buy. On <strong>premium</strong>, leads come to you first — we stay in the background for backup and platform support.</div></div>
+        <div class="landing-faq-item"><button type="button">Do I get my own storefront?<span>+</span></button><div class="landing-faq-panel"><strong>Premium members</strong> get a branded dealer page with your inventory, photos, and a single link to share everywhere. Free listings appear in the hub; premium gives you a dedicated buyer destination.</div></div>
+        <div class="landing-faq-item"><button type="button">What do I need to apply?<span>+</span></button><div class="landing-faq-panel">A registered dealership or consistent car-selling business, a valid email, and a WhatsApp number we can reach you on. For premium, you will also complete secure checkout. We may ask for basic verification so buyers trust who they are buying from.</div></div>
+        <div class="landing-faq-item"><button type="button">Is there a long-term contract?<span>+</span></button><div class="landing-faq-panel">No lock-in contract. Premium is month-to-month after your trial. Free has no monthly fee — you only pay commission when our team helps you close a sale. You can pause or cancel premium through your account or by contacting support.</div></div>
+        <div class="landing-faq-item"><button type="button">What happens after I pay?<span>+</span></button><div class="landing-faq-panel">Stripe confirms payment, we provision your dealer ID and portal login, and you can start adding inventory. Check your email for next steps and your storefront link. Our team can walk you through your first listing if you want a hand.</div></div>
+      </div>
+      <div class="landing-faq-cta acj-reveal">
+        <div class="landing-faq-cta-copy">
+          <h3>Still have a question?</h3>
+          <p>Ask someone on our team — we will explain free vs premium, setup, and financing in plain language.</p>
+        </div>
+        <div class="landing-faq-cta-actions">
+          <a class="acj-btn acj-btn-primary acj-btn-luxe" href="#" id="faqWhatsApp">Chat with our team</a>
+          <a class="acj-btn acj-btn-outline-dark" href="mailto:support@autoconciergeja.com">Email support</a>
+        </div>
       </div>
     </div></section>
-  </main>
   </main>
 
   <footer class="landing-footer" id="footer">
@@ -401,7 +470,7 @@
       return "https://wa.me/" + SALES_WHATSAPP + "?text=" + WA_MSG;
     }
     const WA_FIN = encodeURIComponent("Hi — I want to learn how buyer financing works for my dealership on Auto Concierge Jamaica.");
-    ["heroWhatsApp","bandWhatsApp","mobileWhatsApp","featureWhatsApp"].forEach((id) => {
+    ["heroWhatsApp","bandWhatsApp","mobileWhatsApp","featureWhatsApp","faqWhatsApp"].forEach((id) => {
       const el = document.getElementById(id);
       if(el){ el.href = whatsAppHref(); el.target = "_blank"; el.rel = "noopener"; }
     });
@@ -553,7 +622,7 @@
     if(window.ACJMotion){
       ACJMotion.whenReady(() => {
         ACJMotion.heroIntro([".landing-hero h1", ".landing-hero-lead", ".landing-hero-ctas"]);
-        ACJMotion.revealOnScroll(".landing-feature-showcase, .landing-benefit-point, .landing-plan-column, .landing-compare-accordion, .landing-financing-inner > div:first-child, .landing-trust-strip, .landing-step, .landing-value-pill", { duration: 0.5, y: 20, stagger: 0.06 });
+        ACJMotion.revealOnScroll(".landing-feature-showcase, .landing-benefit-point, .landing-plan-column, .landing-compare-matrix, .landing-compare-matrix-row, .landing-financing-inner > div:first-child, .landing-trust-intro, .landing-step, .landing-value-pill", { duration: 0.5, y: 20, stagger: 0.06 });
         if(!window.matchMedia("(prefers-reduced-motion: reduce)").matches){
           ACJMotion.parallaxLayer(".parallax-img", 14);
         }
