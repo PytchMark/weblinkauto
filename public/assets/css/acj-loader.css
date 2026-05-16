@@ -1,0 +1,113 @@
+.acj-page-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  background: #0a0b0e;
+  transition: opacity 0.35s ease, visibility 0.35s ease;
+}
+
+.acj-page-loader.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.acj-page-loader-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.acj-page-loader-logo {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  object-fit: cover;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+  animation: acjLoaderLogoIn 0.5s ease-out both;
+}
+
+.acj-page-loader.is-nav .acj-page-loader-logo {
+  animation: acjLoaderLogoPulse 0.35s ease-in-out;
+}
+
+.acj-page-loader-rings {
+  position: relative;
+  width: 52px;
+  height: 52px;
+}
+
+.acj-page-loader-rings::before,
+.acj-page-loader-rings::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: #c41e3a;
+  animation: acjLoaderSpin 0.9s linear infinite;
+}
+
+.acj-page-loader-rings::after {
+  inset: 8px;
+  border-top-color: #e11d48;
+  animation-duration: 1.2s;
+  animation-direction: reverse;
+}
+
+.acj-page-loader-status {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+  min-height: 1.2em;
+  text-align: center;
+}
+
+@keyframes acjLoaderSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes acjLoaderLogoIn {
+  from {
+    opacity: 0;
+    transform: scale(0.88);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes acjLoaderLogoPulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .acj-page-loader {
+    transition: none;
+  }
+
+  .acj-page-loader-logo {
+    animation: none;
+  }
+
+  .acj-page-loader-rings::before,
+  .acj-page-loader-rings::after {
+    animation: none;
+    border-top-color: #c41e3a;
+    border-right-color: rgba(196, 30, 58, 0.35);
+  }
+}
