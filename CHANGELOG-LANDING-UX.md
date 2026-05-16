@@ -19,6 +19,16 @@ This release moves dealer “about” content into a modal on the storefront, st
 - **Trust strip**: Stripe, verified dealers, setup speed, and a labeled example quote.
 - **Branded loader**: `acj-loader.css` / `acj-loader.js` on landing, storefront, dealer, and admin; respects `prefers-reduced-motion`.
 
+## Landing visual revamp (v3)
+
+- **Contrast fix**: Removed inline `.feature-block p { color: var(--muted) }` that overrode red brand sections; marketing styles moved to `public/assets/css/acj-landing.css`.
+- **White + red shell** (ClickMenu-inspired): Light gray bands, white elevated feature cards, red accents on CTAs and icons only.
+- **Hero**: Badge, split layout, gradient highlight on “One link”, trust row, video background with dark scrim.
+- **Glass nav**: Floating pill header with Plans / Compare / Financing / Contact; mobile hamburger drawer.
+- **Feature showcases**: Four `.landing-feature-showcase` cards (including “Your own page on paid”) with dark-on-white copy — no full-bleed red text blocks.
+- **Financing band** (KDB-inspired): Dark `#financing` section with scoped white typography, 4 benefits, dual CTAs, mini FAQ.
+- **Plan/compare polish**: Hover lift on price and compare cards; Plus Jakarta Sans for UI body.
+
 ## Landing SaaS funnel upgrade (v2)
 
 - **Two-column plan compare** (`#tierCompare`): Free and Paid cards with four icon bullets each; `<details>` accordions explain each inventory-manager benefit; compact fee table below.
@@ -38,11 +48,14 @@ This release moves dealer “about” content into a modal on the storefront, st
 - Compare accordions open with keyboard; plan columns stack on narrow screens.
 - Financing WhatsApp link uses financing-specific prefill message.
 - Every feature block shows at least four icon sub-points and one image.
+- **Visual revamp**: “Your own page on paid” and all feature cards use dark text on white; financing band uses white text on dark only.
+- Glass nav opens on mobile (hamburger); hero trust row and gradient headline highlight visible on desktop.
 
 ## Files
 
 - `apps/storefront/index.html`
 - `apps/landing/index.html`
 - `public/assets/css/acj-brand.css`
+- `public/assets/css/acj-landing.css`
 - `public/assets/css/acj-loader.css`
 - `public/assets/js/acj-loader.js`
