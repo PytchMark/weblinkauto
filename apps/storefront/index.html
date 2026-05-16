@@ -28,6 +28,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="/assets/css/acj-brand.css" />
+  <link rel="stylesheet" href="/assets/css/acj-loader.css" />
 
   <style>
     :root{
@@ -442,6 +443,33 @@
       font-size:12px;font-weight:800;height:36px;padding:0 12px;border-radius:999px;cursor:pointer;
     }
     .btn-report:hover{border-color:rgba(220,38,38,.35);color:var(--brand)}
+    .btn-about-dealer{
+      display:inline-flex;align-items:center;gap:8px;
+      font-size:12px;font-weight:800;height:38px;padding:0 14px;
+      border-radius:999px;border:1px solid var(--line);background:var(--surface);
+      color:var(--ink);cursor:pointer;transition:border-color .15s ease, background .15s ease;
+    }
+    .btn-about-dealer:hover:not(:disabled){border-color:rgba(220,38,38,.35);background:var(--brand-soft)}
+    .btn-about-dealer:disabled{opacity:.45;cursor:not-allowed}
+    .btn-about-dealer svg{width:16px;height:16px;flex-shrink:0}
+    .dealer-about-modal{
+      position:fixed;inset:0;z-index:76;display:none;place-items:center;padding:18px;
+      background:rgba(0,0,0,.45);
+    }
+    .dealer-about-modal.show{display:grid}
+    .dealer-about-card{
+      width:min(720px,100%);max-height:min(90vh,920px);background:var(--surface);
+      border-radius:22px;border:1px solid var(--line);box-shadow:var(--shadow);
+      display:flex;flex-direction:column;overflow:hidden;
+    }
+    .dealer-about-head{
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+      padding:16px 18px;border-bottom:1px solid var(--line);flex-shrink:0;
+    }
+    .dealer-about-head h2{margin:0;font-size:18px;font-family:var(--acj-font-display)}
+    .dealer-about-body{padding:18px;overflow:auto;flex:1}
+    .dealer-about-grid{display:grid;grid-template-columns:1fr;gap:20px}
+    @media (min-width:720px){.dealer-about-grid{grid-template-columns:1.05fr .95fr}}
     .report-modal{
       position:fixed;inset:0;z-index:75;display:none;place-items:center;padding:18px;
       background:rgba(0,0,0,.45);
@@ -826,6 +854,10 @@
       <span id="lastRefresh">Last refreshed —</span>
     </div>
     <div class="dealer-tags" id="dealerTags"></div>
+    <button type="button" class="btn-about-dealer" id="btnAboutDealer" disabled aria-haspopup="dialog" aria-controls="dealerAboutModal" aria-expanded="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+      About this dealer
+    </button>
   </div>
 </section>
 
@@ -941,11 +973,15 @@
     </div>
   </section>
 
-  <section class="section dealer-profile-section" id="dealerProfileSection" aria-labelledby="dealerProfileHeading">
-    <div class="wrap">
-      <div class="dealer-profile-grid">
-        <div class="dealer-profile-card">
-          <h2 id="dealerProfileHeading">About this dealer</h2>
+<div class="dealer-about-modal" id="dealerAboutBackdrop" aria-hidden="true">
+  <div class="dealer-about-card" id="dealerAboutModal" role="dialog" aria-modal="true" aria-labelledby="dealerAboutTitle">
+    <div class="dealer-about-head">
+      <h2 id="dealerAboutTitle">About this dealer</h2>
+      <button class="btn btn-ghost" type="button" id="dealerAboutClose">Close</button>
+    </div>
+    <div class="dealer-about-body">
+      <div class="dealer-about-grid">
+        <div class="dealer-profile-card" style="box-shadow:none;border:0;padding:0">
           <p id="dealerProfileDescription">Browse verified inventory and book a viewing with this dealer.</p>
           <p class="reviews-note" id="dealerReviewsNote" style="display:none"></p>
           <div id="dealerReviewsSummary" class="reviews-summary" hidden></div>
@@ -955,7 +991,7 @@
         </div>
         <div>
           <div class="dealer-maps" id="dealerMapsEmbed" aria-label="Dealer location map"></div>
-          <div class="dealer-profile-card" style="margin-top:16px">
+          <div class="dealer-profile-card" style="margin-top:16px;box-shadow:none;border:0;padding:0">
             <h3 style="margin:0 0 10px;font-size:16px;font-family:var(--acj-font-display)">Buyer reviews</h3>
             <ul class="review-list" id="dealerReviewsList" aria-live="polite"></ul>
             <form class="review-form" id="dealerReviewForm">
@@ -987,7 +1023,8 @@
         </div>
       </div>
     </div>
-  </section>
+  </div>
+</div>
 
   <section class="section" id="inventory">
     <div class="wrap">
@@ -1178,6 +1215,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/gsap.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/ScrollTrigger.min.js"></script>
+<script src="/assets/js/acj-loader.js"></script>
 <script src="/assets/js/acj-motion.js"></script>
 <script>
   const API_BASE = "";
@@ -1249,7 +1287,10 @@
     directorySearch: $("directorySearch"),
     directorySearchBtn: $("directorySearchBtn"),
     directoryResults: $("directoryResults"),
-    dealerProfileSection: $("dealerProfileSection"),
+    btnAboutDealer: $("btnAboutDealer"),
+    dealerAboutBackdrop: $("dealerAboutBackdrop"),
+    dealerAboutModal: $("dealerAboutModal"),
+    dealerAboutClose: $("dealerAboutClose"),
     dealerProfileDescription: $("dealerProfileDescription"),
     dealerReviewsNote: $("dealerReviewsNote"),
     dealerSocials: $("dealerSocials"),
@@ -1309,6 +1350,8 @@
     reviewRating: 0,
     reviewsLoadToken: 0,
     reportModalTrigger: null,
+    aboutModalTrigger: null,
+    cachedAboutProfile: null,
   };
 
   const tips = [
@@ -1417,21 +1460,15 @@
   }
 
   function pickImageUrl(vehicle){
-    const direct =
-      vehicle?.heroImageUrl ||
-      vehicle?.hero_image_url ||
+    const gallery =
       vehicle?.cloudinaryImageUrls ||
+      vehicle?.cloudinary_image_urls ||
       vehicle?.cloudinaryImageUrl ||
-      vehicle?.imageUrl ||
-      vehicle?.logoUrl;
-    const parsed = parseImageUrls(direct);
-    if(parsed.length) return parsed[0];
+      vehicle?.cloudinary_image_url;
+    const parsedGallery = parseImageUrls(gallery);
+    if(parsedGallery.length) return parsedGallery[0];
 
-    const alt = vehicle?.cloudinary_image_urls || vehicle?.cloudinary_image_url;
-    const parsedAlt = parseImageUrls(alt);
-    if(parsedAlt.length) return parsedAlt[0];
-
-    const att = vehicle?.images || vehicle?.["Main Photo"] || vehicle?.["Gallery Photos"] || vehicle?.["Logo"] || [];
+    const att = vehicle?.images || vehicle?.["Main Photo"] || vehicle?.["Gallery Photos"] || [];
     const parsedAtt = parseImageUrls(att);
     return parsedAtt[0] || "";
   }
@@ -1456,7 +1493,6 @@
       status,
       availability,
       imageUrl: pickImageUrl(v),
-      heroVideoUrl: v.heroVideoUrl || v.hero_video_url || v.cloudinaryVideoUrl || v.cloudinary_video_url || "",
       mileage: v.mileage || v.Mileage || v.odometer || "",
       transmission: v.transmission || v.Transmission || "",
       fuel: v.fuel || v.fuelType || v["Fuel Type"] || "",
@@ -1687,15 +1723,8 @@
     }
   }
 
-  function renderDealerProfileBlock(profile){
-    if(!ui.dealerProfileSection) return;
-    if(!profile){
-      ui.dealerProfileSection.classList.remove("show");
-      state.reviewsLoadToken += 1;
-      resetReviewForm();
-      return;
-    }
-    ui.dealerProfileSection.classList.add("show");
+  function populateDealerAboutContent(profile){
+    if(!profile) return;
     if(ui.dealerProfileDescription){
       ui.dealerProfileDescription.textContent = profile.description || "Browse verified inventory and book a viewing with this dealer.";
     }
@@ -1736,8 +1765,55 @@
         ? links.map(([label, href]) => `<a href="${esc(href)}" target="_blank" rel="noopener noreferrer">${esc(label)}</a>`).join("")
         : "";
     }
+  }
+
+  function setDealerAboutAvailable(profile){
+    state.cachedAboutProfile = profile || null;
+    if(ui.btnAboutDealer) ui.btnAboutDealer.disabled = !profile;
+    if(!profile){
+      state.reviewsLoadToken += 1;
+      resetReviewForm();
+      if(ui.dealerReviewsSummary) ui.dealerReviewsSummary.hidden = true;
+      if(ui.dealerReviewsList) ui.dealerReviewsList.innerHTML = "";
+      return;
+    }
+    populateDealerAboutContent(profile);
+  }
+
+  function openDealerAboutModal(trigger){
+    if(!state.cachedAboutProfile){
+      toast("Load a dealer storefront first.", "info");
+      return;
+    }
+    state.aboutModalTrigger = trigger || document.activeElement;
+    populateDealerAboutContent(state.cachedAboutProfile);
     resetReviewForm();
-    loadDealerReviews(profile.dealerId || state.dealerIds[0]);
+    loadDealerReviews(state.cachedAboutProfile.dealerId || state.dealerIds[0]);
+    ui.btnAboutDealer?.setAttribute("aria-expanded", "true");
+    if(window.ACJMotion && ui.dealerAboutModal){
+      ACJMotion.modalTimeline(ui.dealerAboutBackdrop, ui.dealerAboutModal, true);
+    }else{
+      ui.dealerAboutBackdrop?.classList.add("show");
+    }
+    ui.dealerAboutBackdrop?.setAttribute("aria-hidden", "false");
+    ui.dealerAboutClose?.focus();
+  }
+
+  function closeDealerAboutModal(){
+    const finish = () => {
+      ui.dealerAboutBackdrop?.classList.remove("show");
+      ui.dealerAboutBackdrop?.setAttribute("aria-hidden", "true");
+      ui.btnAboutDealer?.setAttribute("aria-expanded", "false");
+      if(state.aboutModalTrigger && typeof state.aboutModalTrigger.focus === "function"){
+        state.aboutModalTrigger.focus();
+      }
+    };
+    if(window.ACJMotion && ui.dealerAboutModal){
+      ACJMotion.modalTimeline(ui.dealerAboutBackdrop, ui.dealerAboutModal, false);
+      window.setTimeout(finish, 220);
+    }else{
+      finish();
+    }
   }
 
   function applyHeroVideo(url){
@@ -1840,7 +1916,7 @@
         image: "https://res.cloudinary.com/dd8pjjxsm/image/upload/v1770298701/ChatGPT_Image_Sep_6_2025_08_27_53_AM_raorxf.png",
         url: window.location.origin + "/storefront",
       });
-      renderDealerProfileBlock(null);
+      setDealerAboutAvailable(null);
       toggleDiscoveryPanel();
       return;
     }
@@ -1862,7 +1938,7 @@
         ui.heroLogoImg.alt = name;
       }
       applyHeroVideo(primary.heroVideoUrl);
-      renderDealerProfileBlock(primary);
+      setDealerAboutAvailable(primary);
       updateMetaTags({
         title: `${name} · Auto Concierge Jamaica`,
         description: `Browse ${name}'s verified inventory and book a viewing by WhatsApp, live video, or walk-in.`,
@@ -2243,16 +2319,12 @@
     ui.modalVehicle.textContent = vehicle.title || "Vehicle";
     ui.modalPrice.textContent = money(vehicle.price);
     const fallbackImage = "https://res.cloudinary.com/dd8pjjxsm/image/upload/v1770298701/ChatGPT_Image_Sep_6_2025_08_27_53_AM_raorxf.png";
-    ui.modalImage.src = vehicle.imageUrl || fallbackImage;
-    const heroVideo = vehicle.heroVideoUrl || "";
-    if(heroVideo){
-      ui.modalVideo.src = heroVideo;
-      ui.modalVideo.style.display = "block";
-      ui.modalImage.style.display = "none";
-    }else{
+    const galleryImages = parseImageUrls(vehicle.raw?.cloudinaryImageUrls || vehicle.raw?.cloudinary_image_urls || vehicle.imageUrl || vehicle.raw?.images || []);
+    ui.modalImage.src = galleryImages[0] || vehicle.imageUrl || fallbackImage;
+    ui.modalImage.style.display = "block";
+    if(ui.modalVideo){
       ui.modalVideo.removeAttribute("src");
       ui.modalVideo.style.display = "none";
-      ui.modalImage.style.display = "block";
     }
     ui.modalTitle.textContent = "Book a viewing";
 
@@ -2422,7 +2494,7 @@
       state.filtered = [];
       state.lastRefreshed = null;
       setBranding();
-      renderDealerProfileBlock(null);
+      setDealerAboutAvailable(null);
       updateDealerBar();
       ui.kpiLive.textContent = "0";
       const msg = e?.message || "Unknown error";
@@ -2524,6 +2596,15 @@
   ui.dealerReviewForm?.addEventListener("submit", submitDealerReview);
   ui.reviewStarPicker?.querySelectorAll("[data-rating]").forEach((btn) => {
     btn.addEventListener("click", () => setReviewRating(Number(btn.getAttribute("data-rating"))));
+  });
+  ui.btnAboutDealer?.addEventListener("click", () => openDealerAboutModal(ui.btnAboutDealer));
+  ui.dealerAboutClose?.addEventListener("click", closeDealerAboutModal);
+  ui.dealerAboutBackdrop?.addEventListener("click", (e) => {
+    if(e.target === ui.dealerAboutBackdrop) closeDealerAboutModal();
+  });
+  ui.dealerAboutBackdrop?.addEventListener("keydown", (e) => {
+    if(e.key === "Escape") closeDealerAboutModal();
+    if(e.key === "Tab" && ui.dealerAboutModal) trapFocus(ui.dealerAboutModal, e);
   });
   ui.reportDealerBtn?.addEventListener("click", () => openReportModal(ui.reportDealerBtn));
   ui.reportModalClose?.addEventListener("click", closeReportModal);

@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Become a Verified Dealer · Auto Concierge Jamaica</title>
-  <meta name="description" content="More buyers. Your own storefront. Inventory in one place. Join as a verified dealer—free commission program or paid plan with lower commission and full lead control." />
+  <meta name="description" content="List cars in one hub. Free: our team handles buyer chats. Paid: your own page and direct leads." />
   <meta property="og:type" content="website" />
   <meta property="og:title" content="Become a Verified Dealer · Auto Concierge Jamaica" />
   <meta property="og:description" content="Sell faster with a premium dealer storefront, our sales team on commission tier, or full control on paid." />
@@ -15,6 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="/assets/css/acj-brand.css" />
+  <link rel="stylesheet" href="/assets/css/acj-loader.css" />
   <style>
     :root{
       --bg:#0a0b0e;
@@ -29,8 +30,9 @@
       --line2:#e4e4e7;
       --radius:20px;
       --gutter:clamp(18px,4vw,32px);
+      --space-1:8px;--space-2:12px;--space-3:16px;--space-4:24px;--space-5:32px;--space-6:48px;
     }
-    html{scroll-behavior:smooth}
+    html{scroll-behavior:smooth;scroll-padding-top:72px}
     body{margin:0;font-family:var(--acj-font-body);color:var(--ink);background:var(--surface2)}
     a{text-decoration:none;color:inherit}
     .wrap{max-width:1140px;margin:0 auto;padding:0 var(--gutter)}
@@ -114,9 +116,21 @@
     .feature-block:nth-child(odd){background:var(--surface)}
     .feature-block:nth-child(even){background:var(--surface2)}
     .feature-block-inner{
-      max-width:720px;margin:0 auto;padding:0 var(--gutter);
-      display:grid;gap:12px;
+      max-width:1140px;margin:0 auto;padding:0 var(--gutter);
+      display:grid;gap:var(--space-3);align-items:center;
     }
+    .feature-block-rich .feature-block-inner{
+      grid-template-columns:1fr minmax(240px,42%);
+    }
+    .feature-block-copy{display:grid;gap:var(--space-2)}
+    .feature-block-icon{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;background:#fdecea;color:var(--brand)}
+    .feature-block-icon svg{width:24px;height:24px}
+    .feature-block-proof{font-size:12px;font-weight:700;color:var(--brand);margin:0}
+    .feature-block-media{border-radius:20px;overflow:hidden;border:1px solid var(--line2);aspect-ratio:4/3;background:#f4f4f5}
+    .feature-block-media img{width:100%;height:100%;object-fit:cover}
+    .section-head h2{font-weight:700}
+    .section-head p{max-width:58ch}
+    .section-eyebrow{font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--brand);margin-bottom:var(--space-2);display:block}
     .feature-block h3{
       margin:0;font-family:var(--acj-font-display);
       font-size:clamp(1.35rem,2.8vw,1.85rem);line-height:1.15;letter-spacing:-.02em;
@@ -213,13 +227,16 @@
 
     @media(max-width:960px){
       .hero{min-height:auto}
-      .financing-banner{grid-template-columns:1fr}
+      .plan-compare-grid{grid-template-columns:1fr}
+      .benefit-points{grid-template-columns:1fr}
+      .financing-section .wrap{grid-template-columns:1fr}
       .value-strip{grid-template-columns:repeat(2,1fr);margin-top:16px}
       .steps{grid-template-columns:1fr}
       .compare-wrap{overflow-x:auto}
       .compare-table{min-width:560px}
       .mobile-bar{display:flex}
-      body{padding-bottom:72px}
+      body{padding-bottom:88px}
+      .mobile-bar{padding-bottom:max(10px,env(safe-area-inset-bottom))}
     }
     @media (prefers-reduced-motion:reduce){
       html{scroll-behavior:auto}
@@ -233,14 +250,14 @@
     <div class="wrap"><div class="marquee-track">
       <span>Verified dealer program</span>
       <span>Your inventory · one link</span>
-      <span>Free tier · our sales team</span>
-      <span>Paid · lower commission · full control</span>
+      <span>Free · we handle chats</span>
+      <span>Paid · your page · direct leads</span>
       <span>Inventory hub for every dealer</span>
       <span>Financing for your buyers</span>
       <span>Verified dealer program</span>
       <span>Your inventory · one link</span>
-      <span>Free tier · our sales team</span>
-      <span>Paid · lower commission · full control</span>
+      <span>Free · we handle chats</span>
+      <span>Paid · your page · direct leads</span>
       <span>Inventory hub for every dealer</span>
       <span>Financing for your buyers</span>
     </div></div>
@@ -267,7 +284,7 @@
 
   <section class="hero">
     <div class="hero-media" aria-hidden="true">
-      <video class="hero-video" autoplay loop muted playsinline
+      <video class="hero-video" autoplay loop muted playsinline preload="metadata"
         poster="https://res.cloudinary.com/dd8pjjxsm/image/upload/v1768193442/mediaexclusive/dealers/0000/vehicles/VEH-0069/qbu8lvupz54ufudhcnv6.jpg"
         src="https://res.cloudinary.com/dd8pjjxsm/video/upload/v1776742826/From_KlickPin_CF_Aerial_view_of_a_crowded_parking_lot___Lavoretti_scientifici_-_Pin-972988694477218510_k7n3he.mp4"></video>
     </div>
@@ -277,9 +294,9 @@
         <div>
           <div class="eyebrow">Verified dealer program</div>
           <h1>More customers.<br />One link.<br />Real sales.</h1>
-          <p class="hero-tagline">Your inventory in one hub. A premium storefront on paid—or our sales team helping you close on free.</p>
+          <p class="hero-tagline">List your cars in one place. On free, our team handles buyer chats. On paid, you get your own page and every lead.</p>
           <div class="hero-actions">
-            <a class="acj-btn acj-btn-primary acj-btn-luxe" href="#programs">Become a Verified Dealer · Start today</a>
+            <a class="acj-btn acj-btn-primary acj-btn-luxe" href="#programs">See how to start</a>
             <a class="acj-btn acj-btn-outline-light" href="#" id="heroWhatsApp">Ask us on WhatsApp</a>
           </div>
         </div>
@@ -289,100 +306,250 @@
 
   <div class="wrap">
     <div class="value-strip">
-      <div class="value-pill"><span class="num">1</span><span class="lbl">Storefront link for every dealer</span></div>
-      <div class="value-pill"><span class="num">0→$98</span><span class="lbl">Start free or upgrade when ready</span></div>
-      <div class="value-pill"><span class="num">↓%</span><span class="lbl">Lower commission on paid</span></div>
-      <div class="value-pill"><span class="num">$</span><span class="lbl">Financing to help buyers buy</span></div>
+      <div class="value-pill"><span class="num">1</span><span class="lbl">One link for your stock (paid)</span></div>
+      <div class="value-pill"><span class="num">$0</span><span class="lbl">Start free, no monthly fee</span></div>
+      <div class="value-pill"><span class="num">↓</span><span class="lbl">Lower commission on paid</span></div>
+      <div class="value-pill"><span class="num">$</span><span class="lbl">Buyer financing available</span></div>
     </div>
   </div>
 
   <main>
-    <section class="features-stack" aria-label="Dealer benefits">
-      <article class="feature-block">
-        <div class="feature-block-inner">
-          <h3>Need a branded storefront buyers trust?</h3>
-          <p>On paid, send one premium link—directory listing, live stock, and viewing requests without a messy feed.</p>
-          <a class="acj-btn acj-btn-outline-dark feature-cta" href="#programs">See paid benefits</a>
-        </div>
-      </article>
-      <article class="feature-block">
-        <div class="feature-block-inner">
-          <h3>Want more qualified buyers without chasing DMs?</h3>
-          <p>Look verified and ready to sell. Serious shoppers book viewings, WhatsApp, or walk-ins from your page.</p>
-          <a class="acj-btn acj-btn-outline-dark feature-cta" href="#tierCompare">Compare free vs paid</a>
-        </div>
-      </article>
-      <article class="feature-block">
-        <div class="feature-block-inner">
-          <h3>Tired of inventory scattered across chats and sheets?</h3>
-          <p>Use the inventory hub—add, update, and archive every unit from one dealer portal on every plan.</p>
-          <a class="acj-btn acj-btn-outline-dark feature-cta" href="#programs">Start with inventory hub</a>
-        </div>
-      </article>
-      <article class="feature-block">
-        <div class="feature-block-inner">
-          <h3>Ready for walkaround video on your listings?</h3>
-          <p>Paid dealers add video to listings so buyers see the car before they visit—higher intent, fewer tire-kickers.</p>
-          <a class="acj-btn acj-btn-outline-dark feature-cta" href="#tierCompare">Video on listings — paid only</a>
-        </div>
-      </article>
-      <article class="feature-block">
-        <div class="feature-block-inner">
-          <h3>Prefer our team to qualify leads while you stock cars?</h3>
-          <p>Free tier: no monthly fee. Our Sales Team nurtures buyers and moves deals while you focus on inventory.</p>
-          <a class="acj-btn acj-btn-primary acj-btn-luxe feature-cta" href="#whatsappBand">Talk through free vs paid</a>
-        </div>
-      </article>
-    </section>
-
-    <section class="section wrap">
+    <section class="section wrap" id="programs">
       <div class="section-head">
-        <h2>Live in three moves</h2>
-        <p>From application to your first buyer link—most paid dealers are live in minutes.</p>
+        <span class="section-eyebrow">Plans</span>
+        <h2>Two ways to get started</h2>
+        <p>Same inventory hub on both plans. Pick free if you want us to handle buyer chats, or paid if you want your own page and direct leads.</p>
       </div>
-      <motion class="steps">
-        <div class="step" tabindex="0"><div class="icon">Step 01</div><h3>Apply or subscribe</h3><p>Join the free waitlist or start paid with a 14-day trial.</p></div>
-        <div class="step" tabindex="0"><div class="icon">Step 02</div><h3>Get verified</h3><p>We provision your dealer ID, portal, and inventory hub.</p></div>
-        <div class="step" tabindex="0"><div class="icon">Step 03</div><h3>Share your link</h3><p>Buyers browse stock. You—or our team—close the sale.</p></div>
-      </motion>
+      <div class="pricing-grid">
+        <div class="price-card">
+          <span class="acj-tag acj-tag-muted">Free</span>
+          <h3 style="margin:0;font-size:20px">Free — we help with sales</h3>
+          <p class="price">0<small>/mo</small></p>
+          <ul class="plan-benefit-list">
+            <li class="plan-benefit-item"><span class="plan-benefit-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 12h18"/></svg></span><span>Add and update every car in one hub</span></li>
+            <li class="plan-benefit-item"><span class="plan-benefit-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg></span><span>Buyer messages go to our team first</span></li>
+            <li class="plan-benefit-item"><span class="plan-benefit-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></span><span>We follow up; you hear when a sale is ready</span></li>
+            <li class="plan-benefit-item"><span class="plan-benefit-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span><span>$0 monthly — commission when you sell</span></li>
+          </ul>
+          <div class="form-grid">
+            <div><input class="acj-input" id="wlBusiness" placeholder="Business name" autocomplete="organization" /><p class="acj-field-error" id="wlBusinessError" hidden></p></div>
+            <div><input class="acj-input" id="wlEmail" type="email" placeholder="Work email" /><p class="acj-field-error" id="wlEmailError" hidden></p></div>
+            <input class="acj-input" id="wlWhatsapp" placeholder="Your WhatsApp" inputmode="numeric" />
+            <textarea class="acj-textarea" id="wlNotes" placeholder="How many cars? Where are you based? (optional)"></textarea>
+          </div>
+          <button class="acj-btn acj-btn-outline-dark acj-btn-luxe" type="button" id="btnWaitlist">Start Free Listing</button>
+          <p id="waitlistStatus" style="display:none;margin:0"></p>
+        </div>
+
+        <div class="price-card featured">
+          <span class="acj-tag">Paid · $98/mo</span>
+          <h3 style="margin:0;font-size:20px">Paid — you handle buyers</h3>
+          <p class="price">$98<small>/mo · 14-day trial</small></p>
+          <ul class="plan-benefit-list">
+            <li class="plan-benefit-item"><span class="plan-benefit-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span><span>Your branded page with logo and live stock</span></li>
+            <li class="plan-benefit-item"><span class="plan-benefit-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg></span><span>Every lead goes to your WhatsApp</span></li>
+            <li class="plan-benefit-item"><span class="plan-benefit-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></span><span>You run the chat; video on listings</span></li>
+            <li class="plan-benefit-item"><span class="plan-benefit-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span><span>Lower commission as you sell more</span></li>
+          </ul>
+          <div class="form-grid">
+            <div><input class="acj-input" id="businessName" placeholder="Business name" /><p class="acj-field-error" id="businessNameError" hidden></p></div>
+            <div><input class="acj-input" id="email" type="email" placeholder="Billing email" /><p class="acj-field-error" id="emailError" hidden></p></div>
+            <input class="acj-input" id="whatsapp" placeholder="Sales WhatsApp" inputmode="numeric" />
+          </div>
+          <button class="acj-btn acj-btn-primary acj-btn-luxe" type="button" id="btnPaidCheckout">Start Paid Trial</button>
+          <div class="checkout-trust">
+            <strong>Secure Stripe checkout</strong>
+            <span>Cancel anytime during trial.</span>
+          </div>
+          <div class="warning" id="checkoutStatus" style="display:none;margin:0"></div>
+        </div>
+      </div>
     </section>
 
     <section class="section wrap" id="tierCompare">
       <div class="section-head">
-        <h2>Free vs paid—at a glance</h2>
-        <p>Paid means your branded storefront, lower commission, Our Sales Team plus AI support, and faster financing for your customers.</p>
+        <span class="section-eyebrow">Compare</span>
+        <h2>Free vs paid — at a glance</h2>
+        <p>Four things that matter when you manage inventory day to day.</p>
+      </div>
+      <div class="plan-compare-grid acj-reveal">
+        <div class="plan-column plan-column--free">
+          <div class="plan-column-head">
+            <span class="acj-tag acj-tag-muted">Free</span>
+            <h3>We help close sales</h3>
+            <p class="plan-column-price">$0<small>/mo</small></p>
+          </div>
+          <ul class="plan-benefit-list">
+            <li class="plan-benefit-item"><span class="plan-benefit-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 12h18"/></svg></span><span>List cars in one hub — we help when buyers ask</span></li>
+            <li class="plan-benefit-item"><span class="plan-benefit-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg></span><span>Inquiries go to our team so none get lost</span></li>
+            <li class="plan-benefit-item"><span class="plan-benefit-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></span><span>We follow up; you get notified when ready to buy</span></li>
+            <li class="plan-benefit-item"><span class="plan-benefit-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span><span>$0 monthly; commission when you sell</span></li>
+          </ul>
+          <a class="acj-btn acj-btn-outline-dark" href="#programs">Start Free Listing</a>
+        </div>
+        <div class="plan-column plan-column--paid">
+          <div class="plan-column-head">
+            <span class="acj-tag">Paid</span>
+            <h3>You own every conversation</h3>
+            <p class="plan-column-price">$98<small>/mo · trial</small></p>
+          </div>
+          <ul class="plan-benefit-list">
+            <li class="plan-benefit-item"><span class="plan-benefit-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span><span>Your page, photos, and video — you control speed</span></li>
+            <li class="plan-benefit-item"><span class="plan-benefit-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg></span><span>Leads hit your WhatsApp — no handoff wait</span></li>
+            <li class="plan-benefit-item"><span class="plan-benefit-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></span><span>You run the chat; optional AI help on paid</span></li>
+            <li class="plan-benefit-item"><span class="plan-benefit-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span><span>Lower % plus tools as volume grows</span></li>
+          </ul>
+          <a class="acj-btn acj-btn-primary acj-btn-luxe" href="#programs">Start Paid Trial</a>
+        </div>
+      </div>
+      <div class="compare-accordions">
+        <details class="compare-accordion">
+          <summary>List and update stock faster</summary>
+          <div class="compare-accordion-panel"><p>On free, you add cars in the inventory hub and our team answers buyer questions about availability. On paid, you publish to your own storefront with photos and walkaround video, so serious buyers see the car before they visit.</p></div>
+        </details>
+        <details class="compare-accordion">
+          <summary>Never lose a buyer message</summary>
+          <div class="compare-accordion-panel"><p>Free-tier inquiries go to our team first in a structured flow — you are not juggling DMs. On paid, every inquiry routes to your WhatsApp or lead inbox so you can reply immediately.</p></div>
+        </details>
+        <details class="compare-accordion">
+          <summary>Close more sales</summary>
+          <div class="compare-accordion-panel"><p>On free, we follow up with buyers and tell you when someone is ready to purchase — you focus on stock. On paid, you own the full conversation from first message to close, with optional AI support when you want it.</p></div>
+        </details>
+        <details class="compare-accordion">
+          <summary>Keep more of each sale</summary>
+          <div class="compare-accordion-panel"><p>Free has no monthly fee; you pay commission when you sell. Paid is $98/month with a lower commission rate, built for dealers who want margin protection as they scale.</p></div>
+        </details>
       </div>
       <div class="compare-wrap">
         <table class="compare-table">
           <thead>
             <tr>
               <th></th>
-              <th>Free · Commission</th>
-              <th class="highlight">Paid · $98/mo</th>
+              <th>Free</th>
+              <th class="highlight">Paid</th>
             </tr>
           </thead>
           <tbody>
-            <tr><td>Monthly fee</td><td><span class="chip-yes">$0</span></td><td><span class="chip-best">$98 · 14-day trial</span></td></tr>
-            <tr><td>Commission on sales</td><td><span class="chip-team">Standard rate</span></td><td><span class="chip-best">Lower %</span></td></tr>
-            <tr><td>Who talks to the buyer</td><td><span class="chip-team">Our Sales Team</span></td><td><span class="chip-yes">Your team</span></td></tr>
-            <tr><td>Lead inbox in your portal</td><td>—</td><td><span class="chip-yes">Full access</span></td></tr>
-            <tr><td>WhatsApp routing</td><td>Our Sales Team</td><td>Your sales line</td></tr>
-            <tr><td>Negotiations &amp; follow-up</td><td>Our Sales Team</td><td>You control</td></tr>
-            <tr><td>Branded storefront</td><td>—</td><td><span class="chip-yes">Yes</span></td></tr>
-            <tr><td>Inventory hub</td><td><span class="chip-yes">Yes</span></td><td><span class="chip-yes">Yes</span></td></tr>
+            <tr><td>Monthly fee</td><td><span class="chip-yes">$0</span></td><td><span class="chip-best">$98 · trial</span></td></tr>
+            <tr><td>Commission</td><td>Standard</td><td><span class="chip-best">Lower</span></td></tr>
+            <tr><td>Your storefront page</td><td>—</td><td><span class="chip-yes">Yes</span></td></tr>
             <tr><td>Video on listings</td><td>—</td><td><span class="chip-yes">Yes</span></td></tr>
-            <tr><td>AI sales support</td><td>—</td><td><span class="chip-best">Included</span></td></tr>
-            <tr><td>Our Sales Team + AI</td><td><span class="chip-team">Sales team only</span></td><td><span class="chip-best">Team + AI support</span></td></tr>
-            <tr><td>Financing for your Customers</td><td><span class="chip-yes">Available</span></td><td><span class="chip-best">Priority access</span></td></tr>
+            <tr><td>Financing for buyers</td><td><span class="chip-yes">Yes</span></td><td><span class="chip-best">Priority</span></td></tr>
           </tbody>
         </table>
       </div>
-      <div class="financing-banner">
-        <img src="https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=900&q=80" alt="Financing placeholder" loading="lazy" />
-        <div class="financing-copy">
-          <h3>Financing that helps you sell faster</h3>
-          <p>Connect buyers to our financing partners. You can get paid in full while the customer pays monthly—more deals close, less buyer hesitation.</p>
+    </section>
+
+    <section class="features-stack" aria-label="What you get">
+      <article class="feature-block feature-block-rich feature-block--light acj-reveal">
+        <div class="feature-block-inner">
+          <div class="feature-block-copy">
+            <span class="section-eyebrow">Inventory</span>
+            <h2>All your cars in one hub</h2>
+            <p class="feature-lead">Stop updating spreadsheets and scattered chats. One place for every unit you sell.</p>
+            <div class="benefit-points"><div class="benefit-point acj-reveal-child"><span class="benefit-point-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span><div><strong>Add in minutes</strong><span>Enter details once and publish to your hub.</span></div></div><div class="benefit-point acj-reveal-child"><span class="benefit-point-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg></span><div><strong>Mark sold fast</strong><span>Archive units so buyers never see old stock.</span></div></div><div class="benefit-point acj-reveal-child"><span class="benefit-point-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span><div><strong>One live view</strong><span>See what is available without opening five apps.</span></div></div><div class="benefit-point acj-reveal-child"><span class="benefit-point-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></span><div><strong>Free or paid</strong><span>Same hub on both plans — upgrade when you want your own page.</span></div></div></div>
+            <p class="feature-block-proof">Built for dealers listing 10–100+ cars</p>
+            <div class="feature-ctas">
+              <a class="acj-btn acj-btn-outline-dark acj-btn-luxe feature-cta" href="#programs">Start Free Listing</a>
+              <a class="acj-btn acj-btn-outline-dark" href="#tierCompare">See compare</a>
+            </div>
+          </div>
+          <div class="feature-block-media"><img class="parallax-img" src="https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=800&q=80" alt="Cars in a dealership lot" width="800" height="600" loading="lazy" /></div>
         </div>
+      </article>      <article class="feature-block feature-block-rich feature-block--brand acj-reveal">
+        <div class="feature-block-inner">
+          <div class="feature-block-copy">
+            <span class="section-eyebrow">Storefront</span>
+            <h2>Your own page on paid</h2>
+            <p class="feature-lead">Send one professional link instead of a messy social feed.</p>
+            <div class="benefit-points"><div class="benefit-point acj-reveal-child"><span class="benefit-point-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span><div><strong>One shareable link</strong><span>Buyers bookmark your storefront, not a post that disappears.</span></div></div><div class="benefit-point acj-reveal-child"><span class="benefit-point-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span><div><strong>Logo and live stock</strong><span>Your brand, your cars, updated when you change inventory.</span></div></div><div class="benefit-point acj-reveal-child"><span class="benefit-point-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span><div><strong>Book viewings</strong><span>WhatsApp, live video, or walk-in requests from one page.</span></div></div><div class="benefit-point acj-reveal-child"><span class="benefit-point-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span><div><strong>Looks verified</strong><span>Buyers trust a proper dealer page over random DMs.</span></div></div></div>
+            <p class="feature-block-proof">Typical setup under 15 minutes after checkout</p>
+            <div class="feature-ctas">
+              <a class="acj-btn acj-btn-primary acj-btn-luxe feature-cta" href="#programs">Start Paid Trial</a>
+              <a class="acj-btn acj-btn-outline-light" href="/storefront">See example</a>
+            </div>
+          </div>
+          <div class="feature-block-media"><img class="parallax-img" src="https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=800&q=80" alt="Dealer showroom" width="800" height="600" loading="lazy" /></div>
+        </div>
+      </article>      <article class="feature-block feature-block-rich feature-block--light acj-reveal">
+        <div class="feature-block-inner">
+          <div class="feature-block-copy">
+            <span class="section-eyebrow">Video</span>
+            <h2>Walkaround video on listings</h2>
+            <p class="feature-lead">Let buyers see the car before they waste your time on the lot.</p>
+            <div class="benefit-points"><div class="benefit-point acj-reveal-child"><span class="benefit-point-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></span><div><strong>Upload walkarounds</strong><span>Show condition, interior, and engine on paid listings.</span></div></div><div class="benefit-point acj-reveal-child"><span class="benefit-point-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span><div><strong>Buyer preview</strong><span>Serious shoppers arrive knowing what they want.</span></div></div><div class="benefit-point acj-reveal-child"><span class="benefit-point-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 17h14l-1-7H6z"/><path d="M7 17v2M17 17v2"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/></svg></span><div><strong>Fewer wasted visits</strong><span>Filter tire-kickers before they book.</span></div></div><div class="benefit-point acj-reveal-child"><span class="benefit-point-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span><div><strong>Paid plan</strong><span>Video is included on the paid dealer plan.</span></div></div></div>
+            <p class="feature-block-proof">Paid plan only</p>
+            <div class="feature-ctas">
+              <a class="acj-btn acj-btn-outline-dark acj-btn-luxe feature-cta" href="#tierCompare">Compare plans</a>
+              <a class="acj-btn acj-btn-outline-dark" href="#programs">Start Paid Trial</a>
+            </div>
+          </div>
+          <div class="feature-block-media"><img class="parallax-img" src="https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?w=800&q=80" alt="Car walkaround video" width="800" height="600" loading="lazy" /></div>
+        </div>
+      </article>      <article class="feature-block feature-block-rich feature-block--brand acj-reveal">
+        <div class="feature-block-inner">
+          <div class="feature-block-copy">
+            <span class="section-eyebrow">Free plan</span>
+            <h2>We handle buyer chats</h2>
+            <p class="feature-lead">No monthly fee. Our team talks to buyers and tells you when someone is ready to buy.</p>
+            <div class="benefit-points"><div class="benefit-point acj-reveal-child"><span class="benefit-point-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span><div><strong>$0 monthly</strong><span>You pay commission when you sell — not before.</span></div></div><div class="benefit-point acj-reveal-child"><span class="benefit-point-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><div><strong>Team replies</strong><span>We answer availability and follow-up questions.</span></div></div><div class="benefit-point acj-reveal-child"><span class="benefit-point-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span><div><strong>Sale-ready alerts</strong><span>You hear when a buyer is ready to move forward.</span></div></div><div class="benefit-point acj-reveal-child"><span class="benefit-point-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 17h14l-1-7H6z"/><path d="M7 17v2M17 17v2"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/></svg></span><div><strong>Focus on stock</strong><span>You add cars; we help with the conversations.</span></div></div></div>
+            <p class="feature-block-proof">You stock cars; we help with buyers</p>
+            <div class="feature-ctas">
+              <a class="acj-btn acj-btn-primary acj-btn-luxe feature-cta" href="#programs">Start Free Listing</a>
+              <a class="acj-btn acj-btn-outline-light" href="#whatsappBand">Ask a question</a>
+            </div>
+          </div>
+          <div class="feature-block-media"><img class="parallax-img" src="https://images.unsplash.com/photo-1521791136064-7986c2920216?w=800&q=80" alt="Team helping customers" width="800" height="600" loading="lazy" /></div>
+        </div>
+      </article>
+    </section>
+
+    <section class="financing-section" id="financing">
+      <div class="wrap">
+        <div>
+          <span class="section-eyebrow">Financing</span>
+          <h2>Help buyers afford the car — get paid in full</h2>
+          <p class="feature-lead">Many buyers need monthly payments. We connect them to financing partners so you can close the deal and get paid upfront while they repay over time.</p>
+          <div class="benefit-points">
+            <div class="benefit-point acj-reveal-child"><span class="benefit-point-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg></span><div><strong>Partner introductions</strong><span>We route qualified buyers to trusted lenders.</span></div></div><div class="benefit-point acj-reveal-child"><span class="benefit-point-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 7v10a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/></svg></span><div><strong>Paid upfront</strong><span>You can receive full payment when the deal is approved.</span></div></div><div class="benefit-point acj-reveal-child"><span class="benefit-point-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span><div><strong>Buyer pays monthly</strong><span>The buyer repays the lender on a schedule that works for them.</span></div></div><div class="benefit-point acj-reveal-child"><span class="benefit-point-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span><div><strong>Both plans</strong><span>Available on free; priority handling on paid.</span></div></div>
+          </div>
+          <div class="feature-ctas" style="margin-top:var(--space-4)">
+            <a class="acj-btn acj-btn-outline-light acj-btn-luxe" href="#" id="financingWhatsApp">Ask about financing</a>
+            <a class="acj-btn acj-btn-outline-light" href="#tierCompare">Compare plans</a>
+          </div>
+          <div class="financing-mini-faq">
+            <details class="compare-accordion">
+              <summary>How do I get paid?</summary>
+              <div class="compare-accordion-panel"><p>When a buyer is approved, you can be paid in full according to the partner agreement. Terms vary by lender and buyer profile.</p></div>
+            </details>
+            <details class="compare-accordion">
+              <summary>Who approves the buyer?</summary>
+              <div class="compare-accordion-panel"><p>Financing partners review the buyer application. We help connect the buyer — the lender makes the credit decision.</p></div>
+            </details>
+          </div>
+        </div>
+        <div class="financing-media"><img class="parallax-img" src="https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=900&q=80" alt="Financing paperwork" width="900" height="600" loading="lazy" /></div>
+      </div>
+    </section>
+    <section class="section wrap">
+      <div class="section-head">
+        <span class="section-eyebrow">Setup</span>
+        <h2>Live in three moves</h2>
+        <p>From sign-up to your first buyer link.</p>
+      </div>
+      <div class="steps">
+        <div class="step" tabindex="0"><div class="icon">Step 01</div><h3>Apply or subscribe</h3><p>Join free or start paid with a 14-day trial.</p></div>
+        <div class="step" tabindex="0"><div class="icon">Step 02</div><h3>Get your login</h3><p>We give you a dealer ID and portal access.</p></div>
+        <div class="step" tabindex="0"><div class="icon">Step 03</div><h3>Share your link</h3><p>Buyers browse stock. On free we help close; on paid you do.</p></div>
+      </div>
+    </section>
+
+    <section class="section wrap" aria-label="Trust">
+      <div class="trust-strip">
+        <div class="trust-strip-item"><strong>Stripe checkout</strong><span>Secure paid sign-up</span></div>
+        <div class="trust-strip-item"><strong>Verified dealers</strong><span>Real inventory, real IDs</span></div>
+        <div class="trust-strip-item"><strong>Fast setup</strong><span>Paid dealers often live same day</span></div>
+        <div class="trust-strip-item"><strong>Example quote</strong><span>“One link for all our stock — buyers book without endless DMs.”</span></div>
       </div>
     </section>
 
@@ -390,61 +557,9 @@
       <div class="whatsapp-band">
         <div>
           <h2>Not sure which plan fits?</h2>
-          <p>Start a conversation—we’ll walk you through free vs paid in two minutes.</p>
+          <p>Message us — we will explain free vs paid in plain language.</p>
         </div>
         <a class="acj-btn acj-btn-primary acj-btn-luxe" href="#" id="bandWhatsApp">Chat on WhatsApp</a>
-      </div>
-    </section>
-
-    <section class="section wrap" id="programs">
-      <div class="section-head">
-        <h2>Start today</h2>
-        <p>Same inventory hub on both plans—choose our team on free or full control on paid.</p>
-      </div>
-      <div class="pricing-grid">
-        <div class="price-card">
-          <span class="acj-tag acj-tag-muted">Free · Commission</span>
-          <h3 style="margin:0;font-size:20px">Free—our team helps you close</h3>
-          <p class="price">0<small>/mo</small></p>
-          <ul class="bullets">
-            <li><strong>Inventory hub</strong>—add, update, and archive every unit in one portal</li>
-            <li>Our Sales Team qualifies buyers and follows up for you</li>
-            <li>$0 monthly—commission agreed when you are approved</li>
-            <li>Directory presence; no branded storefront or listing video</li>
-          </ul>
-          <div class="form-grid">
-            <div><input class="acj-input" id="wlBusiness" placeholder="Business name" autocomplete="organization" /><p class="acj-field-error" id="wlBusinessError" hidden></p></div>
-            <div><input class="acj-input" id="wlEmail" type="email" placeholder="Work email" /><p class="acj-field-error" id="wlEmailError" hidden></p></div>
-            <input class="acj-input" id="wlWhatsapp" placeholder="Your WhatsApp" inputmode="numeric" />
-            <textarea class="acj-textarea" id="wlNotes" placeholder="Cars in stock? Location? (optional)"></textarea>
-          </div>
-          <button class="acj-btn acj-btn-outline-dark acj-btn-luxe" type="button" id="btnWaitlist">Become a Verified Dealer · Apply free</button>
-          <p id="waitlistStatus" style="display:none;margin:0"></p>
-        </div>
-
-        <div class="price-card featured">
-          <span class="acj-tag">Paid · Full control</span>
-          <h3 style="margin:0;font-size:20px">Paid—you own every conversation</h3>
-          <p class="price">$98<small>/mo · 14-day trial</small></p>
-          <ul class="bullets">
-            <li><strong>Inventory hub</strong> plus your branded storefront link</li>
-            <li><strong>Video on listings</strong>—walkarounds buyers watch before they visit</li>
-            <li>Lower commission; your WhatsApp and lead inbox</li>
-            <li>You run negotiations; AI sales support included</li>
-            <li>Priority financing introductions for your customers</li>
-          </ul>
-          <div class="form-grid">
-            <div><input class="acj-input" id="businessName" placeholder="Business name" /><p class="acj-field-error" id="businessNameError" hidden></p></div>
-            <div><input class="acj-input" id="email" type="email" placeholder="Billing email" /><p class="acj-field-error" id="emailError" hidden></p></div>
-            <input class="acj-input" id="whatsapp" placeholder="Sales WhatsApp" inputmode="numeric" />
-          </div>
-          <button class="acj-btn acj-btn-primary acj-btn-luxe" type="button" id="btnPaidCheckout">Become a Verified Dealer · Start paid trial</button>
-          <div class="checkout-trust">
-            <strong>Secure Stripe checkout</strong>
-            <span>Cancel anytime during trial.</span>
-          </div>
-          <div class="warning" id="checkoutStatus" style="display:none;margin:0"></div>
-        </div>
       </div>
     </section>
 
@@ -462,9 +577,9 @@
     <section class="section wrap">
       <h2 style="font-family:var(--acj-font-display);margin:0 0 14px">Quick answers</h2>
       <div class="faq">
-        <div class="faq-item"><button type="button">Free vs paid?<span>+</span></button><div class="faq-panel">Free: Our Sales Team nurtures buyers. Paid: lower commission and every conversation stays with you.</div></div>
-        <div class="faq-item"><button type="button">How fast can I go live?<span>+</span></button><div class="faq-panel">Paid: minutes after checkout. Free: after we approve your application.</div></div>
-        <div class="faq-item"><button type="button">Financing—how does it work?<span>+</span></button><div class="faq-panel">We connect qualified buyers to financing partners. You can be paid in full while the buyer repays monthly—terms vary by partner.</div></div>
+        <div class="faq-item"><button type="button">Free vs paid?<span>+</span></button><div class="faq-panel">Free: our team handles buyer chats. Paid: lower commission and every lead goes to you.</div></div>
+        <div class="faq-item"><button type="button">How fast can I go live?<span>+</span></button><div class="faq-panel">Paid: often same day after checkout. Free: after we approve your application.</div></div>
+        <div class="faq-item"><button type="button">How does financing work?<span>+</span></button><div class="faq-panel">We connect buyers to partners. You may get paid in full while they repay monthly — terms vary.</div></div>
       </div>
     </section>
   </main>
@@ -476,11 +591,12 @@
 
   <div class="mobile-bar">
     <a class="acj-btn acj-btn-outline-dark" href="#" id="mobileWhatsApp">WhatsApp</a>
-    <a class="acj-btn acj-btn-primary acj-btn-luxe" href="#programs">Start today</a>
+    <a class="acj-btn acj-btn-primary acj-btn-luxe" href="#programs">Get started</a>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/gsap.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/ScrollTrigger.min.js"></script>
+  <script src="/assets/js/acj-loader.js"></script>
   <script src="/assets/js/acj-motion.js"></script>
   <script>
     const SALES_WHATSAPP = (document.body.dataset.salesWhatsapp || "").replace(/\D/g, "") || "18760000000";
@@ -489,6 +605,7 @@
     function whatsAppHref(){
       return "https://wa.me/" + SALES_WHATSAPP + "?text=" + WA_MSG;
     }
+    const WA_FIN = encodeURIComponent("Hi — I want to learn how buyer financing works for my dealership on Auto Concierge Jamaica.");
     ["heroWhatsApp","bandWhatsApp","mobileWhatsApp","featureWhatsApp"].forEach((id) => {
       const el = document.getElementById(id);
       if(el){ el.href = whatsAppHref(); el.target = "_blank"; el.rel = "noopener"; }
@@ -622,10 +739,20 @@
       });
     });
 
+    const financingWa = document.getElementById("financingWhatsApp");
+    if(financingWa){
+      financingWa.href = "https://wa.me/" + SALES_WHATSAPP + "?text=" + WA_FIN;
+      financingWa.target = "_blank";
+      financingWa.rel = "noopener";
+    }
+
     if(window.ACJMotion){
       ACJMotion.whenReady(() => {
         ACJMotion.heroIntro([".hero h1", ".hero-tagline", ".hero-actions"]);
-        ACJMotion.revealOnScroll(".feature-block, .step, .value-pill", { duration: 0.45, y: 16, stagger: 0.04 });
+        ACJMotion.revealOnScroll(".feature-block, .benefit-point, .plan-column, .compare-accordion, .financing-section .wrap > div:first-child, .trust-strip, .step, .value-pill", { duration: 0.5, y: 20, stagger: 0.06 });
+        if(!window.matchMedia("(prefers-reduced-motion: reduce)").matches){
+          ACJMotion.parallaxLayer(".parallax-img", 14);
+        }
       });
     }
   </script>

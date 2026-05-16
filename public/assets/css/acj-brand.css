@@ -346,6 +346,506 @@ select:focus-visible {
   background: rgba(196, 30, 58, 0.04);
 }
 
+/* Landing funnel — compare rows, trust strip, feature splits */
+:root {
+  --acj-space-1: 8px;
+  --acj-space-2: 12px;
+  --acj-space-3: 16px;
+  --acj-space-4: 24px;
+  --acj-space-5: 32px;
+  --acj-space-6: 48px;
+}
+
+.section-eyebrow {
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--acj-brand);
+  margin-bottom: var(--acj-space-2);
+}
+
+.compare-benefits-grid {
+  display: grid;
+  gap: var(--acj-space-3);
+  margin-bottom: var(--acj-space-4);
+}
+
+.compare-benefit-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--acj-space-3);
+  padding: var(--acj-space-4);
+  background: var(--acj-surface);
+  border: 1px solid var(--acj-line);
+  border-radius: var(--acj-radius);
+  box-shadow: var(--acj-shadow-soft);
+}
+
+.compare-benefit-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: var(--acj-brand-soft);
+  color: var(--acj-brand);
+  flex-shrink: 0;
+}
+
+.compare-benefit-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.compare-benefit-head h3 {
+  margin: 0 0 var(--acj-space-2);
+  font-family: var(--acj-font-display);
+  font-size: 1.05rem;
+  letter-spacing: -0.02em;
+}
+
+.compare-benefit-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--acj-space-3);
+  grid-column: 1 / -1;
+}
+
+.compare-benefit-col {
+  padding: var(--acj-space-3);
+  border-radius: 14px;
+  background: var(--acj-surface-soft);
+  border: 1px solid var(--acj-line);
+}
+
+.compare-benefit-col strong {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--acj-muted);
+  margin-bottom: 6px;
+}
+
+.compare-benefit-col p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--acj-ink);
+}
+
+.trust-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--acj-space-3);
+  padding: var(--acj-space-4);
+  background: var(--acj-surface);
+  border: 1px solid var(--acj-line);
+  border-radius: var(--acj-radius-lg);
+  box-shadow: var(--acj-shadow-soft);
+}
+
+.trust-strip-item {
+  text-align: center;
+  padding: var(--acj-space-2);
+}
+
+.trust-strip-item strong {
+  display: block;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.trust-strip-item span {
+  font-size: 12px;
+  color: var(--acj-muted);
+  line-height: 1.45;
+}
+
+.feature-block-rich .feature-block-inner {
+  max-width: 1140px;
+  grid-template-columns: 1fr minmax(240px, 42%);
+  align-items: center;
+  gap: clamp(20px, 4vw, 40px);
+}
+
+.feature-block-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: var(--acj-brand-soft);
+  color: var(--acj-brand);
+  margin-bottom: var(--acj-space-2);
+}
+
+.feature-block-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.feature-block-proof {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--acj-brand);
+  margin: var(--acj-space-2) 0 0;
+}
+
+.feature-block-media {
+  border-radius: var(--acj-radius);
+  overflow: hidden;
+  border: 1px solid var(--acj-line);
+  aspect-ratio: 4 / 3;
+  background: var(--acj-surface-soft);
+}
+
+.feature-block-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* SaaS plan compare + benefit points */
+.plan-compare-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--acj-space-4);
+  margin-bottom: var(--acj-space-5);
+}
+
+.plan-column {
+  background: var(--acj-surface);
+  border: 1px solid var(--acj-line);
+  border-radius: var(--acj-radius-lg);
+  padding: var(--acj-space-4);
+  box-shadow: var(--acj-shadow-soft);
+  display: flex;
+  flex-direction: column;
+  gap: var(--acj-space-3);
+}
+
+.plan-column--paid {
+  border-color: rgba(196, 30, 58, 0.35);
+  box-shadow: 0 24px 55px rgba(196, 30, 58, 0.12);
+}
+
+.plan-column-head h3 {
+  margin: 0;
+  font-family: var(--acj-font-display);
+  font-size: 1.25rem;
+  letter-spacing: -0.02em;
+}
+
+.plan-column-price {
+  font-family: var(--acj-font-display);
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--acj-brand);
+  margin: 0;
+  line-height: 1;
+}
+
+.plan-column-price small {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--acj-muted);
+  font-family: var(--acj-font-body);
+}
+
+.plan-benefit-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--acj-space-2);
+}
+
+.plan-benefit-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--acj-ink);
+}
+
+.plan-benefit-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: var(--acj-brand-soft);
+  color: var(--acj-brand);
+  flex-shrink: 0;
+}
+
+.plan-benefit-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.compare-accordions {
+  display: grid;
+  gap: var(--acj-space-2);
+  margin-bottom: var(--acj-space-4);
+}
+
+.compare-accordion {
+  background: var(--acj-surface);
+  border: 1px solid var(--acj-line);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.compare-accordion summary {
+  cursor: pointer;
+  padding: 14px 16px;
+  font-weight: 700;
+  font-size: 14px;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.compare-accordion summary::-webkit-details-marker {
+  display: none;
+}
+
+.compare-accordion summary::after {
+  content: "+";
+  font-size: 18px;
+  color: var(--acj-brand);
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.compare-accordion[open] summary::after {
+  content: "−";
+}
+
+.compare-accordion-panel {
+  padding: 0 16px 14px;
+  font-size: 14px;
+  color: var(--acj-muted);
+  line-height: 1.55;
+}
+
+.compare-accordion-panel p {
+  margin: 0;
+}
+
+.compare-section-ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: var(--acj-space-4);
+}
+
+.benefit-points {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--acj-space-3);
+  margin: var(--acj-space-3) 0;
+}
+
+.benefit-point {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.benefit-point-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  background: var(--acj-brand-soft);
+  color: var(--acj-brand);
+}
+
+.benefit-point-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.benefit-point strong {
+  display: block;
+  font-size: 13px;
+  margin-bottom: 2px;
+}
+
+.benefit-point span {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--acj-muted);
+}
+
+.feature-block--brand {
+  background: linear-gradient(145deg, var(--acj-brand) 0%, var(--acj-brand-2) 100%);
+  color: #fff;
+  border-color: transparent;
+}
+
+.feature-block--brand .section-eyebrow {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.feature-block--brand h2,
+.feature-block--brand h3 {
+  color: #fff;
+}
+
+.feature-block--brand .feature-lead,
+.feature-block--brand .benefit-point span {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.feature-block--brand .benefit-point-icon {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.feature-block--brand .feature-block-proof {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.feature-block--brand .feature-block-media {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.feature-block--light {
+  background: var(--acj-surface);
+}
+
+.feature-lead {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.55;
+  max-width: 58ch;
+}
+
+.feature-block h2 {
+  margin: 0;
+  font-family: var(--acj-font-display);
+  font-size: clamp(1.85rem, 4vw, 2.75rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.feature-ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: var(--acj-space-2);
+}
+
+.financing-section {
+  padding: clamp(48px, 6vw, 72px) 0;
+  background: linear-gradient(145deg, var(--acj-brand) 0%, var(--acj-brand-2) 100%);
+  color: #fff;
+}
+
+.financing-section .wrap {
+  display: grid;
+  grid-template-columns: 1fr minmax(260px, 44%);
+  gap: clamp(24px, 4vw, 48px);
+  align-items: center;
+}
+
+.financing-section .section-eyebrow {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.financing-section h2 {
+  margin: 0 0 var(--acj-space-2);
+  font-family: var(--acj-font-display);
+  font-size: clamp(1.85rem, 4vw, 2.75rem);
+  font-weight: 800;
+  line-height: 1.1;
+  color: #fff;
+}
+
+.financing-section .feature-lead {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.financing-section .benefit-point-icon {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.financing-section .benefit-point span {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.financing-section .benefit-point strong {
+  color: #fff;
+}
+
+.financing-media {
+  border-radius: var(--acj-radius-lg);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  aspect-ratio: 4 / 3;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+}
+
+.financing-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.financing-mini-faq {
+  margin-top: var(--acj-space-4);
+  display: grid;
+  gap: var(--acj-space-2);
+}
+
+.financing-mini-faq .compare-accordion {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.financing-mini-faq .compare-accordion summary,
+.financing-mini-faq .compare-accordion-panel {
+  color: #fff;
+}
+
+.financing-mini-faq .compare-accordion-panel {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+@media (max-width: 900px) {
+  .plan-compare-grid,
+  .financing-section .wrap {
+    grid-template-columns: 1fr;
+  }
+
+  .benefit-points {
+    grid-template-columns: 1fr;
+  }
+
+  .compare-benefit-cols,
+  .trust-strip,
+  .feature-block-rich .feature-block-inner {
+    grid-template-columns: 1fr;
+  }
+
+  .compare-benefit-row {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
