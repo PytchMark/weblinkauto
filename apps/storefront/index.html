@@ -406,6 +406,56 @@
     .dealer-maps{min-height:280px;border-radius:var(--radius);overflow:hidden;border:1px solid var(--line);background:var(--surface-soft)}
     .dealer-maps iframe{width:100%;height:280px;border:0}
     .reviews-note{margin-top:12px;padding:12px 14px;border-radius:12px;background:var(--brand-soft);font-size:13px;line-height:1.45}
+    .dealer-location-label{font-size:13px;font-weight:800;margin-top:14px;color:var(--ink)}
+    .dealer-maps-link{display:inline-flex;margin-top:8px;font-size:12px;font-weight:800;color:var(--brand)}
+    .reviews-summary{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:14px 0 4px;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:var(--surface-soft)}
+    .reviews-summary .score{font-size:28px;font-weight:900;font-family:var(--acj-font-data);line-height:1}
+    .reviews-summary .meta{font-size:12px;color:var(--muted);line-height:1.45}
+    .stars{display:inline-flex;gap:2px;align-items:center}
+    .stars .star{font-size:16px;line-height:1;color:var(--muted-2)}
+    .stars .star.on{color:#f59e0b}
+    .star-picker{margin:12px 0 14px}
+    .star-picker-label{display:block;font-size:12px;font-weight:800;margin-bottom:8px;color:var(--ink)}
+    .star-picker-btns{display:flex;gap:6px;flex-wrap:wrap}
+    .star-picker-btns button{
+      appearance:none;border:1px solid var(--line);background:var(--surface);
+      width:40px;height:40px;border-radius:12px;cursor:pointer;
+      font-size:18px;color:var(--muted-2);transition:transform .12s ease, background .12s ease, color .12s ease, border-color .12s ease;
+    }
+    .star-picker-btns button:hover{transform:translateY(-1px);border-color:rgba(220,38,38,.35)}
+    .star-picker-btns button.on{background:var(--brand-soft);border-color:rgba(220,38,38,.45);color:#f59e0b}
+    .review-list{list-style:none;margin:0 0 16px;padding:0;display:grid;gap:10px}
+    .review-item{padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:var(--surface-soft)}
+    .review-item-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+    .review-item-head strong{font-size:13px}
+    .review-item p{margin:0;font-size:13px;color:var(--muted);line-height:1.5}
+    .review-form{display:grid;gap:10px;margin-top:4px}
+    .review-form .form-field label{font-size:12px;font-weight:800;display:block;margin-bottom:6px}
+    .review-form .input,.review-form .textarea{
+      width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--line);
+      font:inherit;background:var(--surface);
+    }
+    .review-form .textarea{min-height:88px;resize:vertical}
+    .profile-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;align-items:center}
+    .btn-report{
+      background:transparent;border:1px solid var(--line);color:var(--muted);
+      font-size:12px;font-weight:800;height:36px;padding:0 12px;border-radius:999px;cursor:pointer;
+    }
+    .btn-report:hover{border-color:rgba(220,38,38,.35);color:var(--brand)}
+    .report-modal{
+      position:fixed;inset:0;z-index:75;display:none;place-items:center;padding:18px;
+      background:rgba(0,0,0,.45);
+    }
+    .report-modal.show{display:grid}
+    .report-modal-card{
+      width:min(520px,100%);background:var(--surface);border-radius:22px;
+      border:1px solid var(--line);padding:20px;box-shadow:var(--shadow);
+    }
+    .report-modal-card h2{margin:0 0 8px;font-size:18px;font-family:var(--acj-font-display)}
+    .report-modal-card p{margin:0 0 12px;color:var(--muted);font-size:14px;line-height:1.55}
+    .report-modal-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+    .brand .logo-link{display:block;color:inherit}
+    .btn-icon svg{width:16px;height:16px;flex-shrink:0}
     @media (max-width:900px){.dealer-profile-grid{grid-template-columns:1fr}}
 
 
@@ -729,12 +779,14 @@
 <div class="marquee" aria-hidden="true">
   <div class="wrap">
     <div class="marquee-track">
-      <span>Live Inventory • Real Availability • Book Viewings Fast</span>
-      <span>No more “still available?” messages</span>
-      <span>Real-time updates • WhatsApp routing • Cleaner sales flow</span>
-      <span>Live Inventory • Real Availability • Book Viewings Fast</span>
-      <span>No more “still available?” messages</span>
-      <span>Real-time updates • WhatsApp routing • Cleaner sales flow</span>
+      <span>Verified dealer storefronts</span>
+      <span>Real availability before you travel</span>
+      <span>Book viewings on your schedule</span>
+      <span>Clear next steps for serious buyers</span>
+      <span>Verified dealer storefronts</span>
+      <span>Real availability before you travel</span>
+      <span>Book viewings on your schedule</span>
+      <span>Clear next steps for serious buyers</span>
     </div>
   </div>
 </div>
@@ -743,9 +795,11 @@
   <div class="wrap">
     <div class="head-row">
       <div class="brand">
-        <div class="logo">
-          <img id="dealerLogoImg" src="https://res.cloudinary.com/dd8pjjxsm/image/upload/v1770298701/ChatGPT_Image_Sep_6_2025_08_27_53_AM_raorxf.png" alt="Storefront logo" />
-        </div>
+        <a href="/storefront" class="logo-link" aria-label="Storefront home">
+          <div class="logo">
+            <img id="dealerLogoImg" src="https://res.cloudinary.com/dd8pjjxsm/image/upload/v1770298701/ChatGPT_Image_Sep_6_2025_08_27_53_AM_raorxf.png" alt="Storefront logo" />
+          </div>
+        </a>
         <div class="brand-meta">
           <div class="name" id="dealerName">Dealer Concierge</div>
           <div class="sub" id="dealerSub">Verified availability · Fast response</div>
@@ -754,6 +808,10 @@
       <div class="head-actions">
         <button id="scrollBtn" class="btn btn-primary btn-gloss">Browse vehicles</button>
         <a class="btn btn-outline" href="/landing">Become a Dealer</a>
+        <a class="btn btn-ghost btn-icon" href="/dealer" aria-label="Dealer login">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+          Dealer login
+        </a>
         <button class="btn btn-ghost" id="headerSupportBtn" type="button">Buyer support</button>
       </div>
     </div>
@@ -883,6 +941,54 @@
     </div>
   </section>
 
+  <section class="section dealer-profile-section" id="dealerProfileSection" aria-labelledby="dealerProfileHeading">
+    <div class="wrap">
+      <div class="dealer-profile-grid">
+        <div class="dealer-profile-card">
+          <h2 id="dealerProfileHeading">About this dealer</h2>
+          <p id="dealerProfileDescription">Browse verified inventory and book a viewing with this dealer.</p>
+          <p class="reviews-note" id="dealerReviewsNote" style="display:none"></p>
+          <div id="dealerReviewsSummary" class="reviews-summary" hidden></div>
+          <div id="dealerSocials" class="dealer-socials"></div>
+          <div class="dealer-location-label" id="dealerLocationLabel"></div>
+          <a class="dealer-maps-link" id="dealerMapsLink" href="#" target="_blank" rel="noopener noreferrer" style="display:none">Open in Google Maps</a>
+        </div>
+        <div>
+          <div class="dealer-maps" id="dealerMapsEmbed" aria-label="Dealer location map"></div>
+          <div class="dealer-profile-card" style="margin-top:16px">
+            <h3 style="margin:0 0 10px;font-size:16px;font-family:var(--acj-font-display)">Buyer reviews</h3>
+            <ul class="review-list" id="dealerReviewsList" aria-live="polite"></ul>
+            <form class="review-form" id="dealerReviewForm">
+              <div class="star-picker" id="reviewStarPicker">
+                <span class="star-picker-label">Give us a review</span>
+                <input type="hidden" id="reviewRatingInput" name="rating" value="" />
+                <div class="star-picker-btns" role="group" aria-label="Rating from 1 to 5 stars">
+                  <button type="button" data-rating="1" aria-label="1 star">★</button>
+                  <button type="button" data-rating="2" aria-label="2 stars">★</button>
+                  <button type="button" data-rating="3" aria-label="3 stars">★</button>
+                  <button type="button" data-rating="4" aria-label="4 stars">★</button>
+                  <button type="button" data-rating="5" aria-label="5 stars">★</button>
+                </div>
+              </div>
+              <div class="form-field">
+                <label for="reviewName">Your name (optional)</label>
+                <input class="input" id="reviewName" name="name" maxlength="120" placeholder="Alex" />
+              </div>
+              <div class="form-field">
+                <label for="reviewComment">Comment (optional)</label>
+                <textarea class="textarea" id="reviewComment" name="comment" maxlength="2000" placeholder="Share your experience with this dealer"></textarea>
+              </div>
+              <button class="btn btn-primary btn-gloss" type="submit" id="reviewSubmitBtn">Submit review</button>
+            </form>
+            <div class="profile-actions">
+              <button class="btn-report" type="button" id="reportDealerBtn">Report this dealer</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section class="section" id="inventory">
     <div class="wrap">
       <div class="section-head">
@@ -937,6 +1043,51 @@
       <details><summary>Who receives my request?</summary><p class="muted">Requests are sent to the dealer workflow. You will see next steps in the booking modal after submitting.</p></details>
     </div>
     <p class="muted" style="margin-top:12px">Contact placeholder: <a href="mailto:support@autoconciergeja.com">support@autoconciergeja.com</a></p>
+  </div>
+</div>
+
+<div class="report-modal" id="reportModalOverlay" aria-hidden="true">
+  <div class="report-modal-card" role="dialog" aria-modal="true" aria-labelledby="reportModalTitle">
+    <div style="display:flex;justify-content:space-between;gap:10px;align-items:center">
+      <h2 id="reportModalTitle">Report this dealer</h2>
+      <button class="btn btn-ghost" type="button" id="reportModalClose">Close</button>
+    </div>
+    <p>Tell us what went wrong. Our team reviews reports and may follow up if you leave contact details.</p>
+    <form id="reportDealerForm">
+      <div class="form-field" style="margin-top:10px">
+        <label for="reportReason">Reason *</label>
+        <select class="input" id="reportReason" name="reason" required>
+          <option value="">Select a reason</option>
+          <option value="Misleading listing">Misleading listing</option>
+          <option value="No response">No response</option>
+          <option value="Suspected scam">Suspected scam</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="form-field" style="margin-top:10px">
+        <label for="reportDetails">Details</label>
+        <textarea class="textarea" id="reportDetails" name="details" maxlength="2000" placeholder="What happened?"></textarea>
+      </div>
+      <div class="form-grid" style="margin-top:10px">
+        <div class="form-field">
+          <label for="reportName">Your name</label>
+          <input class="input" id="reportName" name="name" maxlength="120" />
+        </div>
+        <div class="form-field">
+          <label for="reportEmail">Email</label>
+          <input class="input" id="reportEmail" name="email" type="email" maxlength="120" />
+        </div>
+      </div>
+      <div class="form-field" style="margin-top:10px">
+        <label for="reportPhone">Phone</label>
+        <input class="input" id="reportPhone" name="phone" maxlength="40" />
+      </div>
+      <div class="report-modal-actions">
+        <button class="btn btn-primary" type="submit" id="reportSubmitBtn">Submit report</button>
+        <button class="btn btn-ghost" type="button" id="reportCancelBtn">Cancel</button>
+      </div>
+      <div id="reportFormError" style="font-size:12px;color:#991b1b;margin-top:8px"></div>
+    </form>
   </div>
 </div>
 
@@ -1105,6 +1256,26 @@
     dealerLocationLabel: $("dealerLocationLabel"),
     dealerMapsEmbed: $("dealerMapsEmbed"),
     dealerMapsLink: $("dealerMapsLink"),
+    dealerReviewsSummary: $("dealerReviewsSummary"),
+    dealerReviewsList: $("dealerReviewsList"),
+    dealerReviewForm: $("dealerReviewForm"),
+    reviewRatingInput: $("reviewRatingInput"),
+    reviewStarPicker: $("reviewStarPicker"),
+    reviewName: $("reviewName"),
+    reviewComment: $("reviewComment"),
+    reviewSubmitBtn: $("reviewSubmitBtn"),
+    reportDealerBtn: $("reportDealerBtn"),
+    reportModalOverlay: $("reportModalOverlay"),
+    reportModalClose: $("reportModalClose"),
+    reportCancelBtn: $("reportCancelBtn"),
+    reportDealerForm: $("reportDealerForm"),
+    reportReason: $("reportReason"),
+    reportDetails: $("reportDetails"),
+    reportName: $("reportName"),
+    reportEmail: $("reportEmail"),
+    reportPhone: $("reportPhone"),
+    reportSubmitBtn: $("reportSubmitBtn"),
+    reportFormError: $("reportFormError"),
     heroVideo: document.querySelector(".hero-video"),
     refreshBtn: $("refreshBtn"),
     inventoryFreshness: $("inventoryFreshness"),
@@ -1135,6 +1306,9 @@
     lastRefreshed: null,
     lastModalTrigger: null,
     detailVehicle: null,
+    reviewRating: 0,
+    reviewsLoadToken: 0,
+    reportModalTrigger: null,
   };
 
   const tips = [
@@ -1326,10 +1500,199 @@
     return "https://www.google.com/maps?q=" + encodeURIComponent(u) + "&output=embed";
   }
 
+  function starsHtml(rating, max = 5){
+    const n = Math.max(0, Math.min(max, Math.round(Number(rating) || 0)));
+    let html = '<span class="stars" aria-hidden="true">';
+    for(let i = 1; i <= max; i += 1){
+      html += `<span class="star${i <= n ? " on" : ""}">★</span>`;
+    }
+    html += "</span>";
+    return html;
+  }
+
+  function formatReviewDate(value){
+    if(!value) return "";
+    const d = new Date(value);
+    if(Number.isNaN(d.getTime())) return "";
+    return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+  }
+
+  function setReviewRating(rating){
+    state.reviewRating = Math.max(0, Math.min(5, Number(rating) || 0));
+    if(ui.reviewRatingInput) ui.reviewRatingInput.value = state.reviewRating ? String(state.reviewRating) : "";
+    if(!ui.reviewStarPicker) return;
+    ui.reviewStarPicker.querySelectorAll("[data-rating]").forEach((btn) => {
+      const value = Number(btn.getAttribute("data-rating"));
+      btn.classList.toggle("on", state.reviewRating >= value);
+      btn.setAttribute("aria-pressed", state.reviewRating >= value ? "true" : "false");
+    });
+  }
+
+  function resetReviewForm(){
+    state.reviewRating = 0;
+    ui.dealerReviewForm?.reset();
+    setReviewRating(0);
+    if(ui.reviewSubmitBtn){
+      ui.reviewSubmitBtn.disabled = false;
+      ui.reviewSubmitBtn.textContent = "Submit review";
+    }
+  }
+
+  function renderReviewsSummary(averageRating, count){
+    if(!ui.dealerReviewsSummary) return;
+    if(!count){
+      ui.dealerReviewsSummary.hidden = true;
+      ui.dealerReviewsSummary.innerHTML = "";
+      return;
+    }
+    ui.dealerReviewsSummary.hidden = false;
+    const avg = Number(averageRating) || 0;
+    ui.dealerReviewsSummary.innerHTML = `
+      <div class="score">${avg.toFixed(1)}</div>
+      <div>
+        ${starsHtml(avg)}
+        <div class="meta">${count} review${count === 1 ? "" : "s"} from buyers on this storefront</div>
+      </div>`;
+  }
+
+  function renderReviewsList(reviews){
+    if(!ui.dealerReviewsList) return;
+    const list = Array.isArray(reviews) ? reviews : [];
+    if(!list.length){
+      ui.dealerReviewsList.innerHTML = `<li class="review-item"><p class="muted" style="margin:0">No reviews yet. Be the first to share your experience.</p></li>`;
+      return;
+    }
+    ui.dealerReviewsList.innerHTML = list.map((review) => {
+      const name = esc(review.reviewerName || review.reviewer_name || "Buyer");
+      const comment = esc(review.comment || "");
+      const when = esc(formatReviewDate(review.createdAt || review.created_at));
+      return `<li class="review-item">
+        <div class="review-item-head">
+          <strong>${name}</strong>
+          ${starsHtml(review.rating)}
+        </div>
+        ${comment ? `<p>${comment}</p>` : ""}
+        ${when ? `<p class="muted" style="margin:6px 0 0;font-size:11px">${when}</p>` : ""}
+      </li>`;
+    }).join("");
+  }
+
+  async function loadDealerReviews(dealerId){
+    if(!dealerId || !ui.dealerReviewsList) return;
+    const token = ++state.reviewsLoadToken;
+    ui.dealerReviewsList.innerHTML = `<li class="review-item"><p class="muted" style="margin:0">Loading reviews…</p></li>`;
+    if(ui.dealerReviewsSummary){
+      ui.dealerReviewsSummary.hidden = true;
+      ui.dealerReviewsSummary.innerHTML = "";
+    }
+    try{
+      const data = await fetchOk(API_BASE + "/api/public/dealer/" + encodeURIComponent(dealerId) + "/reviews", { method: "GET" });
+      if(token !== state.reviewsLoadToken) return;
+      renderReviewsSummary(data.averageRating, data.count);
+      renderReviewsList(data.reviews || []);
+    }catch(err){
+      if(token !== state.reviewsLoadToken) return;
+      ui.dealerReviewsList.innerHTML = `<li class="review-item"><p class="muted" style="margin:0">${esc(err.message || "Could not load reviews.")}</p></li>`;
+    }
+  }
+
+  async function submitDealerReview(event){
+    event.preventDefault();
+    const dealerId = state.dealerIds[0];
+    if(!dealerId){
+      toast("Load a dealer storefront first.", "info");
+      return;
+    }
+    if(state.reviewRating < 1 || state.reviewRating > 5){
+      toast("Choose a star rating from 1 to 5.", "error");
+      return;
+    }
+    ui.reviewSubmitBtn.disabled = true;
+    ui.reviewSubmitBtn.textContent = "Sending…";
+    try{
+      await fetchOk(API_BASE + "/api/public/dealer/" + encodeURIComponent(dealerId) + "/reviews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          rating: state.reviewRating,
+          comment: ui.reviewComment?.value?.trim() || "",
+          reviewerName: ui.reviewName?.value?.trim() || "",
+        }),
+      });
+      toast("Thank you for your review.", "success");
+      resetReviewForm();
+      await loadDealerReviews(dealerId);
+    }catch(err){
+      toast(err.message || "Could not submit review.", "error");
+      ui.reviewSubmitBtn.disabled = false;
+      ui.reviewSubmitBtn.textContent = "Submit review";
+    }
+  }
+
+  function openReportModal(trigger){
+    if(!state.dealerIds.length){
+      toast("Load a dealer storefront first.", "info");
+      return;
+    }
+    state.reportModalTrigger = trigger || document.activeElement;
+    ui.reportFormError.textContent = "";
+    ui.reportDealerForm?.reset();
+    ui.reportModalOverlay.classList.add("show");
+    ui.reportModalOverlay.setAttribute("aria-hidden", "false");
+    ui.reportReason?.focus();
+  }
+
+  function closeReportModal(){
+    ui.reportModalOverlay.classList.remove("show");
+    ui.reportModalOverlay.setAttribute("aria-hidden", "true");
+    if(state.reportModalTrigger && typeof state.reportModalTrigger.focus === "function"){
+      state.reportModalTrigger.focus();
+    }
+  }
+
+  async function submitDealerReport(event){
+    event.preventDefault();
+    ui.reportFormError.textContent = "";
+    const dealerId = state.dealerIds[0];
+    if(!dealerId){
+      ui.reportFormError.textContent = "Load a dealer storefront first.";
+      return;
+    }
+    const reason = ui.reportReason?.value?.trim();
+    if(!reason){
+      ui.reportFormError.textContent = "Please select a reason.";
+      return;
+    }
+    ui.reportSubmitBtn.disabled = true;
+    ui.reportSubmitBtn.textContent = "Sending…";
+    try{
+      await fetchOk(API_BASE + "/api/public/dealer/" + encodeURIComponent(dealerId) + "/report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          reason,
+          details: ui.reportDetails?.value?.trim() || "",
+          reporterName: ui.reportName?.value?.trim() || "",
+          reporterEmail: ui.reportEmail?.value?.trim() || "",
+          reporterPhone: ui.reportPhone?.value?.trim() || "",
+        }),
+      });
+      toast("Report submitted. Our team will review it.", "success");
+      closeReportModal();
+    }catch(err){
+      ui.reportFormError.textContent = err.message || "Could not submit report.";
+    }finally{
+      ui.reportSubmitBtn.disabled = false;
+      ui.reportSubmitBtn.textContent = "Submit report";
+    }
+  }
+
   function renderDealerProfileBlock(profile){
     if(!ui.dealerProfileSection) return;
     if(!profile){
       ui.dealerProfileSection.classList.remove("show");
+      state.reviewsLoadToken += 1;
+      resetReviewForm();
       return;
     }
     ui.dealerProfileSection.classList.add("show");
@@ -1346,7 +1709,9 @@
       }
     }
     if(ui.dealerLocationLabel){
-      ui.dealerLocationLabel.textContent = profile.locationLabel || "";
+      const loc = profile.locationLabel || "";
+      ui.dealerLocationLabel.textContent = loc;
+      ui.dealerLocationLabel.style.display = loc ? "block" : "none";
     }
     if(ui.dealerMapsEmbed){
       const embed = profile.googleMapsEmbedUrl || mapsEmbedSrc(profile.googleMapsUrl);
@@ -1357,7 +1722,7 @@
     if(ui.dealerMapsLink){
       const maps = profile.googleMapsUrl || "#";
       ui.dealerMapsLink.href = maps;
-      ui.dealerMapsLink.style.display = profile.googleMapsUrl ? "inline" : "none";
+      ui.dealerMapsLink.style.display = profile.googleMapsUrl ? "inline-flex" : "none";
     }
     if(ui.dealerSocials){
       const socials = profile.socials || {};
@@ -1371,6 +1736,8 @@
         ? links.map(([label, href]) => `<a href="${esc(href)}" target="_blank" rel="noopener noreferrer">${esc(label)}</a>`).join("")
         : "";
     }
+    resetReviewForm();
+    loadDealerReviews(profile.dealerId || state.dealerIds[0]);
   }
 
   function applyHeroVideo(url){
@@ -2028,6 +2395,7 @@
           description: profile?.description || apiDealer.description || "",
           locationLabel: profile?.locationLabel || apiDealer.locationLabel || "",
           googleMapsUrl: profile?.googleMapsUrl || apiDealer.googleMapsUrl || "",
+          googleMapsEmbedUrl: profile?.googleMapsEmbedUrl || apiDealer.googleMapsEmbedUrl || "",
           heroVideoUrl: profile?.heroVideoUrl || apiDealer.heroVideoUrl || "",
           reviewsHighlight: profile?.reviewsHighlight || apiDealer.reviewsHighlight || "",
           socials: profile?.socials || apiDealer.socials || {},
@@ -2153,6 +2521,20 @@
     if(e.key === "Tab") trapFocus(ui.supportPanel.querySelector(".support-card"), e);
   });
   ui.requestForm.addEventListener("submit", submitRequest);
+  ui.dealerReviewForm?.addEventListener("submit", submitDealerReview);
+  ui.reviewStarPicker?.querySelectorAll("[data-rating]").forEach((btn) => {
+    btn.addEventListener("click", () => setReviewRating(Number(btn.getAttribute("data-rating"))));
+  });
+  ui.reportDealerBtn?.addEventListener("click", () => openReportModal(ui.reportDealerBtn));
+  ui.reportModalClose?.addEventListener("click", closeReportModal);
+  ui.reportCancelBtn?.addEventListener("click", closeReportModal);
+  ui.reportDealerForm?.addEventListener("submit", submitDealerReport);
+  ui.reportModalOverlay?.addEventListener("click", (e) => {
+    if(e.target === ui.reportModalOverlay) closeReportModal();
+  });
+  ui.reportModalOverlay?.addEventListener("keydown", (e) => {
+    if(e.key === "Escape") closeReportModal();
+  });
   $$(".option-card", ui.requestOptions).forEach((btn) => {
     btn.addEventListener("click", () => {
       const type = btn.getAttribute("data-type");

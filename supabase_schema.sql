@@ -134,6 +134,37 @@ for each row execute function set_updated_at();
 
 alter table dealer_applications disable row level security;
 
+-- Buyer reviews on dealers (storefront)
+create table if not exists dealer_reviews (
+  id uuid primary key default gen_random_uuid(),
+  dealer_id text not null,
+  rating int not null check (rating between 1 and 5),
+  comment text,
+  reviewer_name text,
+  created_at timestamptz default now()
+);
+
+create index if not exists idx_dealer_reviews_dealer_id on dealer_reviews (dealer_id);
+create index if not exists idx_dealer_reviews_created_at on dealer_reviews (created_at desc);
+
+-- Buyer reports on dealers
+create table if not exists dealer_reports (
+  id uuid primary key default gen_random_uuid(),
+  dealer_id text not null,
+  reason text not null,
+  details text,
+  reporter_name text,
+  reporter_email text,
+  reporter_phone text,
+  created_at timestamptz default now()
+);
+
+create index if not exists idx_dealer_reports_dealer_id on dealer_reports (dealer_id);
+create index if not exists idx_dealer_reports_created_at on dealer_reports (created_at desc);
+
+alter table dealer_reviews disable row level security;
+alter table dealer_reports disable row level security;
+
 drop trigger if exists trg_profiles_updated_at on profiles;
 create trigger trg_profiles_updated_at
 before update on profiles

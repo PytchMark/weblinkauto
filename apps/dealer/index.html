@@ -8,6 +8,7 @@
 
   <!-- Chart.js (light + fast) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="/assets/css/acj-brand.css" />
 
   <style>
     :root{
@@ -400,13 +401,17 @@
       table{min-width:860px}
     }
 
+    .file-hidden{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+    .media-upload-block{margin:14px 0;display:grid;gap:8px}
+    .file-pick-label{font-size:12px;color:var(--muted)}
+    .hidden{display:none!important}
     @media (prefers-reduced-motion: reduce){
       .btn,.mini-btn{transition:none}
       .gallery-card.skeleton::before{animation:none}
     }
   </style>
 </head>
-<body>
+<body class="acj-premium-shell">
 
 <header>
   <div class="wrap">
@@ -572,7 +577,7 @@
           <div class="panel-head">
             <div>
               <h1>Inventory Manager</h1>
-              <p>Add, update, or archive vehicles. Media links save to Airtable (Cloudinary recommended).</p>
+              <p>Add cars, upload photos, and update status. Nothing is deleted — archive when a unit is gone.</p>
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
               <button class="btn btn-primary" id="newVehicleBtn2" type="button">+ Add Vehicle</button>
@@ -583,7 +588,8 @@
               <div class="search" role="search"><span style="opacity:.75">⌕</span><input id="invSearch" placeholder="Search title, make, model, VIN, id…" aria-label="Search inventory" /></div>
               <div class="seg" role="group" aria-label="Status filter">
                 <button type="button" class="segBtn" data-status="all" aria-pressed="true">All</button>
-                <button type="button" class="segBtn" data-status="available" aria-pressed="false">Available</button>
+                <button type="button" class="segBtn" data-status="available" aria-pressed="false">On the lot</button>
+                <button type="button" class="segBtn" data-status="ready_for_import" aria-pressed="false">Ready for Import</button>
                 <button type="button" class="segBtn" data-status="pending" aria-pressed="false">Pending</button>
                 <button type="button" class="segBtn" data-status="sold" aria-pressed="false">Sold</button>
                 <button type="button" class="segBtn" data-status="archived" aria-pressed="false">Archived</button>
@@ -670,7 +676,7 @@
           <div class="panel-head">
             <div>
               <h1>Performance</h1>
-              <p>High-level view of conversions and sales activity (based on Airtable status + timestamps).</p>
+              <p>See how many cars are live, pending, and sold this month.</p>
             </div>
           </div>
           <div class="panel-body">
@@ -779,21 +785,20 @@
     </div>
     <div class="drawer-body">
       <form id="vehForm" class="form" novalidate>
-        <input type="hidden" id="airtableRecordId" value="" />
-
         <div class="row">
           <div>
-            <label for="vehicleId">Vehicle ID</label>
+            <label for="vehicleId">Stock number</label>
             <input class="field" id="vehicleId" placeholder="VEH-00001" />
-            <div class="help">If blank, server can generate (recommended).</div>
+            <div class="help">Leave blank and we will create one for you.</div>
           </div>
           <div>
             <label for="status">Status</label>
             <select class="field" id="status">
-              <option value="available">available</option>
-              <option value="pending">pending</option>
-              <option value="sold">sold</option>
-              <option value="archived">archived</option>
+              <option value="available">On the lot</option>
+              <option value="ready_for_import">Ready for Import</option>
+              <option value="pending">Pending</option>
+              <option value="sold">Sold</option>
+              <option value="archived">Archived</option>
             </select>
           </div>
         </div>
@@ -875,30 +880,27 @@
           <textarea class="field" id="notes" rows="5" placeholder="Condition notes, known issues, features…"></textarea>
         </div>
 
-        <div>
-          <label for="cloudinaryImageUrls">Cloudinary Image URLs (optional)</label>
-          <textarea class="field" id="cloudinaryImageUrls" rows="4" placeholder='Paste URLs (JSON array, comma, or newline).'></textarea>
-          <div class="help">Storefront uses the hero image first, then this gallery list.</div>
+        <textarea class="field hidden" id="cloudinaryImageUrls" rows="1" aria-hidden="true" tabindex="-1"></textarea>
+        <textarea class="field hidden" id="cloudinaryVideoUrl" rows="1" aria-hidden="true" tabindex="-1"></textarea>
+
+        <div class="media-upload-block">
+          <label>Photos (up to 7)</label>
+          <div class="help">Add clear photos buyers can trust.</div>
+          <input type="file" id="imageFiles" accept="image/*" multiple class="file-hidden" />
+          <button class="btn btn-primary acj-btn-luxe" type="button" id="pickImagesBtn">Add photos</button>
+          <span class="file-pick-label" id="imageFilesLabel"></span>
         </div>
 
-        <div>
-          <label for="cloudinaryVideoUrl">Cloudinary Video URLs (optional)</label>
-          <textarea class="field" id="cloudinaryVideoUrl" rows="3" placeholder="Paste up to 3 video URLs (one per line)." ></textarea>
+        <div class="media-upload-block" id="videoUploadBlock">
+          <label>Videos (paid plan, up to 3)</label>
+          <div class="help" id="videoUploadHint">Walkaround videos on paid listings.</div>
+          <input type="file" id="videoFiles" accept="video/*" multiple class="file-hidden" />
+          <button class="btn btn-primary acj-btn-luxe" type="button" id="pickVideosBtn">Add videos</button>
+          <span class="file-pick-label" id="videoFilesLabel"></span>
         </div>
 
-        <div class="row">
-          <div>
-            <label for="imageFiles">Upload Images (max 7)</label>
-            <input class="field" id="imageFiles" type="file" accept="image/*" multiple />
-          </div>
-          <div>
-            <label for="videoFiles">Upload Videos (max 3)</label>
-            <input class="field" id="videoFiles" type="file" accept="video/*" multiple />
-          </div>
-        </div>
-
-        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px">
-          <button class="btn btn-ghost" id="uploadMediaBtn" type="button">Upload Media</button>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;align-items:center">
+          <button class="btn btn-primary acj-btn-luxe" id="uploadMediaBtn" type="button">Upload selected files</button>
           <div class="statusline" id="uploadStatus"></div>
         </div>
 
@@ -960,7 +962,7 @@
         </div>
 
         <div class="statusline" id="vehStatus"></div>
-        <div class="help">No deletes. Archive instead. Changes sync to Airtable instantly.</div>
+        <div class="help">No deletes. Archive instead. Your changes save right away.</div>
       </form>
     </div>
   </div>
@@ -969,7 +971,7 @@
 <script>
   /**
    * Dealer Portal Frontend
-   * - Uses server-side Airtable access via /api/dealer
+   * - Dealer portal API
    * - Stores a short-lived token in localStorage (best-effort).
    *
    * Required server endpoints (expected):
@@ -1161,10 +1163,11 @@
 
   function statusPill(s){
     const x = String(s || '').toLowerCase();
-    if(x === 'available') return '<span class="pill ok"><span class="d"></span>available</span>';
-    if(x === 'pending') return '<span class="pill warn"><span class="d"></span>pending</span>';
-    if(x === 'sold') return '<span class="pill slate"><span class="d"></span>sold</span>';
-    if(x === 'archived') return '<span class="pill slate"><span class="d"></span>archived</span>';
+    if(x === 'available') return '<span class="pill ok"><span class="d"></span>On the lot</span>';
+    if(x === 'pending') return '<span class="pill warn"><span class="d"></span>Pending</span>';
+    if(x === 'sold') return '<span class="pill slate"><span class="d"></span>Sold</span>';
+    if(x === 'archived') return '<span class="pill slate"><span class="d"></span>Archived</span>';
+    if(x === 'ready_for_import') return '<span class="pill warn"><span class="d"></span>Ready for Import</span>';
     return '<span class="pill slate"><span class="d"></span>' + escapeHtml(s || '—') + '</span>';
   }
 
@@ -1208,11 +1211,43 @@
       body: JSON.stringify(payload || {}),
       credentials:'include'
     });
+    const data = await res.json().catch(() => ({}));
     if(!res.ok){
-      const t = await res.text().catch(()=> '');
-      throw new Error(`Request failed (${res.status}) ${t}`);
+      const msg = data?.error || `We could not complete that request (${res.status}).`;
+      throw new Error(msg);
     }
-    return res.json();
+    return data;
+  }
+
+  function updateVideoUploadVisibility(){
+    const block = document.getElementById('videoUploadBlock');
+    if(!block) return;
+    const restricted = STATE.dealer?.requestsRestricted === true;
+    block.style.display = restricted ? 'none' : '';
+    const hint = document.getElementById('videoUploadHint');
+    if(hint && restricted) hint.textContent = 'Upgrade to paid to add walkaround videos.';
+  }
+
+  function suggestNextStockNumber(){
+    let max = 0;
+    (STATE.vehicles || []).forEach((v) => {
+      const id = String(v.vehicleId || v['Vehicle ID'] || '');
+      const m = id.match(/VEH-(\d+)/i);
+      if(m) max = Math.max(max, Number(m[1]));
+    });
+    return `VEH-${String(max + 1).padStart(5, '0')}`;
+  }
+
+  function statusLabel(status){
+    const s = String(status || '').toLowerCase();
+    const map = {
+      available: 'On the lot',
+      pending: 'Pending',
+      sold: 'Sold',
+      archived: 'Archived',
+      ready_for_import: 'Ready for Import',
+    };
+    return map[s] || s;
   }
 
   async function apiPatch(url, payload){
@@ -1242,7 +1277,7 @@
     hdrDealerName.textContent = name;
     hdrDealerSub.textContent = 'Inventory · Requests · Performance';
 
-    // Logo: allow logoUrl string or Airtable attachment field "Logo"
+    // Logo: allow logoUrl string or logo URL
     const logoUrl = d?.logoUrl || (() => {
       const logo = d?.Logo;
       if(Array.isArray(logo) && logo[0]?.url) return logo[0].url;
@@ -1645,7 +1680,6 @@
    * --------------------------*/
   function resetVehicleForm(){
     vehForm.reset();
-    $('#airtableRecordId').value = '';
     vehStatus.textContent = '';
     archiveVehicleBtn.style.display = 'none';
     drawerTitle.textContent = 'Add Vehicle';
@@ -1666,7 +1700,6 @@
 
     if(v){
       drawerTitle.textContent = 'Edit Vehicle';
-      $('#airtableRecordId').value = v.airtableRecordId || '';
       $('#vehicleId').value = v.vehicleId || v['Vehicle ID'] || '';
       $('#status').value = String(v.status || v.Status || 'available').toLowerCase();
       $('#title').value = v.title || '';
@@ -1703,15 +1736,18 @@
       };
     }
 
+    if(!v){
+      $('#vehicleId').value = suggestNextStockNumber();
+    }
     renderImageGallery();
     renderVideoGallery();
+    updateVideoUploadVisibility();
     setDrawer(true);
   }
 
   function buildVehiclePayload(){
-    // Map UI -> Airtable fields expected by server
+    // Build save payload
     return {
-      airtableRecordId: cleanStr($('#airtableRecordId').value, 80) || undefined,
       vehicleId: cleanStr($('#vehicleId').value, 60) || undefined,
       status: cleanStr($('#status').value, 20),
       title: cleanStr($('#title').value, 120),
@@ -2026,6 +2062,7 @@
     // Dealer profile
     const me = await apiGet('/api/dealer/me');
     STATE.dealer = me.dealer;
+    updateVideoUploadVisibility();
     applyBranding();
 
     // Vehicles + requests + summary in parallel
