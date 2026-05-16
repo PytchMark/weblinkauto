@@ -46,43 +46,50 @@
     .brand-badge{width:38px;height:38px;border-radius:10px;overflow:hidden;border:1px solid var(--line)}
     .head-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 
-    .cta-loop{
+    .acj-btn-luxe{
       position:relative;overflow:hidden;isolation:isolate;
-      animation:ctaPulse 2.4s ease-in-out infinite;
     }
-    .cta-loop::after{
-      content:"";position:absolute;top:-120%;left:-70%;width:55%;height:240%;
-      background:linear-gradient(105deg,transparent,rgba(255,255,255,.55),transparent);
-      transform:translateX(-120%) rotate(18deg);
-      animation:ctaSheen 2.8s ease-in-out infinite;
+    .acj-btn-luxe::after{
+      content:"";position:absolute;top:-120%;left:-60%;width:58%;height:220%;
+      background:linear-gradient(120deg,transparent,rgba(255,255,255,.42),transparent);
+      transform:translateX(-140%) rotate(20deg);
+      animation:acjLuxeSheen 4.8s ease-in-out infinite;
       pointer-events:none;
     }
-    @keyframes ctaPulse{
-      0%,100%{box-shadow:0 14px 36px rgba(196,30,58,.32)}
-      50%{box-shadow:0 18px 44px rgba(225,29,72,.48);transform:translateY(-1px)}
-    }
-    @keyframes ctaSheen{
-      0%,35%{transform:translateX(-120%) rotate(18deg)}
-      55%,100%{transform:translateX(220%) rotate(18deg)}
+    @keyframes acjLuxeSheen{
+      0%,42%{transform:translateX(-140%) rotate(20deg)}
+      58%,100%{transform:translateX(210%) rotate(20deg)}
     }
 
-    .hero{
-      background:
-        radial-gradient(ellipse 90% 60% at 70% 0%, rgba(196,30,58,.22), transparent 55%),
-        linear-gradient(180deg,#0a0b0e 0%,#12141a 100%);
-      color:var(--ink-soft);padding:clamp(40px,6vw,72px) 0 clamp(32px,5vw,56px);
+    .dealer-portal-link{
+      display:inline-flex;align-items:center;gap:7px;
+      font-size:12px;font-weight:700;color:rgba(255,255,255,.72);
+      padding:8px 12px;border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      transition:color .15s ease,background .15s ease,border-color .15s ease;
     }
-    .hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(24px,4vw,40px);align-items:center}
+    .dealer-portal-link svg{width:14px;height:14px;opacity:.85;flex-shrink:0}
+    .dealer-portal-link:hover{color:#fff;background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.22)}
+
+    .hero{
+      position:relative;overflow:hidden;
+      color:var(--ink-soft);padding:clamp(48px,7vw,88px) 0 clamp(36px,5vw,60px);
+      min-height:min(92vh,720px);display:flex;align-items:center;
+    }
+    .hero-media{position:absolute;inset:0;z-index:0}
+    .hero-video{width:100%;height:100%;object-fit:cover;filter:saturate(1.08) contrast(1.04)}
+    .hero-scrim{
+      position:absolute;inset:0;z-index:1;
+      background:
+        linear-gradient(105deg,rgba(8,9,12,.88) 0%,rgba(10,11,14,.62) 42%,rgba(12,13,18,.78) 100%),
+        radial-gradient(ellipse 70% 50% at 20% 30%,rgba(196,30,58,.28),transparent 55%);
+    }
+    .hero-content{position:relative;z-index:2}
+    .hero-grid{display:grid;grid-template-columns:1fr;gap:clamp(20px,3vw,32px);max-width:640px}
     .eyebrow{font-size:11px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:12px}
   .hero h1{font-family:var(--acj-font-display);font-size:clamp(2.1rem,4.8vw,3.4rem);line-height:1.08;margin:0 0 14px;color:#fff;letter-spacing:-.02em}
     .hero-tagline{font-size:clamp(1rem,2vw,1.15rem);line-height:1.5;color:rgba(255,255,255,.72);max-width:34ch;margin:0 0 22px}
     .hero-actions{display:flex;flex-wrap:wrap;gap:10px}
-    .hero-visual{
-      border-radius:24px;overflow:hidden;border:1px solid var(--line);
-      box-shadow:0 32px 70px rgba(0,0,0,.45);aspect-ratio:4/3;background:#1a1c22;
-    }
-    .hero-visual img{width:100%;height:100%;object-fit:cover}
-
     .value-strip{
       display:grid;grid-template-columns:repeat(4,1fr);gap:12px;
       margin-top:-28px;position:relative;z-index:2;
@@ -99,33 +106,45 @@
     .section-head h2{font-family:var(--acj-font-display);font-size:clamp(1.6rem,3vw,2.2rem);margin:0 0 8px;letter-spacing:-.02em}
     .section-head p{margin:0;color:var(--muted);font-size:15px;max-width:50ch;line-height:1.5}
 
-    .bento{
-      display:grid;gap:14px;
-      grid-template-columns:repeat(12,1fr);
-      grid-auto-rows:minmax(140px,auto);
+    .features-stack{display:grid;gap:0}
+    .feature-block{
+      width:100%;padding:clamp(36px,5vw,56px) 0;
+      border-bottom:1px solid var(--line2);
     }
-    .bento-card{
-      grid-column:span 4;background:var(--surface);border:1px solid var(--line2);
-      border-radius:22px;overflow:hidden;display:flex;flex-direction:column;
-      box-shadow:0 16px 40px rgba(15,23,42,.07);
+    .feature-block:nth-child(odd){background:var(--surface)}
+    .feature-block:nth-child(even){background:var(--surface2)}
+    .feature-block-inner{
+      max-width:720px;margin:0 auto;padding:0 var(--gutter);
+      display:grid;gap:12px;
     }
-    .bento-card.span6{grid-column:span 6}
-    .bento-card.span8{grid-column:span 8}
-    .bento-card.span4{grid-column:span 4}
-    .bento-media{aspect-ratio:16/10;background:#e8e8ec;overflow:hidden}
-    .bento-media img{width:100%;height:100%;object-fit:cover}
-    .bento-body{padding:16px 18px 18px;flex:1;display:flex;flex-direction:column;gap:6px}
-    .bento-body h3{margin:0;font-size:17px;font-weight:800;line-height:1.2}
-    .bento-body p{margin:0;font-size:13px;color:var(--muted);line-height:1.45}
+    .feature-block h3{
+      margin:0;font-family:var(--acj-font-display);
+      font-size:clamp(1.35rem,2.8vw,1.85rem);line-height:1.15;letter-spacing:-.02em;
+    }
+    .feature-block p{margin:0;font-size:15px;color:var(--muted);line-height:1.55;max-width:52ch}
+    .feature-block .feature-cta{align-self:flex-start;margin-top:4px}
 
     .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
     .step{
-      background:var(--surface);border:1px solid var(--line2);border-radius:20px;
-      padding:20px;text-align:center;
+      background:linear-gradient(145deg,var(--brand) 0%,var(--brand-2) 100%);
+      border:1px solid rgba(255,255,255,.12);border-radius:20px;
+      padding:22px 18px;text-align:center;color:#fff;
+      box-shadow:0 18px 44px rgba(196,30,58,.28);
+      transition:background .2s ease,color .2s ease,box-shadow .2s ease,transform .15s ease;
+      cursor:default;
     }
-    .step .icon{font-size:28px;margin-bottom:10px}
-    .step h3{margin:0 0 6px;font-size:15px}
-    .step p{margin:0;font-size:13px;color:var(--muted);line-height:1.45}
+    .step:hover,.step:focus-within,.step.is-active{
+      background:#fff;color:var(--ink);
+      box-shadow:0 20px 48px rgba(15,23,42,.12);
+      transform:translateY(-2px);
+    }
+    .step .icon{
+      font-family:var(--acj-font-data);font-size:13px;font-weight:600;
+      letter-spacing:.12em;text-transform:uppercase;opacity:.85;margin-bottom:12px;
+    }
+    .step h3{margin:0 0 8px;font-size:16px;font-weight:800}
+    .step p{margin:0;font-size:13px;line-height:1.45;opacity:.88}
+    .step:hover p,.step:focus-within p,.step.is-active p{color:var(--muted);opacity:1}
 
     .compare-wrap{
       background:var(--surface);border:1px solid var(--line2);border-radius:22px;
@@ -162,6 +181,7 @@
     .bullets{margin:0;padding:0;list-style:none;display:grid;gap:8px}
     .bullets li{font-size:13px;color:var(--muted);padding-left:18px;position:relative}
     .bullets li::before{content:"✓";position:absolute;left:0;color:var(--brand);font-weight:800}
+    .bullets li strong{color:var(--ink);font-weight:700}
 
     .whatsapp-band{
       background:linear-gradient(135deg,#0a0b0e,#151820);
@@ -192,9 +212,9 @@
     .mobile-bar .acj-btn{flex:1}
 
     @media(max-width:960px){
-      .hero-grid,.financing-banner{grid-template-columns:1fr}
+      .hero{min-height:auto}
+      .financing-banner{grid-template-columns:1fr}
       .value-strip{grid-template-columns:repeat(2,1fr);margin-top:16px}
-      .bento-card,.bento-card.span6,.bento-card.span8,.bento-card.span4{grid-column:span 12}
       .steps{grid-template-columns:1fr}
       .compare-wrap{overflow-x:auto}
       .compare-table{min-width:560px}
@@ -203,8 +223,7 @@
     }
     @media (prefers-reduced-motion:reduce){
       html{scroll-behavior:auto}
-      .marquee-track,.cta-loop,.cta-loop::after{animation:none}
-      .cta-loop{animation:none}
+      .marquee-track,.acj-btn-luxe::after{animation:none}
     }
   </style>
 </head>
@@ -212,46 +231,57 @@
 
   <div class="marquee" aria-hidden="true">
     <div class="wrap"><div class="marquee-track">
-      <span>Verified dealer storefronts</span>
-      <span>More buyers · More sales</span>
-      <span>Financing partners available</span>
-      <span>Start free or go paid for full control</span>
-      <span>Verified dealer storefronts</span>
-      <span>More buyers · More sales</span>
-      <span>Financing partners available</span>
-      <span>Start free or go paid for full control</span>
+      <span>Verified dealer program</span>
+      <span>Your inventory · one link</span>
+      <span>Free tier · our sales team</span>
+      <span>Paid · lower commission · full control</span>
+      <span>Inventory hub for every dealer</span>
+      <span>Financing for your buyers</span>
+      <span>Verified dealer program</span>
+      <span>Your inventory · one link</span>
+      <span>Free tier · our sales team</span>
+      <span>Paid · lower commission · full control</span>
+      <span>Inventory hub for every dealer</span>
+      <span>Financing for your buyers</span>
     </div></div>
   </div>
 
   <header>
     <div class="wrap">
       <div class="head-row">
-        <div class="brand">
+        <a class="brand" href="/landing">
           <div class="brand-badge"><img src="https://res.cloudinary.com/dd8pjjxsm/image/upload/v1770298701/ChatGPT_Image_Sep_6_2025_08_27_53_AM_raorxf.png" alt="Auto Concierge Jamaica" width="38" height="38" /></div>
           Auto Concierge Jamaica
-        </div>
+        </a>
         <div class="head-actions">
+          <a href="/dealer" class="dealer-portal-link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            Dealer login
+          </a>
           <a class="acj-btn acj-btn-outline-light" href="/storefront">See storefront</a>
-          <a class="acj-btn acj-btn-primary cta-loop" href="#programs">Become a Verified Dealer</a>
+          <a class="acj-btn acj-btn-primary acj-btn-luxe" href="#programs">Become a Verified Dealer</a>
         </div>
       </div>
     </div>
   </header>
 
   <section class="hero">
-    <div class="wrap">
+    <div class="hero-media" aria-hidden="true">
+      <video class="hero-video" autoplay loop muted playsinline
+        poster="https://res.cloudinary.com/dd8pjjxsm/image/upload/v1768193442/mediaexclusive/dealers/0000/vehicles/VEH-0069/qbu8lvupz54ufudhcnv6.jpg"
+        src="https://res.cloudinary.com/dd8pjjxsm/video/upload/v1776742826/From_KlickPin_CF_Aerial_view_of_a_crowded_parking_lot___Lavoretti_scientifici_-_Pin-972988694477218510_k7n3he.mp4"></video>
+    </div>
+    <div class="hero-scrim" aria-hidden="true"></div>
+    <div class="wrap hero-content">
       <div class="hero-grid">
         <div>
           <div class="eyebrow">Verified dealer program</div>
           <h1>More customers.<br />One link.<br />Real sales.</h1>
-          <p class="hero-tagline">Your inventory. Your storefront. Our team helps you close—or you take every conversation on paid.</p>
+          <p class="hero-tagline">Your inventory in one hub. A premium storefront on paid—or our sales team helping you close on free.</p>
           <div class="hero-actions">
-            <a class="acj-btn acj-btn-primary cta-loop" href="#programs">Become a Verified Dealer · Start today</a>
+            <a class="acj-btn acj-btn-primary acj-btn-luxe" href="#programs">Become a Verified Dealer · Start today</a>
             <a class="acj-btn acj-btn-outline-light" href="#" id="heroWhatsApp">Ask us on WhatsApp</a>
           </div>
-        </div>
-        <div class="hero-visual">
-          <img src="https://res.cloudinary.com/dd8pjjxsm/image/upload/v1768193442/mediaexclusive/dealers/0000/vehicles/VEH-0069/qbu8lvupz54ufudhcnv6.jpg" alt="Premium vehicle listing preview" loading="eager" />
         </div>
       </div>
     </div>
@@ -267,65 +297,54 @@
   </div>
 
   <main>
-    <section class="section wrap">
-      <div class="section-head">
-        <h2>What verified dealers get</h2>
-        <p>Less reading. More selling. Replace placeholder images with your own showroom shots anytime.</p>
-      </div>
-      <div class="bento">
-        <article class="bento-card span8">
-          <div class="bento-media">
-            <img src="https://res.cloudinary.com/dd8pjjxsm/image/upload/v1768193442/mediaexclusive/dealers/0000/vehicles/VEH-0069/qbu8lvupz54ufudhcnv6.jpg" alt="Dealer storefront preview" loading="lazy" />
-          </div>
-          <div class="bento-body">
-            <h3>Your own dealer storefront (paid)</h3>
-            <p>Send buyers one branded link. They find you in our directory, see real stock, and book viewings—without a messy feed.</p>
-          </div>
-        </article>
-        <article class="bento-card span4">
-          <div class="bento-body" style="padding-top:22px">
-            <h3>More customers</h3>
-            <p>Look verified. Look ready to sell. Serious buyers trust a clean, professional page.</p>
-          </div>
-          <div class="bento-media" style="aspect-ratio:16/11">
-            <img src="https://res.cloudinary.com/dd8pjjxsm/image/upload/v1770298701/ChatGPT_Image_Sep_6_2025_08_27_53_AM_raorxf.png" alt="Trust badge placeholder" loading="lazy" />
-          </div>
-        </article>
-        <article class="bento-card span4">
-          <div class="bento-media">
-            <img src="https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=800&q=80" alt="Inventory management placeholder" loading="lazy" />
-          </div>
-          <div class="bento-body">
-            <h3>Inventory in one place</h3>
-            <p>Add, update, and archive units from one portal. No scattered spreadsheets.</p>
-          </div>
-        </article>
-        <article class="bento-card span4">
-          <div class="bento-media">
-            <img src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&q=80" alt="Sales conversation placeholder" loading="lazy" />
-          </div>
-          <div class="bento-body">
-            <h3>More sales, less chase</h3>
-            <p>Viewing requests, WhatsApp, live video, walk-ins—buyers pick how they reach you (or our team on free).</p>
-          </div>
-        </article>
-        <article class="bento-card span4">
-          <div class="bento-body" style="padding-top:22px;background:linear-gradient(180deg,#fff,#fdf2f4)">
-            <h3>Our Sales Team (free tier)</h3>
-            <p>No monthly fee. We help qualify buyers and move deals forward while you focus on stock.</p>
-          </div>
-        </article>
-      </div>
+    <section class="features-stack" aria-label="Dealer benefits">
+      <article class="feature-block">
+        <div class="feature-block-inner">
+          <h3>Need a branded storefront buyers trust?</h3>
+          <p>On paid, send one premium link—directory listing, live stock, and viewing requests without a messy feed.</p>
+          <a class="acj-btn acj-btn-outline-dark feature-cta" href="#programs">See paid benefits</a>
+        </div>
+      </article>
+      <article class="feature-block">
+        <div class="feature-block-inner">
+          <h3>Want more qualified buyers without chasing DMs?</h3>
+          <p>Look verified and ready to sell. Serious shoppers book viewings, WhatsApp, or walk-ins from your page.</p>
+          <a class="acj-btn acj-btn-outline-dark feature-cta" href="#tierCompare">Compare free vs paid</a>
+        </div>
+      </article>
+      <article class="feature-block">
+        <div class="feature-block-inner">
+          <h3>Tired of inventory scattered across chats and sheets?</h3>
+          <p>Use the inventory hub—add, update, and archive every unit from one dealer portal on every plan.</p>
+          <a class="acj-btn acj-btn-outline-dark feature-cta" href="#programs">Start with inventory hub</a>
+        </div>
+      </article>
+      <article class="feature-block">
+        <div class="feature-block-inner">
+          <h3>Ready for walkaround video on your listings?</h3>
+          <p>Paid dealers add video to listings so buyers see the car before they visit—higher intent, fewer tire-kickers.</p>
+          <a class="acj-btn acj-btn-outline-dark feature-cta" href="#tierCompare">Video on listings — paid only</a>
+        </div>
+      </article>
+      <article class="feature-block">
+        <div class="feature-block-inner">
+          <h3>Prefer our team to qualify leads while you stock cars?</h3>
+          <p>Free tier: no monthly fee. Our Sales Team nurtures buyers and moves deals while you focus on inventory.</p>
+          <a class="acj-btn acj-btn-primary acj-btn-luxe feature-cta" href="#whatsappBand">Talk through free vs paid</a>
+        </div>
+      </article>
     </section>
 
     <section class="section wrap">
       <div class="section-head">
         <h2>Live in three moves</h2>
+        <p>From application to your first buyer link—most paid dealers are live in minutes.</p>
       </div>
-        <div class="step"><div class="icon">①</div><h3>Apply or subscribe</h3><p>Free waitlist or paid checkout with trial.</p></div>
-        <div class="step"><div class="icon">②</div><h3>Get verified</h3><p>We provision your dealer ID and portal.</p></div>
-        <div class="step"><div class="icon">③</div><h3>Share your link</h3><p>Buyers browse. You close.</p></div>
-      </div>
+      <motion class="steps">
+        <div class="step" tabindex="0"><div class="icon">Step 01</div><h3>Apply or subscribe</h3><p>Join the free waitlist or start paid with a 14-day trial.</p></div>
+        <div class="step" tabindex="0"><div class="icon">Step 02</div><h3>Get verified</h3><p>We provision your dealer ID, portal, and inventory hub.</p></div>
+        <div class="step" tabindex="0"><div class="icon">Step 03</div><h3>Share your link</h3><p>Buyers browse stock. You—or our team—close the sale.</p></div>
+      </motion>
     </section>
 
     <section class="section wrap" id="tierCompare">
@@ -351,6 +370,7 @@
             <tr><td>Negotiations &amp; follow-up</td><td>Our Sales Team</td><td>You control</td></tr>
             <tr><td>Branded storefront</td><td>—</td><td><span class="chip-yes">Yes</span></td></tr>
             <tr><td>Inventory hub</td><td><span class="chip-yes">Yes</span></td><td><span class="chip-yes">Yes</span></td></tr>
+            <tr><td>Video on listings</td><td>—</td><td><span class="chip-yes">Yes</span></td></tr>
             <tr><td>AI sales support</td><td>—</td><td><span class="chip-best">Included</span></td></tr>
             <tr><td>Our Sales Team + AI</td><td><span class="chip-team">Sales team only</span></td><td><span class="chip-best">Team + AI support</span></td></tr>
             <tr><td>Financing for your Customers</td><td><span class="chip-yes">Available</span></td><td><span class="chip-best">Priority access</span></td></tr>
@@ -366,30 +386,31 @@
       </div>
     </section>
 
-    <section class="section wrap">
+    <section class="section wrap" id="whatsappBand">
       <div class="whatsapp-band">
         <div>
           <h2>Not sure which plan fits?</h2>
           <p>Start a conversation—we’ll walk you through free vs paid in two minutes.</p>
         </div>
-        <a class="acj-btn acj-btn-primary cta-loop" href="#" id="bandWhatsApp">Chat on WhatsApp</a>
+        <a class="acj-btn acj-btn-primary acj-btn-luxe" href="#" id="bandWhatsApp">Chat on WhatsApp</a>
       </div>
     </section>
 
     <section class="section wrap" id="programs">
       <div class="section-head">
         <h2>Start today</h2>
-        <p>Pick the path that matches how hands-on you want to be.</p>
+        <p>Same inventory hub on both plans—choose our team on free or full control on paid.</p>
       </div>
       <div class="pricing-grid">
         <div class="price-card">
           <span class="acj-tag acj-tag-muted">Free · Commission</span>
-          <h3 style="margin:0;font-size:20px">Our Sales Team sells with you</h3>
+          <h3 style="margin:0;font-size:20px">Free—our team helps you close</h3>
           <p class="price">0<small>/mo</small></p>
           <ul class="bullets">
-            <li>Verified storefront + inventory hub</li>
-            <li>Our Sales Team handles buyer chat</li>
-            <li>Commission agreed at approval</li>
+            <li><strong>Inventory hub</strong>—add, update, and archive every unit in one portal</li>
+            <li>Our Sales Team qualifies buyers and follows up for you</li>
+            <li>$0 monthly—commission agreed when you are approved</li>
+            <li>Directory presence; no branded storefront or listing video</li>
           </ul>
           <div class="form-grid">
             <div><input class="acj-input" id="wlBusiness" placeholder="Business name" autocomplete="organization" /><p class="acj-field-error" id="wlBusinessError" hidden></p></div>
@@ -397,25 +418,27 @@
             <input class="acj-input" id="wlWhatsapp" placeholder="Your WhatsApp" inputmode="numeric" />
             <textarea class="acj-textarea" id="wlNotes" placeholder="Cars in stock? Location? (optional)"></textarea>
           </div>
-          <button class="acj-btn acj-btn-outline-dark cta-loop" type="button" id="btnWaitlist">Become a Verified Dealer · Apply free</button>
+          <button class="acj-btn acj-btn-outline-dark acj-btn-luxe" type="button" id="btnWaitlist">Become a Verified Dealer · Apply free</button>
           <p id="waitlistStatus" style="display:none;margin:0"></p>
         </div>
 
         <div class="price-card featured">
           <span class="acj-tag">Paid · Full control</span>
-          <h3 style="margin:0;font-size:20px">You own every lead</h3>
+          <h3 style="margin:0;font-size:20px">Paid—you own every conversation</h3>
           <p class="price">$98<small>/mo · 14-day trial</small></p>
           <ul class="bullets">
-            <li>Lower commission %</li>
-            <li>Your team gets WhatsApp + inbox</li>
-            <li>You run negotiations end-to-end</li>
+            <li><strong>Inventory hub</strong> plus your branded storefront link</li>
+            <li><strong>Video on listings</strong>—walkarounds buyers watch before they visit</li>
+            <li>Lower commission; your WhatsApp and lead inbox</li>
+            <li>You run negotiations; AI sales support included</li>
+            <li>Priority financing introductions for your customers</li>
           </ul>
           <div class="form-grid">
             <div><input class="acj-input" id="businessName" placeholder="Business name" /><p class="acj-field-error" id="businessNameError" hidden></p></div>
             <div><input class="acj-input" id="email" type="email" placeholder="Billing email" /><p class="acj-field-error" id="emailError" hidden></p></div>
             <input class="acj-input" id="whatsapp" placeholder="Sales WhatsApp" inputmode="numeric" />
           </div>
-          <button class="acj-btn acj-btn-primary cta-loop" type="button" id="btnPaidCheckout">Become a Verified Dealer · Start paid trial</button>
+          <button class="acj-btn acj-btn-primary acj-btn-luxe" type="button" id="btnPaidCheckout">Become a Verified Dealer · Start paid trial</button>
           <div class="checkout-trust">
             <strong>Secure Stripe checkout</strong>
             <span>Cancel anytime during trial.</span>
@@ -453,7 +476,7 @@
 
   <div class="mobile-bar">
     <a class="acj-btn acj-btn-outline-dark" href="#" id="mobileWhatsApp">WhatsApp</a>
-    <a class="acj-btn acj-btn-primary cta-loop" href="#programs">Start today</a>
+    <a class="acj-btn acj-btn-primary acj-btn-luxe" href="#programs">Start today</a>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/gsap.min.js"></script>
@@ -466,7 +489,7 @@
     function whatsAppHref(){
       return "https://wa.me/" + SALES_WHATSAPP + "?text=" + WA_MSG;
     }
-    ["heroWhatsApp","bandWhatsApp","mobileWhatsApp"].forEach((id) => {
+    ["heroWhatsApp","bandWhatsApp","mobileWhatsApp","featureWhatsApp"].forEach((id) => {
       const el = document.getElementById(id);
       if(el){ el.href = whatsAppHref(); el.target = "_blank"; el.rel = "noopener"; }
     });
@@ -579,6 +602,17 @@
       document.getElementById("programs")?.scrollIntoView({ behavior: "smooth" });
     }
 
+
+    document.querySelectorAll(".steps .step").forEach((step) => {
+      const activate = () => {
+        document.querySelectorAll(".steps .step").forEach((s) => s.classList.remove("is-active"));
+        step.classList.add("is-active");
+      };
+      step.addEventListener("mouseenter", activate);
+      step.addEventListener("focus", activate);
+      step.addEventListener("click", activate);
+    });
+
     document.querySelectorAll(".faq-item button").forEach((btn) => {
       btn.addEventListener("click", () => {
         const item = btn.closest(".faq-item");
@@ -591,7 +625,7 @@
     if(window.ACJMotion){
       ACJMotion.whenReady(() => {
         ACJMotion.heroIntro([".hero h1", ".hero-tagline", ".hero-actions"]);
-        ACJMotion.revealOnScroll(".bento-card, .step, .value-pill", { duration: 0.45, y: 16, stagger: 0.04 });
+        ACJMotion.revealOnScroll(".feature-block, .step, .value-pill", { duration: 0.45, y: 16, stagger: 0.04 });
       });
     }
   </script>

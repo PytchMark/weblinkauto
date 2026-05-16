@@ -164,6 +164,33 @@ async function getDealerApplicationById(id) {
   return unwrap(result, "dealer application lookup");
 }
 
+async function listDealerReviews(dealerId, { limit = 20 } = {}) {
+  const result = await supabase
+    .from("dealer_reviews")
+    .select("*")
+    .eq("dealer_id", dealerId)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  return unwrap(result, "dealer reviews list") || [];
+}
+
+async function createDealerReview(fields) {
+  const result = await supabase.from("dealer_reviews").insert(fields).select("*").single();
+  return unwrap(result, "dealer review create");
+}
+
+async function createDealerReport(fields) {
+  const result = await supabase.from("dealer_reports").insert(fields).select("*").single();
+  return unwrap(result, "dealer report create");
+}
+
+async function listDealerReports({ dealerId, limit = 100 } = {}) {
+  let query = supabase.from("dealer_reports").select("*");
+  if (dealerId) query = query.eq("dealer_id", dealerId);
+  const result = await query.order("created_at", { ascending: false }).limit(limit);
+  return unwrap(result, "dealer reports list") || [];
+}
+
 module.exports = {
   getProfileByDealerId,
   getProfileByEmail,
@@ -186,4 +213,8 @@ module.exports = {
   listDealerApplications,
   updateDealerApplicationById,
   getDealerApplicationById,
+  listDealerReviews,
+  createDealerReview,
+  createDealerReport,
+  listDealerReports,
 };

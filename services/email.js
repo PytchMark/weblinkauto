@@ -480,6 +480,78 @@ async function sendSuspensionNoticeEmail({ dealerEmail, dealerName, dealerId, re
   });
 }
 
+// Admin notice to dealer
+async function sendDealerAdminNotice({ email, dealerName, dealerId, subject, message }) {
+  const content = `
+    <h1>${subject}</h1>
+    <p>Hi ${dealerName || "there"},</p>
+    <div style="white-space:pre-wrap;line-height:1.6">${message}</div>
+    <div class="info-box" style="margin-top:20px">
+      <p><strong>Dealer ID:</strong> ${dealerId}</p>
+      <p><a href="${APP_BASE_URL}/dealer">Open your dealer portal →</a></p>
+    </div>
+  `;
+  return sendEmail({
+    to: email,
+    subject,
+    html: wrapEmail(content, subject),
+    text: `${subject}\n\n${message}\n\nDealer portal: ${APP_BASE_URL}/dealer`,
+  });
+}
+
+async function sendAdminPasscodeEmail({ email, dealerName, dealerId, passcode }) {
+  const subject = "Your Auto Concierge dealer portal passcode";
+  const content = `
+    <h1>Your passcode was updated</h1>
+    <p>Hi ${dealerName}, an administrator set a new passcode for your dealer account.</p>
+    <div class="highlight">
+      <p><strong>Dealer ID:</strong> ${dealerId}</p>
+      <p><strong>Passcode:</strong> ${passcode}</p>
+    </div>
+    <a href="${APP_BASE_URL}/dealer" class="button">Sign in to dealer portal →</a>
+    <p style="font-size:13px;color:#666">Keep this email private.</p>
+  `;
+  return sendEmail({
+    to: email,
+    subject,
+    html: wrapEmail(content, subject),
+    text: `Dealer ID: ${dealerId}, Passcode: ${passcode}. Sign in: ${APP_BASE_URL}/dealer`,
+  });
+}
+
+async function sendDealerReportAlert({
+  inbox,
+  dealerId,
+  dealerName,
+  reason,
+  details,
+  reporterName,
+  reporterEmail,
+  reporterPhone,
+}) {
+  const subject = `Report: ${dealerName || dealerId}`;
+  const detailsHtml = details ? `<p><strong>Details:</strong> ${details}</p>` : "";
+  const content = `
+    <h1>Dealer reported on storefront</h1>
+    <div class="highlight">
+      <p><strong>Dealer:</strong> ${dealerName || "—"} (${dealerId})</p>
+      <p><strong>Reason:</strong> ${reason}</p>
+      ${detailsHtml}
+    </div>
+    <div class="info-box">
+      <p><strong>Reporter:</strong> ${reporterName || "Anonymous"}</p>
+      <p><strong>Email:</strong> ${reporterEmail || "—"}</p>
+      <p><strong>Phone:</strong> ${reporterPhone || "—"}</p>
+    </div>
+  `;
+  return sendEmail({
+    to: inbox,
+    subject,
+    html: wrapEmail(content, subject),
+    text: `Report for ${dealerId}: ${reason}. ${details || ""}`,
+  });
+}
+
 module.exports = {
   sendEmail,
   sendWelcomeEmail,
@@ -492,4 +564,7 @@ module.exports = {
   sendReferralInviteEmail,
   sendPasscodeResetEmail,
   sendSuspensionNoticeEmail,
+  sendDealerAdminNotice,
+  sendAdminPasscodeEmail,
+  sendDealerReportAlert,
 };

@@ -1,330 +1,157 @@
-# Auto Concierge Jamaica
+# Auto Concierge Jamaica (Weblinkauto)
 
-A multi-dealer car inventory and viewing-request SaaS platform built with:
-
-- **Google Cloud Run** (Express API)
-- **Supabase (Postgres)** (single source of truth database)
-- **Cloudinary** (media hosting)
-- **Static HTML apps** (storefront, dealer portal, admin)
-- **Stripe** (SaaS subscriptions + dealer provisioning)
-- **Gmail SMTP** (email notifications)
-
-This system installs a **sales process**, not just a website.
+Multi-dealer inventory, storefront, dealer portal, and admin console. Express API on Cloud Run, Supabase Postgres, Cloudinary media, Stripe subscriptions, and **Resend** transactional email.
 
 ---
 
-## 🚀 Production Readiness Checklist
+## Apps and URLs
 
-### ✅ Completed Features
-- [x] JWT-based authentication for dealer & admin portals
-- [x] Stripe integration for SaaS subscriptions (Tier 1-3)
-- [x] 14-day free trial support
-- [x] Cloudinary media uploads (7 images + 3 videos per vehicle)
-- [x] WhatsApp integration for lead routing
-- [x] Request management system (Video Viewing, Walk-In, WhatsApp)
-- [x] Admin dashboard with dealer drill-down
-- [x] Landing page with pricing and CTA animations
-- [x] Crimson branding (#DC143C) applied throughout
-- [x] Auto Concierge logo integrated across all pages
+| App | URL | Audience |
+|-----|-----|----------|
+| Landing | `/landing` | Prospective dealers |
+| Storefront | `/storefront` or `/{DEALER-ID}` | Car buyers |
+| Dealer portal | `/dealer` | Dealers |
+| Admin | `/admin` | Internal team |
 
-### ✅ NEW - Production Features (v2.0)
-- [x] **#1 Automated Welcome Email** - Sends dealer credentials after signup
-- [x] **#2 New Request Email Alerts** - Notifies dealers instantly on new requests
-- [x] **#4 Low Inventory Alert** - Warns dealers when stock is low
-- [x] **#5 Failed Payment Recovery** - Email when subscription payment fails
-- [x] **#6 & #7 Upgrade Prompts** - Smart upsell emails based on usage
-- [x] **#8 Referral Program** - Earn free months by referring dealers
-- [x] **#9 Passcode Reset Flow** - Email-based password recovery
-- [x] **#11 Session Timeout** - Auto-logout after 30min inactivity
-- [x] **#12 Rate Limiting** - Protects login endpoints from brute force
-- [x] **#22 Dealer Suspension Flow** - Graceful handling of lapsed subscriptions
-- [x] **#23 Export to CSV** - Download dealers/vehicles/requests data
-- [x] **#24 Bulk Status Update** - Mass update vehicle statuses
-- [x] **#26 Social Share Buttons** - Share vehicles to WhatsApp/Facebook
-- [x] **#27 SEO Meta Tags** - Open Graph & Twitter Card support
-- [x] **#28 QR Code Generator** - API endpoint for dealer storefront QR codes
-
-### 🔧 Before Go-Live
-1. Add real Supabase credentials to Cloud Run environment
-2. Add real Stripe API keys and create products/prices
-3. Configure Stripe webhook endpoint
-4. Update ADMIN_EMAIL and ADMIN_PASSWORD for production
-5. Set a strong JWT_SECRET (at least 32 random characters)
-6. Configure Cloudinary API keys
-7. **NEW**: Configure Gmail SMTP for email notifications
+Site root `/` redirects to `/storefront`.
 
 ---
 
-## Architecture Overview
+## Admin console tabs
 
+| Tab | Purpose |
+|-----|---------|
+| **Dealers** | Create/edit dealers, passcode reveal, custom passcode, email welcome, notify dealer |
+| **Applications** | Free-tier waitlist (approve → create dealer) |
+| **Summary** | Monthly KPIs for all dealers |
+| **Inventory** | All vehicles, bulk status update |
+| **Requests** | Viewing / lead requests |
+| **Settings** | Environment reference |
 
-- Browsers **never** talk to Supabase directly
-- All secrets live in environment variables
-- All dealer access is scoped by `Dealer ID`
+### Dealer actions (Dealers tab + editor modal)
 
----
-
-## Apps
-
-### `/apps/storefront`
-Public, read-only dealer storefront.
-
-- User enters a **Dealer ID** (or via URL param)
-- Displays live inventory from Supabase
-- Allows customers to:
-  - Open WhatsApp chat
-  - Request live video viewing
-  - Book in-store viewing
-
-No authentication required.
+- **Work email** — used for welcome, passcode, and custom notifications (Resend).
+- **Email login details** — checkbox on create; sends welcome email with Dealer ID + passcode.
+- **Reveal** — fetches current passcode from API (admin only).
+- **Save custom** — set passcode via editor field.
+- **Generate new** — random passcode; optional **Email on reset**.
+- **Notify dealer** — one-off subject/message email.
 
 ---
 
-### `/apps/dealer`
-Dealer management portal.
+## Environment variables
 
-- Login with **Dealer ID + passcode**
-- Manage vehicles and media
-- Upload images/videos to Cloudinary
-- Update vehicle status:
-  - Available
-  - Pending
-  - Sold
-  - Archived (no deletes)
+Copy [`.env.example`](.env.example) to `.env` for local dev. Set the same keys on **Cloud Run** for production.
 
-Dealers can only access their own data.
+### Required for production
 
----
+| Variable | Purpose |
+|----------|---------|
+| `SUPABASE_URL` | Supabase project URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server-side DB access |
+| `JWT_SECRET` | Dealer/admin session tokens (32+ random chars) |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Admin login |
+| `CLOUDINARY_*` | Image/video uploads |
+| `STRIPE_SECRET_KEY` | Stripe API |
+| `STRIPE_PRICE_PAID` | $98/mo price ID |
+| `STRIPE_WEBHOOK_SECRET` | Checkout webhooks |
+| `RESEND_API_KEY` | Email delivery ([resend.com](https://resend.com)) |
+| `EMAIL_FROM` | Verified sender on Resend domain |
+| `APP_BASE_URL` | Links in emails (e.g. `https://your-domain.com`) |
 
-### `/apps/admin`
-Internal admin dashboard.
+### Recommended
 
-- View all dealers
-- View all vehicles
-- View all requests
-- Sales + performance analytics
-- Filter by Dealer ID
+| Variable | Purpose |
+|----------|---------|
+| `SALES_TEAM_INBOX_EMAIL` | Waitlist + free-tier leads + dealer reports |
+| `CASH_CLOSERS_WHATSAPP_E164` | WhatsApp for free-tier routing |
+| `EMAIL_FROM_NAME` | Display name (default: Auto Concierge Jamaica) |
+| `EMAIL_REPLY_TO` | Reply-to address |
+| `BCC_DEALER_ON_FREE_LEADS` | Set `1` to BCC dealer on free-tier lead emails |
 
----
+### Optional
 
-### `/apps/landing`
-Dealer onboarding funnel.
+| Variable | Purpose |
+|----------|---------|
+| `ADMIN_API_KEY` | Header `x-admin-key` bypass |
+| `ADMIN_USERNAME` | Fallback admin username |
+| `CORS_ORIGINS` | Comma-separated allowed origins |
+| `STRIPE_PRICE_TIER1`–`TIER3` | Legacy price IDs |
 
-- Stripe checkout with a 14-day free trial
-- Tiered pricing: Tier 1 ($45/mo), Tier 2 ($75/mo), Tier 3 ($98/mo)
-- Automatic dealer provisioning after checkout
-
----
-
-## Repository Structure
-
-/
-├── server.js
-├── package.json
-├── .env.example
-├── .gitignore
-├── README.md
-│
-├── apps/
-│ ├── storefront/index.html
-│ ├── dealer/index.html
-│ ├── admin/index.html
-│ └── landing/index.html
-│
-├── services/
-│ ├── supabase.js
-│ ├── auth.js
-│ └── analytics.js
-│
-└── public/assets/
-
+**Note:** Email is **Resend only** (not Gmail SMTP).
 
 ---
 
-## Environment Variables
+## Supabase setup
 
-Create a local `.env` file (not committed) based on `.env.example`.
+There is no `supabase/migrations/` folder. Apply schema in the Supabase SQL editor:
 
-In production:
-- Use **Cloud Run environment variables** or **Google Secret Manager**
-- Never commit real secrets to GitHub
+1. Run the full script: [`supabase_schema.sql`](supabase_schema.sql)
+2. For existing projects, re-run the `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` blocks and the new tables at the bottom:
+   - `dealer_reviews` — buyer star ratings on storefront
+   - `dealer_reports` — buyer “Report Dealer” submissions
 
-### Required env vars
-
-Supabase
-- `SUPABASE_URL`
-- `SUPABASE_SERVICE_ROLE_KEY` (server-only)
-
-Stripe
-- `STRIPE_SECRET_KEY`
-- `STRIPE_WEBHOOK_SECRET`
-- `STRIPE_PRICE_TIER1`
-- `STRIPE_PRICE_TIER2`
-- `STRIPE_PRICE_TIER3`
-
-App + Cloudinary
-- `APP_BASE_URL` (e.g. `https://autoconciergeja.com`)
-- `CLOUDINARY_CLOUD_NAME`
-- `CLOUDINARY_API_KEY`
-- `CLOUDINARY_API_SECRET`
-- `CLOUDINARY_FOLDER` (optional; default uses dealerId/vehicleId)
-- `CLOUDINARY_BASE_FOLDER` (optional alias for folder template)
-
-Admin auth
-- `ADMIN_EMAIL` or `ADMIN_USERNAME`
-- `ADMIN_PASSWORD`
-- `ADMIN_API_KEY` (optional)
-- `JWT_SECRET`
-
-Email notifications (Gmail SMTP)
-- `GMAIL_USER` - Your Gmail address (e.g., `autoconcierge@gmail.com`)
-- `GMAIL_APP_PASSWORD` - Gmail App Password (NOT your regular password)
-- `EMAIL_FROM_NAME` - Display name (e.g., `Auto Concierge Jamaica`)
-
-> **How to get a Gmail App Password:**
-> 1. Go to Google Account → Security → 2-Step Verification (enable if not already)
-> 2. Go to Google Account → Security → App passwords
-> 3. Select "Mail" and your device, then generate
-> 4. Copy the 16-character password (no spaces)
-
-Supabase schema setup:
-- Apply `supabase_schema.sql` in the Supabase SQL editor before running the API.
-
-### Stripe setup checklist
-1. Create Stripe products + prices for:
-   - Tier 1: **$45/mo**
-   - Tier 2: **$75/mo**
-   - Tier 3: **$98/mo**
-2. Store price IDs in `STRIPE_PRICE_TIER1`, `STRIPE_PRICE_TIER2`, `STRIPE_PRICE_TIER3`.
-3. Set a 14-day trial in Stripe (or allow app-side trial via webhook).
-4. Configure webhook endpoint:
-   - `POST https://<your-domain>/api/stripe/webhook`
-5. Local webhook testing with Stripe CLI:
-   ```bash
-   stripe listen --forward-to localhost:8080/api/stripe/webhook
-   ```
-6. Confirm provisioning:
-   - Complete checkout on `/landing`
-   - Check Supabase `profiles` for new dealer row (dealer_id, stripe ids, trial_ends_at).
-
-### Supabase schema additions
-If your Supabase schema is missing any of the fields below, apply these SQL statements:
-
-```sql
-alter table profiles add column if not exists plan text;
-alter table profiles add column if not exists trial_ends_at timestamptz;
-alter table profiles add column if not exists stripe_customer_id text;
-alter table profiles add column if not exists stripe_subscription_id text;
-alter table profiles add column if not exists stripe_subscription_status text;
-
-alter table vehicles add column if not exists hero_image_url text;
-alter table vehicles add column if not exists hero_video_url text;
-```
-
-### New API endpoints
-- `POST /api/stripe/create-checkout-session`
-- `POST /api/stripe/webhook`
-- `GET /api/public/checkout-session?sessionId=...`
-- `GET /api/public/dealer?dealerId=...`
+Tables: `profiles`, `vehicles`, `viewing_requests`, `dealer_applications`, `dealer_reviews`, `dealer_reports`.
 
 ---
 
-## Data Rules (Important)
+## Email checklist (Resend)
 
-- **Dealer ID** is the partition key for all data
-- Vehicles are **never deleted**, only archived
-- Media is hosted on Cloudinary
-- Supabase stores:
-  - Cloudinary URLs for images/videos
-- Dropdown / status values are enforced to keep data clean
-
----
-
-## Status Values
-
-Vehicles:
-- `Available`
-- `Pending`
-- `Sold`
-- `Archived`
-
-Requests:
-- `New`
-- `Contacted`
-- `Booked`
-- `Closed`
-- `No Show`
+1. Create a Resend account and verify your sending domain.
+2. Set `RESEND_API_KEY` and `EMAIL_FROM` (e.g. `notifications@yourdomain.com`).
+3. Set `APP_BASE_URL` to your public URL.
+4. Test flows:
+   - Create dealer with email + “Email login details” → welcome email
+   - Reset passcode with “Email on reset”
+   - Notify dealer from admin modal
+   - Stripe paid signup → welcome email (existing)
+   - Submit “Report Dealer” on storefront → alert to `SALES_TEAM_INBOX_EMAIL`
 
 ---
 
-## Footer Requirement
+## Dealer portal highlights
 
-All apps must display:
-
+- **Stock number** auto-generated if left blank when saving a vehicle.
+- Status **Ready for Import** plus On the lot, Pending, Sold, Archived.
+- **Photos** via upload buttons only (no URL paste fields).
+- **Videos** on listings: **paid plan only** (upload + save blocked on free tier).
+- Plain-language labels throughout.
 
 ---
 
-## Development
+## Storefront highlights
 
-Install dependencies:
+- Buyer-focused marquee and dealer profile card before inventory.
+- Interactive **Give us a review** (1–5 stars) and **Report Dealer**.
+- Logo links to `/storefront`; **Dealer login** in header.
+
+---
+
+## Local development
+
 ```bash
+cp .env.example .env
+# Fill Supabase, JWT, admin, Cloudinary, Resend, Stripe as needed
 npm install
+npm start
 ```
 
-Run the server locally:
-```bash
-npm run dev
-```
+Open `http://localhost:8080/landing`, `/dealer`, `/admin`, `/storefront`.
 
 ---
 
-## Cloud Run deployment notes
+## Post-deploy smoke test
 
-### Environment Variables for Production
-Set these in Google Cloud Run > Edit & Deploy > Variables & Secrets:
-
-```bash
-# Supabase
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-
-# Stripe
-STRIPE_SECRET_KEY=sk_live_xxxx
-STRIPE_WEBHOOK_SECRET=whsec_xxxx
-STRIPE_PRICE_TIER1=price_xxxTier1
-STRIPE_PRICE_TIER2=price_xxxTier2
-STRIPE_PRICE_TIER3=price_xxxTier3
-
-# App
-APP_BASE_URL=https://autoconciergeja.com
-JWT_SECRET=your-strong-random-secret-32-chars-minimum
-
-# Admin
-ADMIN_EMAIL=your-admin@email.com
-ADMIN_PASSWORD=your-secure-password
-
-# Cloudinary
-CLOUDINARY_CLOUD_NAME=your-cloud-name
-CLOUDINARY_API_KEY=your-api-key
-CLOUDINARY_API_SECRET=your-api-secret
-```
-
-### Deployment Steps
-1. Push code to GitHub
-2. Connect Cloud Run to your repository
-3. Set environment variables
-4. Deploy and verify health endpoint: `GET /health`
-5. Configure Stripe webhook to point to: `https://your-domain/api/stripe/webhook`
-6. Test complete flow: Landing → Checkout → Dealer creation
-
-### Stripe Webhook Events to Enable
-- `checkout.session.completed`
-- `customer.subscription.created`
-- `customer.subscription.updated`
-- `customer.subscription.deleted`
+- [ ] Free dealer: add vehicle with empty stock number → saves successfully
+- [ ] Admin: create dealer with email → welcome email received
+- [ ] Admin: reveal / custom / generate passcode
+- [ ] Landing: hero video plays; feature blocks and red step cards work
+- [ ] Storefront: load paid dealer → profile card, reviews, inventory
+- [ ] Paid dealer: upload vehicle video; free dealer cannot
+- [ ] Report dealer → row in `dealer_reports` + sales inbox email (if configured)
 
 ---
 
-## Support
+## Architecture
 
-For assistance, contact the Auto Concierge Jamaica team.
+Browsers call **Express only** (no direct Supabase from the client). Secrets stay in environment variables. Dealer data is scoped by `dealer_id` on the server.

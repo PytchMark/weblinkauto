@@ -30,6 +30,9 @@ const {
   sendReferralInviteEmail,
   sendPasscodeResetEmail,
   sendSuspensionNoticeEmail,
+  sendDealerAdminNotice,
+  sendAdminPasscodeEmail,
+  sendDealerReportAlert,
 } = require("./services/email");
 const {
   getProfileByDealerId,
@@ -53,6 +56,10 @@ const {
   listDealerApplications,
   updateDealerApplicationById,
   getDealerApplicationById,
+  listDealerReviews,
+  createDealerReview,
+  createDealerReport,
+  listDealerReports,
 } = require("./services/supabase");
 const { getDealerMetrics, getDealersSummary } = require("./services/analytics");
 const { stripe } = require("./lib/stripe");
@@ -204,12 +211,50 @@ function toBool(value) {
 }
 
 function normalizeVehicleStatus(value) {
-  const s = cleanStr(value, 40).toLowerCase();
+  const s = cleanStr(value, 40).toLowerCase().replace(/\s+/g, "_");
   if (s === "available") return "available";
   if (s === "pending") return "pending";
   if (s === "sold") return "sold";
   if (s === "archived") return "archived";
+  if (s === "ready_for_import" || s === "readyforimport") return "ready_for_import";
   return "";
+}
+
+function vehicleStatusLabel(status) {
+  const map = {
+    available: "On the lot",
+    pending: "Pending",
+    sold: "Sold",
+    archived: "Archived",
+    ready_for_import: "Ready for Import",
+  };
+  return map[status] || status;
+}
+
+async function generateNextVehicleId(dealerId) {
+  const vehicles = await getVehiclesForDealer(dealerId, { includeArchived: true, publicOnly: false });
+  let maxNum = 0;
+  for (const v of vehicles || []) {
+    const match = String(v.vehicle_id || "").match(/VEH-(\d+)/i);
+    if (match) maxNum = Math.max(maxNum, Number(match[1]));
+  }
+  for (let i = 1; i <= 50; i += 1) {
+    const candidate = `VEH-${String(maxNum + i).padStart(5, "0")}`;
+    const existing = await getVehicleByVehicleId(candidate);
+    if (!existing) return candidate;
+  }
+  return `VEH-${crypto.randomBytes(4).toString("hex").toUpperCase()}`;
+}
+
+function mapVehicleSaveError(err) {
+  const msg = String(err?.message || err || "");
+  if (/duplicate|unique|already exists/i.test(msg)) {
+    return { status: 409, error: "This stock number is already in use. Choose another or leave blank for a new one." };
+  }
+  if (/vehicleid|vehicle_id|required/i.test(msg)) {
+    return { status: 400, error: msg };
+  }
+  return { status: 500, error: msg || "We could not save this vehicle. Please try again." };
 }
 
 function normalizeRequestStatus(value) {
@@ -873,6 +918,124 @@ app.get("/api/public/dealer", async (req, res) => {
   } catch (err) {
     console.error("GET /api/public/dealer error:", err);
     return res.status(500).json({ ok: false, error: "Internal Server Error" });
+  }
+});
+
+app.get("/api/public/dealer/:dealerId/reviews", async (req, res) => {
+  try {
+    const dealerId = cleanStr(req.params.dealerId, 60);
+    if (!isValidDealerId(dealerId)) {
+      return res.status(400).json({ ok: false, error: "Invalid dealerId" });
+    }
+    const dealer = await getProfileByDealerId(dealerId);
+    if (!dealer) return res.status(404).json({ ok: false, error: "Dealer not found" });
+
+    const reviews = await listDealerReviews(dealerId, { limit: 20 });
+    const ratings = reviews.map((r) => Number(r.rating)).filter((n) => n >= 1 && n <= 5);
+    const averageRating = ratings.length
+      ? Math.round((ratings.reduce((a, b) => a + b, 0) / ratings.length) * 10) / 10
+      : 0;
+
+    return res.json({
+      ok: true,
+      reviews: reviews.map((r) => ({
+        id: r.id,
+        rating: r.rating,
+        comment: r.comment || "",
+        reviewerName: r.reviewer_name || "Buyer",
+        createdAt: r.created_at,
+      })),
+      averageRating,
+      count: ratings.length,
+    });
+  } catch (err) {
+    console.error("GET /api/public/dealer/:dealerId/reviews error:", err);
+    return res.status(500).json({ ok: false, error: "Internal Server Error" });
+  }
+});
+
+const reviewSubmitLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { ok: false, error: "Too many reviews. Try again later." },
+});
+
+app.post("/api/public/dealer/:dealerId/reviews", reviewSubmitLimiter, async (req, res) => {
+  try {
+    const dealerId = cleanStr(req.params.dealerId, 60);
+    if (!isValidDealerId(dealerId)) {
+      return res.status(400).json({ ok: false, error: "Invalid dealerId" });
+    }
+    const rating = Number(req.body.rating);
+    if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
+      return res.status(400).json({ ok: false, error: "Rating must be between 1 and 5" });
+    }
+    const dealer = await getProfileByDealerId(dealerId);
+    if (!dealer) return res.status(404).json({ ok: false, error: "Dealer not found" });
+
+    const review = await createDealerReview({
+      dealer_id: dealerId,
+      rating: Math.round(rating),
+      comment: cleanStr(req.body.comment, 2000),
+      reviewer_name: cleanStr(req.body.reviewerName || req.body.name, 120),
+    });
+
+    return res.json({ ok: true, review: { id: review.id, rating: review.rating } });
+  } catch (err) {
+    console.error("POST /api/public/dealer/:dealerId/reviews error:", err);
+    return res.status(500).json({ ok: false, error: "Could not save review" });
+  }
+});
+
+const reportSubmitLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 3,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { ok: false, error: "Too many reports. Try again later." },
+});
+
+app.post("/api/public/dealer/:dealerId/report", reportSubmitLimiter, async (req, res) => {
+  try {
+    const dealerId = cleanStr(req.params.dealerId, 60);
+    if (!isValidDealerId(dealerId)) {
+      return res.status(400).json({ ok: false, error: "Invalid dealerId" });
+    }
+    const reason = cleanStr(req.body.reason, 200);
+    if (!reason) return res.status(400).json({ ok: false, error: "Reason is required" });
+
+    const dealer = await getProfileByDealerId(dealerId);
+    if (!dealer) return res.status(404).json({ ok: false, error: "Dealer not found" });
+
+    const report = await createDealerReport({
+      dealer_id: dealerId,
+      reason,
+      details: cleanStr(req.body.details, 2000),
+      reporter_name: cleanStr(req.body.reporterName || req.body.name, 120),
+      reporter_email: cleanStr(req.body.reporterEmail || req.body.email, 120),
+      reporter_phone: cleanStr(req.body.reporterPhone || req.body.phone, 40),
+    });
+
+    const inbox = salesTeamInboxEmail();
+    if (inbox) {
+      sendDealerReportAlert({
+        inbox,
+        dealerId,
+        dealerName: dealer.name,
+        reason,
+        details: report.details,
+        reporterName: report.reporter_name,
+        reporterEmail: report.reporter_email,
+        reporterPhone: report.reporter_phone,
+      }).catch((e) => console.error("Report alert email error:", e));
+    }
+
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error("POST /api/public/dealer/:dealerId/report error:", err);
+    return res.status(500).json({ ok: false, error: "Could not submit report" });
   }
 });
 
@@ -1548,7 +1711,15 @@ app.post("/api/media/upload", requireActiveDealer, upload.array("files", 5), asy
     const resourceTypeOverride = ["image", "video"].includes(rawType) ? rawType : "";
 
     if (!dealerId) return res.status(401).json({ ok: false, error: "Dealer not found" });
-    if (!vehicleId) return res.status(400).json({ ok: false, error: "vehicleId is required" });
+    if (!vehicleId) return res.status(400).json({ ok: false, error: "Stock number is required before uploading photos." });
+
+    const dealer = await getProfileByDealerId(dealerId);
+    if (resourceTypeOverride === "video" && isFreeTierPlan(dealer)) {
+      return res.status(403).json({
+        ok: false,
+        error: "Video uploads are available on the paid plan. Upgrade to add walkaround videos to your listings.",
+      });
+    }
 
     const files = Array.isArray(req.files) ? req.files : [];
     if (!files.length) return res.status(400).json({ ok: false, error: "No files uploaded" });
@@ -1567,6 +1738,12 @@ app.post("/api/media/upload", requireActiveDealer, upload.array("files", 5), asy
     for (const file of files) {
       const detected = file.mimetype?.startsWith("video/") ? "video" : "image";
       const resourceType = resourceTypeOverride || detected;
+      if (resourceType === "video" && isFreeTierPlan(dealer)) {
+        return res.status(403).json({
+          ok: false,
+          error: "Video uploads are available on the paid plan. Upgrade to add walkaround videos to your listings.",
+        });
+      }
       if (!["image", "video"].includes(resourceType)) {
         return res.status(400).json({ ok: false, error: "Unsupported media type" });
       }
@@ -1608,19 +1785,31 @@ app.get("/api/dealer/vehicles", requireActiveDealer, async (req, res) => {
 app.post("/api/dealer/vehicles", requireActiveDealer, async (req, res) => {
   try {
     const dealerId = cleanStr(req.user?.dealerId, 60);
-    const vehicleId = cleanStr(req.body.vehicleId, 60);
+    let vehicleId = cleanStr(req.body.vehicleId, 60);
+
+    const dealer = await getProfileByDealerId(dealerId);
+    const videoUrl = cleanStr(req.body.cloudinaryVideoUrl || req.body.heroVideoUrl, 2000);
+    if (isFreeTierPlan(dealer) && videoUrl) {
+      return res.status(403).json({
+        ok: false,
+        error: "Video on listings is available on the paid plan. Remove videos or upgrade to save.",
+      });
+    }
 
     if (!vehicleId) {
-      return res.status(400).json({ ok: false, error: "vehicleId is required" });
+      vehicleId = await generateNextVehicleId(dealerId);
     }
 
     const existing = await getVehicleByVehicleId(vehicleId);
     if (existing && existing.dealer_id !== dealerId) {
-      return res.status(403).json({ ok: false, error: "Vehicle belongs to another dealer" });
+      return res.status(403).json({ ok: false, error: "This stock number belongs to another dealer." });
     }
 
+    const mapped = mapVehicleInput(req.body);
+    if (!mapped.status) mapped.status = "available";
+
     const fields = {
-      ...mapVehicleInput(req.body),
+      ...mapped,
       dealer_id: dealerId,
       vehicle_id: vehicleId,
     };
@@ -1633,10 +1822,11 @@ app.post("/api/dealer/vehicles", requireActiveDealer, async (req, res) => {
       return res.status(500).json({ ok: false, error: "Failed to save vehicle" });
     }
 
-    return res.json({ ok: true, vehicle: mapVehicleRow(vehicle) });
+    return res.json({ ok: true, vehicle: mapVehicleRow(vehicle), vehicleId });
   } catch (err) {
     console.error("POST /api/dealer/vehicles error:", err);
-    return res.status(500).json({ ok: false, error: "Internal Server Error" });
+    const mapped = mapVehicleSaveError(err);
+    return res.status(mapped.status).json({ ok: false, error: mapped.error });
   }
 });
 
@@ -1846,10 +2036,26 @@ app.post("/api/admin/dealers", requireAdmin, async (req, res) => {
       return res.status(500).json({ ok: false, error: "Failed to save dealer" });
     }
 
+    const isNew = !existing;
+    const wantWelcome =
+      profileEmail &&
+      passcode &&
+      (req.body.sendWelcomeEmail === true || (isNew && req.body.sendWelcomeEmail !== false));
+    if (wantWelcome) {
+      sendWelcomeEmail({
+        email: profileEmail,
+        dealerName: name,
+        dealerId,
+        passcode: passcode || fields.password,
+        plan: plan || "free",
+      }).catch((e) => console.error("Welcome email error:", e));
+    }
+
     return res.json({
       ok: true,
       dealer: { ...mapProfileRow(dealer), storefrontEnabled: hasPublicStorefront(dealer) },
       passcode,
+      emailSent: Boolean(wantWelcome),
     });
   } catch (err) {
     console.error("POST /api/admin/dealers error:", err);
@@ -1963,9 +2169,75 @@ app.post("/api/admin/reset-passcode", requireAdmin, async (req, res) => {
       return res.status(404).json({ ok: false, error: "Dealer not found" });
     }
 
-    return res.json({ ok: true, dealer: mapProfileRow(dealer), passcode });
+    const sendEmailFlag = toBool(req.body.sendEmail);
+    if (sendEmailFlag && existing.profile_email) {
+      sendAdminPasscodeEmail({
+        email: existing.profile_email,
+        dealerName: existing.name,
+        dealerId,
+        passcode,
+      }).catch((e) => console.error("Passcode email error:", e));
+    }
+
+    return res.json({ ok: true, dealer: mapProfileRow(dealer), passcode, emailSent: Boolean(sendEmailFlag) });
   } catch (err) {
     console.error("POST /api/admin/reset-passcode error:", err);
+    return res.status(500).json({ ok: false, error: "Internal Server Error" });
+  }
+});
+
+app.get("/api/admin/dealers/:dealerId/credentials", requireAdmin, async (req, res) => {
+  try {
+    const dealerId = cleanStr(req.params.dealerId, 60);
+    if (!isValidDealerId(dealerId)) {
+      return res.status(400).json({ ok: false, error: "Invalid dealerId" });
+    }
+    const dealer = await getProfileByDealerId(dealerId);
+    if (!dealer) return res.status(404).json({ ok: false, error: "Dealer not found" });
+    return res.json({ ok: true, passcode: dealer.password || "" });
+  } catch (err) {
+    console.error("GET /api/admin/dealers/:dealerId/credentials error:", err);
+    return res.status(500).json({ ok: false, error: "Internal Server Error" });
+  }
+});
+
+app.post("/api/admin/dealers/:dealerId/notify", requireAdmin, async (req, res) => {
+  try {
+    const dealerId = cleanStr(req.params.dealerId, 60);
+    const subject = cleanStr(req.body.subject, 200);
+    const message = cleanStr(req.body.message, 5000);
+    if (!isValidDealerId(dealerId)) {
+      return res.status(400).json({ ok: false, error: "Invalid dealerId" });
+    }
+    if (!subject || !message) {
+      return res.status(400).json({ ok: false, error: "subject and message are required" });
+    }
+    const dealer = await getProfileByDealerId(dealerId);
+    if (!dealer) return res.status(404).json({ ok: false, error: "Dealer not found" });
+    const email = cleanStr(dealer.profile_email, 120);
+    if (!email) return res.status(400).json({ ok: false, error: "Dealer has no email on file" });
+
+    const result = await sendDealerAdminNotice({
+      email,
+      dealerName: dealer.name,
+      dealerId,
+      subject,
+      message,
+    });
+    return res.json({ ok: true, sent: result.success, mock: result.mock });
+  } catch (err) {
+    console.error("POST /api/admin/dealers/:dealerId/notify error:", err);
+    return res.status(500).json({ ok: false, error: "Internal Server Error" });
+  }
+});
+
+app.get("/api/admin/reports", requireAdmin, async (req, res) => {
+  try {
+    const dealerId = cleanStr(req.query.dealerId, 60);
+    const reports = await listDealerReports({ dealerId: dealerId || undefined, limit: 100 });
+    return res.json({ ok: true, reports });
+  } catch (err) {
+    console.error("GET /api/admin/reports error:", err);
     return res.status(500).json({ ok: false, error: "Internal Server Error" });
   }
 });

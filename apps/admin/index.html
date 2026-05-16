@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Carsales · Admin Console</title>
   <meta name="description" content="Admin console for dealers, inventory, and requests." />
+  <link rel="stylesheet" href="/assets/css/acj-brand.css" />
 
   <style>
     :root{
@@ -318,7 +319,7 @@
   </style>
 </head>
 
-<body>
+<body class="acj-premium-shell">
   <div class="wrap">
 
     <!-- LOGIN -->
@@ -467,6 +468,15 @@
             </div>
 
             <div class="field">
+              <div class="label"><span>Work email</span><span>For welcome email</span></div>
+              <input id="newDealerEmail" class="input" type="email" placeholder="dealer@business.com" />
+            </div>
+            <div class="field">
+              <label style="display:flex;gap:8px;align-items:center;font-size:12px;cursor:pointer">
+                <input type="checkbox" id="newDealerSendWelcome" checked /> Email login details to dealer
+              </label>
+            </div>
+            <div class="field">
               <div class="label"><span>Passcode</span><span>Optional</span></div>
               <input id="newDealerPasscode" class="input" placeholder="123456" />
             </div>
@@ -501,6 +511,7 @@
                 <select id="bulkStatusSelect" class="select" style="width:auto">
                   <option value="">Bulk status...</option>
                   <option value="available">Mark Available</option>
+                  <option value="ready_for_import">Ready for Import</option>
                   <option value="sold">Mark Sold</option>
                   <option value="archived">Archive</option>
                 </select>
@@ -627,9 +638,13 @@
         </div>
 
         <div class="field">
+          <div class="label"><span>Work email</span>
+          <input id="mDealerEmail" class="input" type="email" placeholder="dealer@business.com" />
+        </div>
+        <div class="field">
           <div class="label"><span>Passcode (optional set)</span></div>
           <input id="mDealerPasscode" class="input" placeholder="123456" />
-        </div>
+        
 
         <div class="field">
           <div class="label"><span>Logo URL</span></div>
@@ -684,18 +699,26 @@
         </div>
 
         <div class="panel" style="margin-top:10px">
-          <h3>Passcode reset</h3>
-          <div class="hint">Reset generates a fresh passcode for the dealer (server returns it once).</div>
-
+          <h3 style="color:var(--brand)">Passcode & access</h3>
+          <div class="hint">Reveal the current passcode, set a custom one, or generate a new one.</div>
+          <div id="mDealerKpis" class="hint" style="margin-top:8px"></div>
           <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; justify-content:space-between; margin-top:8px">
             <div class="pill" style="box-shadow:none">
               <span class="dot on" style="box-shadow:none"></span>
-              <span>Latest passcode: <span class="mono" id="mPasscode">••••••</span></span>
+              <span>Passcode: <span class="mono" id="mPasscode">••••••</span></span>
             </div>
-            <div style="display:flex; gap:8px; flex-wrap:wrap">
-              <button class="btn btn-danger" id="btnResetPasscode" type="button">Reset passcode</button>
-              <button class="btn btn-primary" id="btnSaveDealer" type="button">Save changes</button>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;align-items:center">
+              <button class="btn btn-ghost" id="btnRevealPasscode" type="button">Reveal</button>
+              <label style="font-size:11px;display:flex;gap:6px;align-items:center"><input type="checkbox" id="resetSendEmail" /> Email on reset</label>
+              <button class="btn btn-danger" id="btnResetPasscode" type="button">Generate new</button>
+              <button class="btn btn-primary" id="btnSaveDealer" type="button">Save custom</button>
             </div>
+          </div>
+          <div class="field" style="margin-top:12px">
+            <div class="label"><span>Notify dealer</span></div>
+            <input id="notifySubject" class="input" placeholder="Subject" />
+            <textarea id="notifyMessage" class="input" rows="3" placeholder="Message to dealer" style="margin-top:8px;min-height:72px"></textarea>
+            <button class="btn btn-ghost" type="button" id="btnNotifyDealer" style="margin-top:8px">Send email</button>
           </div>
 
           <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px">
@@ -771,6 +794,8 @@
       newDealerId: el("newDealerId"),
       newDealerStatus: el("newDealerStatus"),
       newDealerPlan: el("newDealerPlan"),
+      newDealerEmail: el("newDealerEmail"),
+      newDealerSendWelcome: el("newDealerSendWelcome"),
       newDealerPasscode: el("newDealerPasscode"),
       newDealerWhatsApp: el("newDealerWhatsApp"),
       newDealerLogo: el("newDealerLogo"),
@@ -809,7 +834,14 @@
       mDealerStatus: el("mDealerStatus"),
       mDealerPlan: el("mDealerPlan"),
       mDealerWhatsApp: el("mDealerWhatsApp"),
+      mDealerEmail: el("mDealerEmail"),
       mDealerPasscode: el("mDealerPasscode"),
+      btnRevealPasscode: el("btnRevealPasscode"),
+      resetSendEmail: el("resetSendEmail"),
+      notifySubject: el("notifySubject"),
+      notifyMessage: el("notifyMessage"),
+      btnNotifyDealer: el("btnNotifyDealer"),
+      mDealerKpis: el("mDealerKpis"),
       mDealerLogo: el("mDealerLogo"),
       mLogoFile: el("mLogoFile"),
       btnUploadLogo: el("btnUploadLogo"),
@@ -899,6 +931,8 @@
       ui.dealerBackdrop.addEventListener("click", (e)=>{ if(e.target === ui.dealerBackdrop) closeDealerModal(); });
 
       ui.btnResetPasscode.addEventListener("click", resetPasscode);
+      ui.btnRevealPasscode?.addEventListener("click", () => revealPasscode().catch(()=>{}));
+      ui.btnNotifyDealer?.addEventListener("click", () => notifyDealer().catch(()=>{}));
     ui.btnSaveDealer.addEventListener("click", saveDealerChanges);
     ui.btnUploadLogo?.addEventListener("click", () => uploadAdminProfileMedia("logo"));
     ui.btnUploadHero?.addEventListener("click", () => uploadAdminProfileMedia("hero_video"));
@@ -1345,6 +1379,7 @@
     function fillCreateFromApplication(app) {
       ui.newDealerName.value = app.businessName || "";
       ui.newDealerWhatsApp.value = app.whatsapp || "";
+      if(ui.newDealerEmail) ui.newDealerEmail.value = app.email || "";
       ui.newDealerPlan.value = "free";
       ui.newDealerId.value = "";
       ui.newDealerPasscode.value = "";
@@ -1509,6 +1544,8 @@
           passcode: (ui.newDealerPasscode.value||"").trim(),
           whatsapp: digits(ui.newDealerWhatsApp.value||""),
           logoUrl: (ui.newDealerLogo.value||"").trim(),
+          profileEmail: (ui.newDealerEmail?.value||"").trim(),
+          sendWelcomeEmail: ui.newDealerSendWelcome?.checked !== false,
         };
 
       if(!payload.name || !payload.dealerId){
@@ -1668,6 +1705,7 @@
       ui.mDealerPlan.value = (dealer.plan || "").toLowerCase();
       ui.mDealerWhatsApp.value = dealer.whatsapp || "";
       ui.mDealerPasscode.value = "";
+      if(ui.mDealerEmail) ui.mDealerEmail.value = dealer.email || "";
       ui.mDealerLogo.value = dealer.logoUrl || "";
       if(ui.mDescription) ui.mDescription.value = dealer.description || "";
       if(ui.mLocationLabel) ui.mLocationLabel.value = dealer.locationLabel || "";
@@ -1688,6 +1726,7 @@
 
       ui.mPasscode.textContent = state.demoPasscodes[dealer.dealerId] || "••••••";
 
+      loadDealerKpis(dealer.dealerId);
       ui.dealerBackdrop.classList.add("show");
       ui.dealerBackdrop.setAttribute("aria-hidden","false");
     }
@@ -1704,6 +1743,7 @@
       const payload = {
         dealerId: (ui.mDealerId.value||"").trim(),
         name: (ui.mDealerName.value||"").trim(),
+        profileEmail: (ui.mDealerEmail?.value||"").trim(),
         status: (ui.mDealerStatus.value||"active").toLowerCase(),
         plan: (ui.mDealerPlan.value||"").trim().toLowerCase(),
         whatsapp: digits(ui.mDealerWhatsApp.value||""),
@@ -1757,6 +1797,56 @@
       }
     }
 
+
+    async function revealPasscode(){
+      if(!state.selectedDealer) return;
+      const dealerId = (ui.mDealerId.value||"").trim();
+      try{
+        const res = await fetch(`/api/admin/dealers/${encodeURIComponent(dealerId)}/credentials`, { headers: authHeaders() });
+        const data = await safeJson(res);
+        if(!res.ok || !data?.ok) throw new Error(data?.error || "Reveal failed");
+        ui.mPasscode.textContent = data.passcode || "—";
+        toast("Passcode revealed.", "success");
+      }catch(e){
+        ui.mStatus.textContent = e?.message || "Reveal failed";
+        ui.mStatus.classList.add("error");
+      }
+    }
+
+    async function notifyDealer(){
+      if(!state.selectedDealer) return;
+      const dealerId = (ui.mDealerId.value||"").trim();
+      const subject = (ui.notifySubject?.value||"").trim();
+      const message = (ui.notifyMessage?.value||"").trim();
+      if(!subject || !message){ ui.mStatus.textContent = "Subject and message required."; return; }
+      try{
+        const res = await fetch(`/api/admin/dealers/${encodeURIComponent(dealerId)}/notify`, {
+          method:"POST",
+          headers:{ ...authHeaders(), "Content-Type":"application/json" },
+          body: JSON.stringify({ subject, message })
+        });
+        const data = await safeJson(res);
+        if(!res.ok || !data?.ok) throw new Error(data?.error || "Send failed");
+        ui.mStatus.textContent = data.sent ? "Email sent." : "Email logged (mock).";
+        toast("Notification sent.", "success");
+      }catch(e){
+        ui.mStatus.textContent = e?.message || "Send failed";
+        ui.mStatus.classList.add("error");
+      }
+    }
+
+    async function loadDealerKpis(dealerId){
+      if(!ui.mDealerKpis || !state.apiOnline) return;
+      try{
+        const month = new Date().toISOString().slice(0,7);
+        const res = await fetch(API.summary(month), { headers: authHeaders() });
+        const data = await safeJson(res);
+        const row = (data?.summary?.dealers || []).find(d => d.dealerId === dealerId);
+        if(!row){ ui.mDealerKpis.textContent = ""; return; }
+        ui.mDealerKpis.innerHTML = `<strong style="color:var(--brand)">This month:</strong> ${row.inventory} vehicles · ${row.available} available · ${row.requests} requests · ${row.new} new · ${row.booked} booked`;
+      }catch(_){ ui.mDealerKpis.textContent = ""; }
+    }
+
     async function resetPasscode(){
       if(!state.selectedDealer) return;
 
@@ -1779,7 +1869,7 @@
         const res = await fetch(API.resetPass(), {
           method:"POST",
           headers:{ ...authHeaders(), "Content-Type":"application/json", "Accept":"application/json" },
-          body: JSON.stringify({ dealerId })
+          body: JSON.stringify({ dealerId, sendEmail: ui.resetSendEmail?.checked === true })
         });
         const data = await safeJson(res);
         if(!res.ok || !data?.ok) throw new Error(data?.error || "Reset failed");
