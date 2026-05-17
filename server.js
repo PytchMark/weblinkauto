@@ -11,27 +11,6 @@ require("dotenv").config();
 
 const crypto = require("crypto");
 const path = require("path");
-const fs = require("fs");
-
-// #region agent log
-const DEBUG_LOG_PATH = path.join(__dirname, ".cursor/debug-10f3b0.log");
-function agentDebugLog(location, message, data, hypothesisId) {
-  try {
-    const line =
-      JSON.stringify({
-        sessionId: "10f3b0",
-        location,
-        message,
-        data,
-        hypothesisId,
-        timestamp: Date.now(),
-      }) + "\n";
-    fs.appendFileSync(DEBUG_LOG_PATH, line);
-  } catch (_e) {
-    /* ignore */
-  }
-}
-// #endregion
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
@@ -70,6 +49,10 @@ const {
   createVehicle,
   updateVehicleByVehicleId,
   archiveVehicle,
+  unarchiveVehicle,
+  insertAuditLog,
+  listAuditLogs,
+  listQualityQueueVehicles,
   listVehicles,
   createViewingRequest,
   updateViewingRequestByRequestId,
@@ -270,7 +253,7 @@ function enrichVehicleRow(vehicle, dealer) {
     ...row,
     financingAvailable: vehicle.financing_available === true,
     acjQualityVerified: vehicle.acj_quality_verified === true,
-    showInMarketplace: vehicle.show_in_marketplace === true,
+    showInMarketplace: vehicle.show_in_marketplace !== false,
     marketplaceLive: isVehicleMarketplaceLive(vehicle, marketplaceQualityRequired()),
     marketplaceStatus: marketplaceStatusForVehicle(vehicle, dealer),
     listedAt: vehicle.listed_at || vehicle.created_at || "",
@@ -363,8 +346,12 @@ function isMarketplaceEligibleDealer(dealer) {
   return isFreeTierPlan(dealer) && cleanStr(dealer.status, 30).toLowerCase() === "active";
 }
 
+function isVehicleHiddenFromMarketplace(vehicle) {
+  return vehicle?.show_in_marketplace === false;
+}
+
 function isVehicleMarketplaceLive(vehicle, requireQuality) {
-  if (!vehicle || vehicle.show_in_marketplace !== true) return false;
+  if (!vehicle || isVehicleHiddenFromMarketplace(vehicle)) return false;
   if (requireQuality && vehicle.acj_quality_verified !== true) return false;
   return true;
 }
@@ -373,8 +360,8 @@ function marketplaceStatusForVehicle(vehicle, dealer) {
   if (!isMarketplaceEligibleDealer(dealer)) {
     return { key: "ineligible", label: "Use your paid storefront" };
   }
-  if (vehicle?.show_in_marketplace !== true) {
-    return { key: "off", label: "Not listed" };
+  if (isVehicleHiddenFromMarketplace(vehicle)) {
+    return { key: "off", label: "Hidden from marketplace" };
   }
   if (marketplaceQualityRequired() && vehicle.acj_quality_verified !== true) {
     return { key: "pending", label: "Pending ACJ review" };
@@ -382,17 +369,20 @@ function marketplaceStatusForVehicle(vehicle, dealer) {
   return { key: "live", label: "Live on marketplace" };
 }
 
-function applyDealerMarketplaceOptIn(body, mapped, dealer) {
+function applyDealerMarketplaceOptIn(body, mapped, dealer, existing) {
   if (!isMarketplaceEligibleDealer(dealer)) {
     if (body.showInMarketplace !== undefined || body.show_in_marketplace !== undefined) {
       mapped.show_in_marketplace = false;
     }
     return null;
   }
-  if (body.showInMarketplace === undefined && body.show_in_marketplace === undefined) {
+  if (body.showInMarketplace !== undefined || body.show_in_marketplace !== undefined) {
+    mapped.show_in_marketplace = toBool(body.showInMarketplace ?? body.show_in_marketplace);
     return null;
   }
-  mapped.show_in_marketplace = toBool(body.showInMarketplace ?? body.show_in_marketplace);
+  if (!existing) {
+    mapped.show_in_marketplace = true;
+  }
   return null;
 }
 
@@ -913,8 +903,37 @@ function mapProfileRow(profile) {
     plan: profile.plan || "",
     trialEndsAt: profile.trial_ends_at || "",
     stripeSubscriptionStatus: profile.stripe_subscription_status || "",
+    updatedAt: profile.updated_at || profile.created_at || "",
+    createdAt: profile.created_at || "",
     ...mapProfileFields(profile),
   };
+}
+
+function mapAuditRow(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    actorRole: row.actor_role || "",
+    actorId: row.actor_id || "",
+    action: row.action || "",
+    entityType: row.entity_type || "",
+    entityId: row.entity_id || "",
+    detail: row.detail || {},
+    createdAt: row.created_at || "",
+  };
+}
+
+function recordAudit(req, { action, entityType, entityId, detail } = {}) {
+  const actorRole = req.user?.role === "admin" ? "admin" : "dealer";
+  const actorId = actorRole === "admin" ? cleanStr(req.user?.sub || "admin", 80) : cleanStr(req.user?.dealerId, 80);
+  insertAuditLog({
+    actor_role: actorRole,
+    actor_id: actorId,
+    action: cleanStr(action, 80),
+    entity_type: cleanStr(entityType, 60) || null,
+    entity_id: cleanStr(entityId, 80) || null,
+    detail: detail && typeof detail === "object" ? detail : {},
+  }).catch((err) => console.error("audit log:", err?.message || err));
 }
 
 function mapDealerPortalProfile(profile) {
@@ -981,7 +1000,7 @@ function mapVehicleRow(vehicle) {
     Mileage: vehicle.mileage || "",
     Color: vehicle.color || "",
     Status: vehicle.status || "",
-    showInMarketplace: vehicle.show_in_marketplace === true,
+    showInMarketplace: vehicle.show_in_marketplace !== false,
     acjQualityVerified: vehicle.acj_quality_verified === true,
   };
 }
@@ -1363,7 +1382,7 @@ app.get("/api/public/marketplace/config", (_req, res) => {
     config: {
       reservationDepositPct: defaultMarketplaceReservationPct(),
       qualityPolicy:
-        "Listings from verified free-plan dealers. Every vehicle is reviewed by the ACJ team before buyers see it in the marketplace.",
+        "All available stock from active free-plan dealers. When quality review is enabled, only ACJ-approved units are shown.",
       marketplacePath: "/marketplace",
     },
   });
@@ -1371,19 +1390,8 @@ app.get("/api/public/marketplace/config", (_req, res) => {
 
 app.get("/api/public/marketplace/vehicles", async (req, res) => {
   try {
-    // #region agent log
-    agentDebugLog("server.js:marketplace/vehicles", "request start", { requireQualityEnv: marketplaceQualityRequired() }, "A");
-    // #endregion
     const requireQuality = marketplaceQualityRequired();
     const { vehicles, dealers } = await getMarketplaceVehicles({ requireQuality });
-    // #region agent log
-    agentDebugLog(
-      "server.js:marketplace/vehicles",
-      "getMarketplaceVehicles ok",
-      { vehicleCount: vehicles?.length, dealerCount: dealers?.length },
-      "A"
-    );
-    // #endregion
     const dealerById = new Map(dealers.map((d) => [d.dealer_id, d]));
     const activeStatuses = new Set(["available", "active", "in_transit", "in transit", "reserved", "pending"]);
 
@@ -1402,26 +1410,14 @@ app.get("/api/public/marketplace/vehicles", async (req, res) => {
       meta: {
         count: rows.length,
         qualityPolicy: requireQuality
-          ? "Dealer opted in and ACJ quality-verified listings only."
-          : "Dealer opted-in listings from verified free-plan dealers.",
+          ? "Active free-plan listings that passed ACJ quality review."
+          : "All available inventory from active free-plan dealers.",
         reservationDepositPct: defaultMarketplaceReservationPct(),
       },
     });
   } catch (err) {
     console.error("GET /api/public/marketplace/vehicles error:", err);
-    // #region agent log
-    agentDebugLog(
-      "server.js:marketplace/vehicles",
-      "handler error",
-      { message: err?.message, name: err?.name },
-      "A"
-    );
-    // #endregion
-    const payload = { ok: false, error: "Internal Server Error" };
-    if (req.get("X-Debug-Session-Id") === "10f3b0") {
-      payload.detail = err?.message || String(err);
-    }
-    return res.status(500).json(payload);
+    return res.status(500).json({ ok: false, error: "Internal Server Error" });
   }
 });
 
@@ -2203,7 +2199,7 @@ app.post("/api/dealer/vehicles", requireActiveDealer, async (req, res) => {
       return res.status(400).json({ ok: false, error: statusErr });
     }
 
-    applyDealerMarketplaceOptIn(req.body, mapped, dealer);
+    applyDealerMarketplaceOptIn(req.body, mapped, dealer, existing);
 
     const fields = {
       ...mapped,
@@ -2249,6 +2245,12 @@ app.post("/api/dealer/vehicles/:vehicleId/archive", requireActiveDealer, async (
     }
 
     const updated = await archiveVehicle(vehicleId);
+    recordAudit(req, {
+      action: "vehicle.archive",
+      entityType: "vehicle",
+      entityId: vehicleId,
+      detail: { dealerId },
+    });
 
     return res.json({ ok: true, vehicle: mapVehicleRow(updated) });
   } catch (err) {
@@ -2591,6 +2593,12 @@ app.patch("/api/admin/vehicles/:vehicleId/quality", requireAdmin, async (req, re
     const verified = toBool(req.body.acjQualityVerified ?? req.body.verified);
     const vehicle = await updateVehicleByVehicleId(vehicleId, { acj_quality_verified: verified });
     const dealer = await getProfileByDealerId(vehicle.dealer_id);
+    recordAudit(req, {
+      action: verified ? "vehicle.quality_approved" : "vehicle.quality_revoked",
+      entityType: "vehicle",
+      entityId: vehicleId,
+      detail: { dealerId: vehicle.dealer_id },
+    });
     return res.json({ ok: true, vehicle: enrichVehicleRow(vehicle, dealer) });
   } catch (err) {
     console.error("PATCH /api/admin/vehicles/:vehicleId/quality error:", err);
@@ -2693,12 +2701,107 @@ app.get("/api/admin/reports", requireAdmin, async (req, res) => {
   }
 });
 
+app.post("/api/dealer/vehicles/:vehicleId/unarchive", requireActiveDealer, async (req, res) => {
+  try {
+    const vehicleId = cleanStr(req.params.vehicleId, 60);
+    const dealerId = cleanStr(req.user?.dealerId, 60);
+    const existing = await getVehicleByVehicleId(vehicleId);
+    if (!existing) return res.status(404).json({ ok: false, error: "Vehicle not found" });
+    if (existing.dealer_id !== dealerId) {
+      return res.status(403).json({ ok: false, error: "Vehicle belongs to another dealer" });
+    }
+    const updated = await unarchiveVehicle(vehicleId);
+    recordAudit(req, {
+      action: "vehicle.unarchive",
+      entityType: "vehicle",
+      entityId: vehicleId,
+      detail: { dealerId },
+    });
+    return res.json({ ok: true, vehicle: mapVehicleRow(updated) });
+  } catch (err) {
+    console.error("POST /api/dealer/vehicles/:vehicleId/unarchive error:", err);
+    return res.status(500).json({ ok: false, error: "Internal Server Error" });
+  }
+});
+
+app.post("/api/dealer/vehicles/bulk", requireActiveDealer, async (req, res) => {
+  try {
+    const dealerId = cleanStr(req.user?.dealerId, 60);
+    const vehicleIds = Array.isArray(req.body.vehicleIds) ? req.body.vehicleIds.map((id) => cleanStr(id, 60)).filter(Boolean) : [];
+    const action = cleanStr(req.body.action, 40).toLowerCase();
+    if (!vehicleIds.length) return res.status(400).json({ ok: false, error: "vehicleIds required" });
+
+    let updated = 0;
+    for (const vehicleId of vehicleIds) {
+      const existing = await getVehicleByVehicleId(vehicleId);
+      if (!existing || existing.dealer_id !== dealerId) continue;
+      let fields = null;
+      if (action === "mark_sold") fields = { status: "sold" };
+      else if (action === "marketplace_on") fields = { show_in_marketplace: true };
+      else if (action === "marketplace_off") fields = { show_in_marketplace: false };
+      else if (action === "mark_available") fields = { status: "available", archived: false, availability: true };
+      if (!fields) continue;
+      await updateVehicleByVehicleId(vehicleId, fields);
+      updated += 1;
+    }
+    recordAudit(req, {
+      action: "vehicle.bulk",
+      entityType: "vehicle",
+      entityId: vehicleIds.join(","),
+      detail: { action, count: updated },
+    });
+    return res.json({ ok: true, updated });
+  } catch (err) {
+    console.error("POST /api/dealer/vehicles/bulk error:", err);
+    return res.status(500).json({ ok: false, error: "Internal Server Error" });
+  }
+});
+
+app.get("/api/admin/vehicles/quality-queue", requireAdmin, async (req, res) => {
+  try {
+    const vehicles = await listQualityQueueVehicles();
+    const dealerIds = [...new Set(vehicles.map((v) => v.dealer_id).filter(Boolean))];
+    const profiles = dealerIds.length ? await listProfiles({}) : [];
+    const dealerById = new Map(profiles.map((p) => [p.dealer_id, p]));
+    const rows = vehicles.map((v) => {
+      const dealer = dealerById.get(v.dealer_id);
+      return {
+        ...mapVehicleRow(v),
+        dealerName: dealer?.name || "",
+        dealerPlan: dealer?.plan || "",
+      };
+    });
+    return res.json({ ok: true, vehicles: rows });
+  } catch (err) {
+    console.error("GET /api/admin/vehicles/quality-queue error:", err);
+    return res.status(500).json({ ok: false, error: "Internal Server Error" });
+  }
+});
+
+app.get("/api/admin/audit-log", requireAdmin, async (req, res) => {
+  try {
+    const limit = Math.min(Number(req.query.limit) || 150, 500);
+    const rows = await listAuditLogs({ limit });
+    return res.json({ ok: true, entries: rows.map(mapAuditRow) });
+  } catch (err) {
+    console.error("GET /api/admin/audit-log error:", err);
+    return res.status(500).json({ ok: false, error: "Internal Server Error" });
+  }
+});
+
 app.get("/api/admin/inventory", requireAdmin, async (req, res) => {
   try {
     const dealerId = cleanStr(req.query.dealerId, 60);
     const status = normalizeVehicleStatus(req.query.status);
     const vehicles = await listVehicles({ dealerId, status });
-    return res.json({ ok: true, vehicles: vehicles.map(mapVehicleRow) });
+    return res.json({
+      ok: true,
+      vehicles: vehicles.map((v) => ({
+        ...mapVehicleRow(v),
+        updatedAt: v.updated_at || v.created_at || "",
+        createdAt: v.created_at || "",
+      })),
+    });
   } catch (err) {
     console.error("GET /api/admin/inventory error:", err);
     return res.status(500).json({ ok: false, error: "Internal Server Error" });

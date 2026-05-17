@@ -73,7 +73,6 @@ alter table vehicles add column if not exists hero_video_url text;
 ```
 
 **Verify:**
-
 ```sql
 select column_name from information_schema.columns
 where table_name = 'vehicles'
@@ -105,7 +104,7 @@ select to_regclass('public.sell_submissions');
 
 **File:** [`scripts/migrate-vehicle-marketplace-opt-in.sql`](scripts/migrate-vehicle-marketplace-opt-in.sql)
 
-Adds `show_in_marketplace` so verified free-plan dealers can choose which units appear on `/marketplace`. When `MARKETPLACE_REQUIRE_QUALITY=1`, ACJ must still approve via `acj_quality_verified`.
+Adds `show_in_marketplace` (dealers can hide a unit). Free-plan stock is listed on `/marketplace` by default. Run [`migrate-marketplace-free-plan-auto-list.sql`](scripts/migrate-marketplace-free-plan-auto-list.sql) to backfill legacy rows. When `MARKETPLACE_REQUIRE_QUALITY=1`, ACJ must still approve via `acj_quality_verified`.
 
 **Verify:**
 
@@ -144,9 +143,11 @@ Run the full [`supabase_schema.sql`](supabase_schema.sql) once instead of the st
 | 3 | Run `migrate-marketplace.sql` | Supabase SQL Editor |
 | 4 | Run `migrate-vehicle-status-scheduling.sql` | Supabase SQL Editor |
 | 5 | Run `migrate-vehicle-marketplace-opt-in.sql` | Supabase SQL Editor |
-| 6 | Confirm env vars (especially `APP_BASE_URL`, Stripe, Resend) | Cloud Run |
-| 7 | Deploy API + static apps | Cloud Run |
-| 8 | Hard-refresh browsers | Landing, dealer, storefront |
+| 6 | Run `migrate-marketplace-free-plan-auto-list.sql` | Supabase SQL Editor |
+| 7 | Run `migrate-audit-log.sql` | Supabase SQL Editor |
+| 8 | Confirm env vars (especially `APP_BASE_URL`, Stripe, Resend) | Cloud Run |
+| 9 | Deploy API + static apps | Cloud Run |
+| 10 | Hard-refresh browsers | Landing, dealer, storefront |
 
 ---
 

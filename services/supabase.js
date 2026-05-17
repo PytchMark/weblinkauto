@@ -102,6 +102,43 @@ async function archiveVehicle(vehicleId) {
   return unwrap(result, "vehicle archive");
 }
 
+async function unarchiveVehicle(vehicleId) {
+  const result = await supabase
+    .from("vehicles")
+    .update({ archived: false, status: "available", availability: true })
+    .eq("vehicle_id", vehicleId)
+    .select("*")
+    .single();
+  return unwrap(result, "vehicle unarchive");
+}
+
+async function insertAuditLog(fields) {
+  const result = await supabase.from("audit_log").insert(fields).select("*").single();
+  return unwrap(result, "audit log insert");
+}
+
+async function listAuditLogs({ limit = 150 } = {}) {
+  const result = await supabase
+    .from("audit_log")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  return unwrap(result, "audit log list") || [];
+}
+
+async function listQualityQueueVehicles() {
+  const dealerIds = await listFreePlanDealerIds();
+  if (!dealerIds.length) return [];
+  const result = await supabase
+    .from("vehicles")
+    .select("*")
+    .in("dealer_id", dealerIds)
+    .eq("archived", false)
+    .eq("acj_quality_verified", false)
+    .order("listed_at", { ascending: false, nullsFirst: false });
+  return unwrap(result, "quality queue vehicles") || [];
+}
+
 async function listVehicles({ dealerId, status, monthStart, monthEnd } = {}) {
   let query = supabase.from("vehicles").select("*");
   if (dealerId) query = query.eq("dealer_id", dealerId);
@@ -212,80 +249,14 @@ async function getMarketplaceVehicles({ requireQuality = false } = {}) {
     .select("*")
     .in("dealer_id", dealerIds)
     .eq("archived", false)
-    .eq("availability", true)
-    .eq("show_in_marketplace", true);
+    .eq("availability", true);
 
   if (requireQuality) {
     query = query.eq("acj_quality_verified", true);
   }
 
-  let result = await query.order("listed_at", { ascending: false, nullsFirst: false });
-
-  const isMissingShowInMarketplaceColumn = (err) =>
-    err &&
-    /show_in_marketplace/i.test(String(err.message || "")) &&
-    /column|schema cache/i.test(String(err.message || ""));
-
-  // #region agent log
-  if (result.error) {
-    try {
-      const fs = require("fs");
-      const path = require("path");
-      fs.appendFileSync(
-        path.join(__dirname, "..", ".cursor/debug-10f3b0.log"),
-        JSON.stringify({
-          sessionId: "10f3b0",
-          location: "supabase.js:getMarketplaceVehicles",
-          message: "vehicles query error",
-          data: { code: result.error.code, message: result.error.message, hint: result.error.hint },
-          hypothesisId: "A",
-          timestamp: Date.now(),
-        }) + "\n"
-      );
-    } catch (_e) {
-      /* ignore */
-    }
-  }
-  // #endregion
-
-  if (result.error && isMissingShowInMarketplaceColumn(result.error)) {
-    // #region agent log
-    try {
-      const fs = require("fs");
-      const path = require("path");
-      fs.appendFileSync(
-        path.join(__dirname, "..", ".cursor/debug-10f3b0.log"),
-        JSON.stringify({
-          sessionId: "10f3b0",
-          location: "supabase.js:getMarketplaceVehicles",
-          message: "fallback query without show_in_marketplace",
-          data: { requireQuality },
-          hypothesisId: "A",
-          timestamp: Date.now(),
-        }) + "\n"
-      );
-    } catch (_e) {
-      /* ignore */
-    }
-    // #endregion
-    let fallback = supabase
-      .from("vehicles")
-      .select("*")
-      .in("dealer_id", dealerIds)
-      .eq("archived", false)
-      .eq("availability", true);
-    if (requireQuality) fallback = fallback.eq("acj_quality_verified", true);
-    result = await fallback.order("listed_at", { ascending: false, nullsFirst: false });
-  }
-
-  let vehicles = unwrap(result, "marketplace vehicles") || [];
-
-  const hasOptInColumn = vehicles.some((v) =>
-    Object.prototype.hasOwnProperty.call(v, "show_in_marketplace")
-  );
-  if (hasOptInColumn) {
-    vehicles = vehicles.filter((v) => v.show_in_marketplace === true);
-  }
+  const result = await query.order("listed_at", { ascending: false, nullsFirst: false });
+  const vehicles = unwrap(result, "marketplace vehicles") || [];
 
   const profileResult = await supabase.from("profiles").select("*").in("dealer_id", dealerIds);
   const dealers = unwrap(profileResult, "marketplace dealer profiles") || [];
@@ -324,6 +295,10 @@ module.exports = {
   createVehicle,
   updateVehicleByVehicleId,
   archiveVehicle,
+  unarchiveVehicle,
+  insertAuditLog,
+  listAuditLogs,
+  listQualityQueueVehicles,
   listVehicles,
   createViewingRequest,
   updateViewingRequestByRequestId,
