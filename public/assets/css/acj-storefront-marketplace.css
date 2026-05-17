@@ -1,0 +1,280 @@
+/* ACJ Marketplace — Griffiths-style cards, trust strip, filters */
+
+body.mp-mode .dealer-bar,
+body.mp-mode #discoveryPanel,
+body.mp-mode #buyerGuide,
+body.mp-mode .hero-media {
+  display: none !important;
+}
+
+body.mp-mode .hero {
+  min-height: auto;
+}
+
+body.mp-mode .hero-card {
+  max-width: 100%;
+}
+
+.mp-trust-band {
+  display: none;
+  background: #0b0b0b;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0;
+}
+
+body.mp-mode .mp-trust-band {
+  display: block;
+}
+
+.mp-filters {
+  display: none;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+
+body.mp-mode .mp-filters {
+  display: block;
+}
+
+body.mp-mode .control-bar--dealer {
+  display: none;
+}
+
+.mp-filters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+  align-items: end;
+}
+
+.mp-filters-grid label {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--muted);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.mp-filters-grid select,
+.mp-filters-grid input {
+  width: 100%;
+  height: 38px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  padding: 0 10px;
+  font: inherit;
+  background: var(--surface);
+}
+
+.mp-filters-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.card--mp .media {
+  position: relative;
+  aspect-ratio: 4/3;
+  background: #111;
+  overflow: hidden;
+}
+
+.card--mp .media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.card--mp .photo-scrub {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  gap: 2px;
+  padding: 6px 8px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.55));
+}
+
+.card--mp .photo-scrub span {
+  flex: 1;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.card--mp .photo-scrub span.on {
+  background: #fff;
+}
+
+.card--mp .photo-more {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+}
+
+.card--mp .posted-age {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.card--mp .veh-title {
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.card--mp .price {
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--brand);
+  font-family: var(--acj-font-data);
+}
+
+.card--mp .reserve-line {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.card--mp .reserve-line em {
+  font-style: normal;
+  color: var(--brand);
+}
+
+.card--mp .spec-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.card--mp .spec-row .spec-i {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.card--mp .spec-row svg {
+  width: 14px;
+  height: 14px;
+  opacity: 0.7;
+}
+
+.card--mp .dealer-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.card--mp .dealer-chip img {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.card--mp .financing-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.card--mp .card-actions {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.card--mp .card-actions .btn-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.badge.status-in-transit {
+  background: #1e3a8a;
+  color: #fff;
+}
+
+.badge.status-reserved {
+  background: #7c2d12;
+  color: #fff;
+}
+
+.mp-free-cta {
+  text-align: center;
+  padding: 28px 20px;
+  border-radius: var(--radius-lg);
+  background: var(--brand-soft);
+  border: 1px solid rgba(196, 30, 58, 0.2);
+}
+
+.mp-free-cta .btn {
+  margin-top: 12px;
+}
+
+.mp-fab-sell {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 40;
+  display: none;
+  box-shadow: 0 16px 40px rgba(196, 30, 58, 0.35);
+}
+
+body.mp-mode .mp-fab-sell {
+  display: inline-flex;
+}
+
+.mp-calc-panel {
+  margin-top: 12px;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--surface-soft);
+  font-size: 13px;
+}
+
+.mp-calc-panel .calc-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.mp-calc-result {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--brand);
+  font-family: var(--acj-font-data);
+}
+
+.mp-calc-disclaimer {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 8px;
+}

@@ -3,6 +3,13 @@
 
   const reducedMotionQuery = global.matchMedia("(prefers-reduced-motion: reduce)");
 
+  const MOTION = {
+    reveal: { duration: 0.42, y: 14, ease: "power3.out", start: "top 90%" },
+    stagger: { duration: 0.36, y: 12, stagger: 0.04, ease: "power3.out", start: "top 88%" },
+    hero: { duration: 0.52, y: 18, stagger: 0.07, ease: "power3.out" },
+    modal: { overlay: 0.18, panel: 0.24 },
+  };
+
   function prefersReducedMotion() {
     return reducedMotionQuery.matches;
   }
@@ -25,6 +32,20 @@
     return true;
   }
 
+  function resolveNodes(selectorOrNodes) {
+    if (!selectorOrNodes) return [];
+    if (typeof selectorOrNodes === "string") {
+      return Array.from(document.querySelectorAll(selectorOrNodes));
+    }
+    if (selectorOrNodes instanceof Element) return [selectorOrNodes];
+    if (Array.isArray(selectorOrNodes)) return selectorOrNodes.filter(Boolean);
+    return [];
+  }
+
+  function markVisible(nodes) {
+    nodes.forEach((node) => node.classList.add("is-visible"));
+  }
+
   function killAll() {
     if (global.ScrollTrigger) global.ScrollTrigger.killAll();
     if (global.lenis && typeof global.lenis.destroy === "function") {
@@ -36,7 +57,7 @@
   function initLenis(options) {
     if (prefersReducedMotion() || !global.Lenis) return null;
     const lenis = new global.Lenis({
-      duration: 1.1,
+      duration: 0.85,
       smoothWheel: true,
       ...options,
     });
@@ -60,30 +81,78 @@
     return lenis;
   }
 
+  /** Fade/slide each matched element when it enters the viewport (no page-wide delay stack). */
   function revealOnScroll(selector, options) {
-    const nodes = Array.from(document.querySelectorAll(selector));
+    const nodes = resolveNodes(selector);
     if (!nodes.length) return;
 
     if (!registerScrollTrigger() || prefersReducedMotion()) {
-      nodes.forEach((node) => node.classList.add("is-visible"));
+      markVisible(nodes);
       return;
     }
 
-    nodes.forEach((node, index) => {
+    const duration = options?.duration ?? MOTION.reveal.duration;
+    const y = options?.y ?? MOTION.reveal.y;
+    const ease = options?.ease ?? MOTION.reveal.ease;
+    const start = options?.start ?? MOTION.reveal.start;
+
+    nodes.forEach((node) => {
       global.gsap.fromTo(
         node,
-        { autoAlpha: 0, y: options?.y ?? 28 },
+        { autoAlpha: 0, y },
         {
           autoAlpha: 1,
           y: 0,
-          duration: options?.duration ?? 0.7,
-          delay: (options?.stagger ?? 0.08) * index,
-          ease: options?.ease ?? "power2.out",
+          duration,
+          ease,
           scrollTrigger: {
             trigger: node,
-            start: options?.start ?? "top 88%",
-            toggleActions: "play none none reverse",
+            start,
+            once: true,
+            toggleActions: "play none none none",
           },
+          onComplete: () => node.classList.add("is-visible"),
+        }
+      );
+    });
+  }
+
+  /** Stagger children inside each parent when the parent scrolls into view. */
+  function revealGroup(parentSelector, childSelector, options) {
+    const parents = resolveNodes(parentSelector);
+    if (!parents.length) return;
+
+    if (!registerScrollTrigger() || prefersReducedMotion()) {
+      parents.forEach((parent) => markVisible(Array.from(parent.querySelectorAll(childSelector))));
+      return;
+    }
+
+    const duration = options?.duration ?? MOTION.stagger.duration;
+    const y = options?.y ?? MOTION.stagger.y;
+    const stagger = options?.stagger ?? MOTION.stagger.stagger;
+    const ease = options?.ease ?? MOTION.stagger.ease;
+    const start = options?.start ?? MOTION.stagger.start;
+
+    parents.forEach((parent) => {
+      const children = Array.from(parent.querySelectorAll(childSelector));
+      if (!children.length) return;
+
+      global.gsap.fromTo(
+        children,
+        { autoAlpha: 0, y },
+        {
+          autoAlpha: 1,
+          y: 0,
+          duration,
+          stagger,
+          ease,
+          scrollTrigger: {
+            trigger: parent,
+            start,
+            once: true,
+            toggleActions: "play none none none",
+          },
+          onComplete: () => children.forEach((child) => child.classList.add("is-visible")),
         }
       );
     });
@@ -122,48 +191,56 @@
   }
 
   function staggerChildren(parentSelector, childSelector, options) {
-    const parent = document.querySelector(parentSelector);
+    const parents = resolveNodes(parentSelector);
+    const parent = parents[0] || null;
     if (!parent) return;
     const children = Array.from(parent.querySelectorAll(childSelector));
     if (!children.length) return;
 
     if (!registerScrollTrigger() || prefersReducedMotion()) {
-      children.forEach((child) => child.classList.add("is-visible"));
+      markVisible(children);
       return;
     }
 
     global.gsap.fromTo(
       children,
-      { autoAlpha: 0, y: options?.y ?? 20 },
+      { autoAlpha: 0, y: options?.y ?? MOTION.stagger.y },
       {
         autoAlpha: 1,
         y: 0,
-        duration: options?.duration ?? 0.45,
-        stagger: options?.stagger ?? 0.06,
-        ease: "power2.out",
+        duration: options?.duration ?? MOTION.stagger.duration,
+        stagger: options?.stagger ?? MOTION.stagger.stagger,
+        ease: options?.ease ?? MOTION.stagger.ease,
         scrollTrigger: {
           trigger: parent,
-          start: options?.start ?? "top 85%",
+          start: options?.start ?? MOTION.stagger.start,
+          once: true,
+          toggleActions: "play none none none",
         },
+        onComplete: () => markVisible(children),
       }
     );
   }
 
-  function heroIntro(selectors) {
+  function heroIntro(selectors, options) {
+    const selectorList = Array.isArray(selectors) ? selectors : [selectors];
+    const nodes = selectorList.flatMap((sel) => Array.from(document.querySelectorAll(sel)));
+
+    if (!nodes.length) return;
+
     if (!ensureGsap() || prefersReducedMotion()) {
-      selectors.forEach((selector) => {
-        document.querySelectorAll(selector).forEach((node) => node.classList.add("is-visible"));
-      });
+      markVisible(nodes);
       return;
     }
 
     registerScrollTrigger();
-    global.gsap.from(selectors.join(","), {
+    global.gsap.from(nodes, {
       autoAlpha: 0,
-      y: 24,
-      duration: 0.8,
-      stagger: 0.12,
-      ease: "power2.out",
+      y: options?.y ?? MOTION.hero.y,
+      duration: options?.duration ?? MOTION.hero.duration,
+      stagger: options?.stagger ?? MOTION.hero.stagger,
+      ease: options?.ease ?? MOTION.hero.ease,
+      onComplete: () => markVisible(nodes),
     });
   }
 
@@ -176,13 +253,13 @@
       { scale: 1 },
       {
         scale: 1.03,
-        duration: 0.35,
+        duration: 0.28,
         yoyo: true,
         repeat: 1,
-        ease: "power1.inOut",
+        ease: "power2.inOut",
         scrollTrigger: {
           trigger: node,
-          start: "top 80%",
+          start: "top 82%",
           once: true,
         },
       }
@@ -199,16 +276,24 @@
     if (open) {
       overlay.classList.add("show");
       overlay.setAttribute("aria-hidden", "false");
-      global.gsap.fromTo(overlay, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.22, ease: "power1.out" });
-      global.gsap.fromTo(panel, { y: 24, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.28, ease: "power2.out" });
+      global.gsap.fromTo(
+        overlay,
+        { autoAlpha: 0 },
+        { autoAlpha: 1, duration: MOTION.modal.overlay, ease: "power2.out" }
+      );
+      global.gsap.fromTo(
+        panel,
+        { y: 16, autoAlpha: 0 },
+        { y: 0, autoAlpha: 1, duration: MOTION.modal.panel, ease: "power3.out" }
+      );
       return;
     }
 
     global.gsap.to(panel, {
-      y: 16,
+      y: 12,
       autoAlpha: 0,
-      duration: 0.2,
-      ease: "power1.in",
+      duration: 0.16,
+      ease: "power2.in",
       onComplete: () => {
         overlay.classList.remove("show");
         overlay.setAttribute("aria-hidden", "true");
@@ -216,7 +301,7 @@
         global.gsap.set(panel, { clearProps: "all" });
       },
     });
-    global.gsap.to(overlay, { autoAlpha: 0, duration: 0.2, ease: "power1.in" });
+    global.gsap.to(overlay, { autoAlpha: 0, duration: 0.16, ease: "power2.in" });
   }
 
   const ACJMotion = {
@@ -224,6 +309,7 @@
     whenReady,
     initLenis,
     revealOnScroll,
+    revealGroup,
     pinSection,
     parallaxLayer,
     staggerChildren,

@@ -286,7 +286,7 @@ select:focus-visible {
 
 .acj-reveal {
   opacity: 0;
-  transform: translateY(24px);
+  transform: translateY(14px);
 }
 
 .acj-reveal.is-visible {

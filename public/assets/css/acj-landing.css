@@ -33,6 +33,8 @@ body.acj-body.landing-page {
   font-family: "Plus Jakarta Sans", var(--acj-font-body);
   color: var(--landing-ink);
   background: var(--landing-surface);
+  overflow-x: clip;
+  -webkit-text-size-adjust: 100%;
   --landing-marquee-h: 38px;
   --landing-header-gap: 12px;
   --landing-header-min-h: 56px;
@@ -538,23 +540,42 @@ body.acj-body.landing-page {
   color: var(--landing-muted);
 }
 
-/* Pricing cards */
+/* Pricing cards — mobile first */
 .landing-pricing-grid {
   display: grid;
-  gap: 24px;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+  .landing-pricing-grid {
+    gap: 24px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .landing-price-card {
   background: var(--landing-bg);
   border-radius: var(--landing-radius-lg);
   border: 1px solid var(--landing-border-strong);
-  padding: 28px;
+  padding: clamp(18px, 4vw, 28px);
   display: flex;
   flex-direction: column;
   gap: 14px;
   box-shadow: var(--landing-shadow);
   transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+  min-width: 0;
+}
+
+.landing-price-card .acj-btn,
+.landing-compare-matrix-ctas .acj-btn,
+.landing-mobile-bar .acj-btn {
+  min-height: 48px;
+}
+
+.landing-price-card .acj-input,
+.landing-price-card .acj-textarea {
+  font-size: 16px;
 }
 
 .landing-price-card:hover {
@@ -1807,6 +1828,30 @@ body.acj-body.landing-page {
   }
 }
 
+@media (max-width: 767px) {
+  .landing-pricing-grid .landing-price-card--featured {
+    order: -1;
+  }
+
+  .landing-section-head h2 {
+    font-size: clamp(1.45rem, 5.5vw, 2rem);
+    line-height: 1.15;
+  }
+
+  .landing-plan-benefit-item {
+    font-size: 15px;
+  }
+
+  .landing-hamburger {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .landing-header {
+    width: calc(100% - 16px);
+  }
+}
+
 @media (max-width: 960px) {
   .landing-hero {
     grid-template-columns: 1fr;
@@ -1911,5 +1956,11 @@ body.acj-body.landing-page {
 
   body.landing-page {
     padding-bottom: 88px;
+  }
+}
+
+@media (max-width: 520px) {
+  .landing-value-strip {
+    grid-template-columns: 1fr;
   }
 }

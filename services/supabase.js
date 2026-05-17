@@ -191,6 +191,59 @@ async function listDealerReports({ dealerId, limit = 100 } = {}) {
   return unwrap(result, "dealer reports list") || [];
 }
 
+async function listFreePlanDealerIds() {
+  const result = await supabase
+    .from("profiles")
+    .select("dealer_id, plan, status")
+    .eq("status", "active");
+  const rows = unwrap(result, "free plan dealers") || [];
+  return rows
+    .filter((row) => String(row.plan || "").toLowerCase() === "free")
+    .map((row) => row.dealer_id)
+    .filter(Boolean);
+}
+
+async function getMarketplaceVehicles({ requireQuality = false } = {}) {
+  const dealerIds = await listFreePlanDealerIds();
+  if (!dealerIds.length) return { vehicles: [], dealers: [] };
+
+  let query = supabase
+    .from("vehicles")
+    .select("*")
+    .in("dealer_id", dealerIds)
+    .eq("archived", false)
+    .eq("availability", true);
+
+  if (requireQuality) {
+    query = query.eq("acj_quality_verified", true);
+  }
+
+  const result = await query.order("listed_at", { ascending: false, nullsFirst: false });
+  const vehicles = unwrap(result, "marketplace vehicles") || [];
+
+  const profileResult = await supabase.from("profiles").select("*").in("dealer_id", dealerIds);
+  const dealers = unwrap(profileResult, "marketplace dealer profiles") || [];
+
+  return { vehicles, dealers };
+}
+
+async function insertSellSubmission(fields) {
+  const result = await supabase.from("sell_submissions").insert(fields).select("*").single();
+  return unwrap(result, "sell submission insert");
+}
+
+async function listSellSubmissions({ status } = {}) {
+  let query = supabase.from("sell_submissions").select("*");
+  if (status) query = query.eq("status", status);
+  const result = await query.order("created_at", { ascending: false });
+  return unwrap(result, "sell submissions list") || [];
+}
+
+async function updateSellSubmissionById(id, fields) {
+  const result = await supabase.from("sell_submissions").update(fields).eq("id", id).select("*").single();
+  return unwrap(result, "sell submission update");
+}
+
 module.exports = {
   getProfileByDealerId,
   getProfileByEmail,
@@ -217,4 +270,8 @@ module.exports = {
   createDealerReview,
   createDealerReport,
   listDealerReports,
+  getMarketplaceVehicles,
+  insertSellSubmission,
+  listSellSubmissions,
+  updateSellSubmissionById,
 };

@@ -2,6 +2,8 @@
 
 Multi-dealer inventory, storefront, dealer portal, and admin console. Express API on Cloud Run, Supabase Postgres, Cloudinary media, Stripe subscriptions, and **Resend** transactional email.
 
+**Deploying updates?** See **[SETUP.md](SETUP.md)** for SQL migration order, new env vars, and a post-deploy checklist.
+
 ---
 
 ## Apps and URLs
@@ -119,14 +121,31 @@ where table_name = 'vehicles'
 
 You should see two rows. If not, re-run the migration and wait ~30 seconds for Supabase’s schema cache to refresh.
 
-#### Step 2 — Other incremental updates (if not already applied)
+#### Step 2 — ACJ Marketplace columns and sell-your-car table
+
+After hero columns are in place, run [`scripts/migrate-marketplace.sql`](scripts/migrate-marketplace.sql) to add marketplace fields (`financing_available`, `acj_quality_verified`, `listed_at`, `profiles.reservation_deposit_pct`) and the `sell_submissions` table.
+
+Then run [`scripts/migrate-vehicle-status-scheduling.sql`](scripts/migrate-vehicle-status-scheduling.sql) so paid-plan dealers can set **In Transit** (`expected_arrival_at`) and **Reserved** (`reserved_until`) on vehicles.
+
+**Verify:**
+
+```sql
+select column_name from information_schema.columns
+where table_name = 'vehicles'
+  and column_name in ('financing_available', 'acj_quality_verified', 'listed_at');
+select column_name from information_schema.columns
+where table_name = 'profiles' and column_name = 'reservation_deposit_pct';
+select to_regclass('public.sell_submissions');
+```
+
+#### Step 3 — Other incremental updates (if not already applied)
 
 Re-run the `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` blocks at the top of [`supabase_schema.sql`](supabase_schema.sql) (profiles, storefront fields, etc.) and ensure these tables exist:
 
 - `dealer_reviews` — buyer star ratings on storefront
 - `dealer_reports` — buyer “Report Dealer” submissions
 
-#### Step 3 — Match Cloud Run environment
+#### Step 4 — Match Cloud Run environment
 
 In **Google Cloud Run** (or your host), confirm the service uses the **same** Supabase project as the SQL editor:
 
@@ -137,12 +156,13 @@ In **Google Cloud Run** (or your host), confirm the service uses the **same** Su
 
 Redeploy Cloud Run after changing env vars.
 
-#### Step 4 — Smoke test after migration
+#### Step 5 — Smoke test after migration
 
 1. Deploy the latest `main` branch to Cloud Run.
 2. Dealer portal → **Inventory** → **Add Vehicle** → fill title and save → should succeed (no `hero_image_url` error).
 3. **Add photos** → pick files → **Upload selected files** → gallery fills → **Save Vehicle** again.
 4. Storefront → confirm the vehicle and hero image appear.
+5. Storefront → `/marketplace` loads aggregated free-plan inventory; reserve request and sell-your-car form submit.
 
 ### Coordination checklist (deploy day)
 
@@ -150,11 +170,13 @@ Redeploy Cloud Run after changing env vars.
 |-------|--------|--------|
 | 1 | Merge/pull latest `main` | GitHub |
 | 2 | Run `migrate-vehicles-hero-columns.sql` | Supabase SQL Editor |
-| 3 | Verify `hero_image_url` / `hero_video_url` columns | Supabase Table Editor or verify query above |
-| 4 | Deploy / redeploy API + static apps | Cloud Run |
-| 5 | Hard-refresh `/landing` and test dealer save + upload | Browser |
+| 3 | Run `migrate-marketplace.sql` | Supabase SQL Editor |
+| 4 | Run `migrate-vehicle-status-scheduling.sql` | Supabase SQL Editor |
+| 5 | Verify hero + marketplace + status columns / `sell_submissions` | Supabase Table Editor or verify queries in SETUP.md |
+| 6 | Deploy / redeploy API + static apps | Cloud Run |
+| 7 | Hard-refresh `/marketplace`, dealer save, sell form, In Transit/Reserved | Browser |
 
-Tables: `profiles`, `vehicles`, `viewing_requests`, `dealer_applications`, `dealer_reviews`, `dealer_reports`.
+Tables: `profiles`, `vehicles`, `viewing_requests`, `dealer_applications`, `dealer_reviews`, `dealer_reports`, `sell_submissions`.
 
 ---
 

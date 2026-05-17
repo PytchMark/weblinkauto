@@ -1,0 +1,76 @@
+/* Griffiths-style diagonal status ribbons on vehicle cards */
+
+.media.has-status-ribbon .badge {
+  display: none;
+}
+
+.status-ribbon {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 2;
+}
+
+.status-ribbon__band {
+  position: absolute;
+  top: 50%;
+  left: -35%;
+  width: 170%;
+  height: 38%;
+  transform: translateY(-50%) rotate(-14deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.status-ribbon--transit .status-ribbon__band {
+  background: rgba(26, 92, 58, 0.88);
+}
+
+.status-ribbon--reserved .status-ribbon__band {
+  background: rgba(232, 163, 23, 0.92);
+}
+
+.status-ribbon__text {
+  transform: rotate(0deg);
+  text-align: center;
+  line-height: 1.15;
+  padding: 0 12px;
+  max-width: 90%;
+}
+
+.status-ribbon--transit .status-ribbon__title {
+  display: block;
+  font-size: clamp(18px, 3.2vw, 26px);
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #fff;
+}
+
+.status-ribbon--transit .status-ribbon__sub {
+  display: block;
+  margin-top: 4px;
+  font-size: clamp(10px, 1.6vw, 13px);
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.status-ribbon--reserved .status-ribbon__title {
+  display: block;
+  font-size: clamp(18px, 3.2vw, 26px);
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #111;
+}
+
+.status-ribbon--reserved .status-ribbon__sub {
+  display: block;
+  margin-top: 4px;
+  font-size: clamp(10px, 1.6vw, 13px);
+  font-weight: 700;
+  color: #1a1a1a;
+  font-variant-numeric: tabular-nums;
+}

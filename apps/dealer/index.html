@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>Dealer Portal · Inventory & Requests</title>
   <meta name="description" content="Dealer portal to manage inventory, requests, and performance." />
 
@@ -592,6 +592,8 @@
                 <button type="button" class="segBtn" data-status="available" aria-pressed="false">On the lot</button>
                 <button type="button" class="segBtn" data-status="ready_for_import" aria-pressed="false">Ready for Import</button>
                 <button type="button" class="segBtn" data-status="pending" aria-pressed="false">Pending</button>
+                <button type="button" class="segBtn segBtn--paid" data-status="in_transit" aria-pressed="false" hidden>In Transit</button>
+                <button type="button" class="segBtn segBtn--paid" data-status="reserved" aria-pressed="false" hidden>Reserved</button>
                 <button type="button" class="segBtn" data-status="sold" aria-pressed="false">Sold</button>
                 <button type="button" class="segBtn" data-status="archived" aria-pressed="false">Archived</button>
               </div>
@@ -738,6 +740,11 @@
                 <label for="profileReviews">Reviews highlight (optional)</label>
                 <textarea class="field" id="profileReviews" rows="2" placeholder="e.g. Rated 4.8 on Google — 120+ reviews"></textarea>
               </div>
+              <div>
+                <label for="profileReservationPct">Reservation deposit % (paid plan)</label>
+                <input class="field" id="profileReservationPct" type="number" min="1" max="50" step="0.1" placeholder="Leave blank for platform default (3.3%)" />
+                <p class="help">Optional override for “Reserve for” on your branded storefront. Free-plan listings appear in the ACJ Marketplace after quality review.</p>
+              </div>
               <div class="row">
                 <div><label for="profileWebsite">Website</label><input class="field" id="profileWebsite" placeholder="https://…" /></div>
                 <div><label for="profileInstagram">Instagram</label><input class="field" id="profileInstagram" placeholder="https://instagram.com/…" /></div>
@@ -798,9 +805,33 @@
               <option value="available">On the lot</option>
               <option value="ready_for_import">Ready for Import</option>
               <option value="pending">Pending</option>
+              <option value="in_transit" data-paid-only="true" hidden disabled>In Transit</option>
+              <option value="reserved" data-paid-only="true" hidden disabled>Reserved</option>
               <option value="sold">Sold</option>
               <option value="archived">Archived</option>
             </select>
+            <p class="help" id="paidStatusHint" style="display:none;margin-top:8px;max-width:52ch;line-height:1.45">
+              <strong>Paid plan:</strong> Show buyers when a unit is <em>In Transit</em> (with expected arrival) or <em>Reserved</em> (with a countdown on your storefront).
+            </p>
+            <div id="statusSchedulingFields" style="display:none;margin-top:12px">
+              <div id="expectedArrivalField" style="display:none">
+                <label for="expectedArrivalAt">Expected arrival date</label>
+                <input class="field" type="date" id="expectedArrivalAt" />
+              </div>
+              <div id="reservedUntilField" style="display:none">
+                <label for="reservedUntil">Reservation ends at</label>
+                <input class="field" type="datetime-local" id="reservedUntil" />
+                <p class="help" style="margin:8px 0 6px">Or set duration from now:</p>
+                <label for="reservedDurationDays">Reservation duration</label>
+                <select class="field" id="reservedDurationDays">
+                  <option value="">Use end time above</option>
+                  <option value="1">1 day</option>
+                  <option value="3">3 days</option>
+                  <option value="7">7 days</option>
+                  <option value="14">14 days</option>
+                </select>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -941,6 +972,13 @@
         </div>
 
         <div class="row">
+          <div>
+            <label for="financingAvailable">Financing available</label>
+            <select class="field" id="financingAvailable">
+              <option value="false">No</option>
+              <option value="true">Yes — show badge to buyers</option>
+            </select>
+          </div>
           <div>
             <label for="availability">Availability (storefront)</label>
             <select class="field" id="availability">
@@ -1083,6 +1121,7 @@
   const profileWhatsapp = $('#profileWhatsapp');
   const profileMapsUrl = $('#profileMapsUrl');
   const profileReviews = $('#profileReviews');
+  const profileReservationPct = $('#profileReservationPct');
   const profileWebsite = $('#profileWebsite');
   const profileInstagram = $('#profileInstagram');
   const profileFacebook = $('#profileFacebook');
@@ -1173,6 +1212,8 @@
     if(x === 'sold') return '<span class="pill slate"><span class="d"></span>Sold</span>';
     if(x === 'archived') return '<span class="pill slate"><span class="d"></span>Archived</span>';
     if(x === 'ready_for_import') return '<span class="pill warn"><span class="d"></span>Ready for Import</span>';
+    if(x === 'in_transit') return '<span class="pill ok"><span class="d"></span>In Transit</span>';
+    if(x === 'reserved') return '<span class="pill warn"><span class="d"></span>Reserved</span>';
     return '<span class="pill slate"><span class="d"></span>' + escapeHtml(s || '—') + '</span>';
   }
 
@@ -1311,12 +1352,17 @@
     if(profileWhatsapp) profileWhatsapp.value = d.whatsapp || '';
     if(profileMapsUrl) profileMapsUrl.value = d.googleMapsUrl || '';
     if(profileReviews) profileReviews.value = d.reviewsHighlight || '';
+    if(profileReservationPct){
+      const pct = d.reservationDepositPct;
+      profileReservationPct.value = pct != null && pct !== '' ? String(pct) : '';
+    }
     const socials = d.socials || {};
     if(profileWebsite) profileWebsite.value = socials.website || '';
     if(profileInstagram) profileInstagram.value = socials.instagram || '';
     if(profileFacebook) profileFacebook.value = socials.facebook || '';
     if(profileTiktok) profileTiktok.value = socials.tiktok || '';
     if(profileHeroStatus) profileHeroStatus.textContent = d.heroVideoUrl ? 'Custom hero video uploaded.' : 'Using platform default until you upload one.';
+    updatePaidStatusOptions();
     if(profileLogoPreview){
       const logo = d.logoUrl || '';
       profileLogoPreview.innerHTML = logo
@@ -1334,6 +1380,7 @@
         whatsapp: profileWhatsapp?.value?.trim() || '',
         googleMapsUrl: profileMapsUrl?.value?.trim() || '',
         reviewsHighlight: profileReviews?.value?.trim() || '',
+        reservationDepositPct: profileReservationPct?.value?.trim() ? Number(profileReservationPct.value) : null,
         socialWebsite: profileWebsite?.value?.trim() || '',
         socialInstagram: profileInstagram?.value?.trim() || '',
         socialFacebook: profileFacebook?.value?.trim() || '',
@@ -1680,6 +1727,57 @@
     };
   }
 
+
+  function dealerHasPaidStorefront(){
+    return Boolean(STATE.dealer?.storefrontEnabled);
+  }
+
+  function toDateInputValue(iso){
+    if(!iso) return '';
+    const d = new Date(iso);
+    if(Number.isNaN(d.getTime())) return '';
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  }
+
+  function toDatetimeLocalValue(iso){
+    if(!iso) return '';
+    const d = new Date(iso);
+    if(Number.isNaN(d.getTime())) return '';
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+
+  function updatePaidStatusOptions(){
+    const paid = dealerHasPaidStorefront();
+    const hint = $('#paidStatusHint');
+    if(hint) hint.style.display = paid ? 'block' : 'none';
+    $$('#status option[data-paid-only]').forEach((opt) => {
+      opt.hidden = !paid;
+      opt.disabled = !paid;
+    });
+    $$('.segBtn--paid').forEach((btn) => {
+      btn.hidden = !paid;
+    });
+    if(!paid && ['in_transit', 'reserved'].includes($('#status').value)){
+      $('#status').value = 'available';
+    }
+    syncStatusSchedulingFields();
+  }
+
+  function syncStatusSchedulingFields(){
+    const status = $('#status').value;
+    const paid = dealerHasPaidStorefront();
+    const wrap = $('#statusSchedulingFields');
+    const arrival = $('#expectedArrivalField');
+    const reserved = $('#reservedUntilField');
+    if(!wrap) return;
+    const show = paid && (status === 'in_transit' || status === 'reserved');
+    wrap.style.display = show ? 'block' : 'none';
+    if(arrival) arrival.style.display = status === 'in_transit' ? 'block' : 'none';
+    if(reserved) reserved.style.display = status === 'reserved' ? 'block' : 'none';
+  }
+
   /** ---------------------------
    * Vehicle editor
    * --------------------------*/
@@ -1698,6 +1796,10 @@
     $('#availability').value = 'true';
     $('#archived').value = 'false';
     $('#status').value = 'available';
+    if($('#expectedArrivalAt')) $('#expectedArrivalAt').value = '';
+    if($('#reservedUntil')) $('#reservedUntil').value = '';
+    if($('#reservedDurationDays')) $('#reservedDurationDays').value = '';
+    syncStatusSchedulingFields();
   }
 
   function openVehicleEditor(v=null){
@@ -1707,6 +1809,14 @@
       drawerTitle.textContent = 'Edit Vehicle';
       $('#vehicleId').value = v.vehicleId || v['Vehicle ID'] || '';
       $('#status').value = String(v.status || v.Status || 'available').toLowerCase();
+      if($('#expectedArrivalAt')){
+        $('#expectedArrivalAt').value = toDateInputValue(v.expectedArrivalAt || v.expected_arrival_at || '');
+      }
+      if($('#reservedUntil')){
+        $('#reservedUntil').value = toDatetimeLocalValue(v.reservedUntil || v.reserved_until || '');
+      }
+      if($('#reservedDurationDays')) $('#reservedDurationDays').value = '';
+      syncStatusSchedulingFields();
       $('#title').value = v.title || '';
       $('#make').value = v.Make || v.make || '';
       $('#model').value = v.Model || v.model || '';
@@ -1725,6 +1835,9 @@
       heroVideoUrl.value = v.heroVideoUrl || v.hero_video_url || '';
       $('#availability').value = String(v.Availability === true ? 'true' : 'false');
       $('#archived').value = String(v.archived === true ? 'true' : 'false');
+      if($('#financingAvailable')){
+        $('#financingAvailable').value = String(v.financingAvailable === true ? 'true' : 'false');
+      }
 
       archiveVehicleBtn.style.display = 'inline-flex';
       archiveVehicleBtn.onclick = async () => {
@@ -1751,8 +1864,7 @@
   }
 
   function buildVehiclePayload(){
-    // Build save payload
-    return {
+    const payload = {
       vehicleId: cleanStr($('#vehicleId').value, 60) || undefined,
       status: cleanStr($('#status').value, 20),
       title: cleanStr($('#title').value, 120),
@@ -1773,7 +1885,20 @@
       heroVideoUrl: cleanStr(heroVideoUrl.value, 2000),
       Availability: $('#availability').value === 'true',
       archived: $('#archived').value === 'true',
+      financingAvailable: $('#financingAvailable')?.value === 'true',
     };
+    const st = payload.status;
+    if (st === "in_transit") {
+      const d = $("#expectedArrivalAt")?.value;
+      if (d) payload.expectedArrivalAt = new Date(d + "T12:00:00").toISOString();
+    }
+    if (st === "reserved") {
+      const until = $("#reservedUntil")?.value;
+      const days = Number($("#reservedDurationDays")?.value || 0);
+      if (until) payload.reservedUntil = new Date(until).toISOString();
+      else if (days > 0) payload.reservedDurationDays = days;
+    }
+    return payload;
   }
 
   function parseUrlList(raw){
@@ -2068,6 +2193,7 @@
     // Dealer profile
     const me = await apiGet('/api/dealer/me');
     STATE.dealer = me.dealer;
+    updatePaidStatusOptions();
     updateVideoUploadVisibility();
     applyBranding();
 
@@ -2152,6 +2278,14 @@
   });
   cloudinaryVideoUrl.addEventListener('input', () => {
     renderVideoGallery();
+  });
+
+  $('#status').addEventListener('change', syncStatusSchedulingFields);
+  $('#reservedDurationDays')?.addEventListener('change', () => {
+    if($('#reservedDurationDays').value) $('#reservedUntil').value = '';
+  });
+  $('#reservedUntil')?.addEventListener('change', () => {
+    if($('#reservedUntil').value) $('#reservedDurationDays').value = '';
   });
 
   // Inventory filters

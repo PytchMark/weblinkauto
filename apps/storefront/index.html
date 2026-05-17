@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   
   <!-- #27 SEO Meta Tags - Dynamic (updated by JS) -->
   <title>Dealer Storefront · Auto Concierge Jamaica</title>
@@ -29,6 +29,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="/assets/css/acj-brand.css" />
   <link rel="stylesheet" href="/assets/css/acj-loader.css" />
+  <link rel="stylesheet" href="/assets/css/acj-landing.css" />
+  <link rel="stylesheet" href="/assets/css/acj-storefront-marketplace.css" />
+  <link rel="stylesheet" href="/assets/css/acj-status-ribbon.css" />
 
   <style>
     :root{
@@ -647,7 +650,7 @@
       opacity:0;
       transform:translateY(10px);
     }
-    .card.show{opacity:1;transform:translateY(0);transition:transform .35s ease, opacity .35s ease, box-shadow .12s ease}
+    .card.show{opacity:1;transform:translateY(0);transition:transform .28s cubic-bezier(.22,1,.36,1), opacity .28s cubic-bezier(.22,1,.36,1), box-shadow .12s ease}
     .card:hover{transform:translateY(-4px);box-shadow:0 30px 60px rgba(15,23,42,.16)}
 
     .media{aspect-ratio:16/10;background:#f1f1f1;position:relative;overflow:hidden}
@@ -835,6 +838,10 @@
       </div>
       <div class="head-actions">
         <button id="scrollBtn" class="btn btn-primary btn-gloss">Browse vehicles</button>
+        <button type="button" class="btn btn-outline" id="marketplaceBtn" title="ACJ Marketplace">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          Marketplace
+        </button>
         <a class="btn btn-outline" href="/landing">Become a Dealer</a>
         <a class="btn btn-ghost btn-icon" href="/dealer" aria-label="Dealer login">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
@@ -920,13 +927,45 @@
     </div>
   </section>
 
-  <section class="control-bar">
+  <section class="mp-trust-band" id="mpTrustBand" aria-label="Marketplace trust highlights">
+    <div class="landing-trust-marquee">
+      <div class="landing-trust-marquee-track landing-trust-marquee-track--hero">
+        <article class="landing-trust-card landing-trust-card--light"><h3>Delivery &amp; document support</h3><p>Coordination and document preparation support for buyers through purchase.</p></article>
+        <article class="landing-trust-card landing-trust-card--brand"><h3>Quality-checked listings</h3><p>Every listing passes the ACJ quality review — not random classifieds.</p></article>
+        <article class="landing-trust-card landing-trust-card--light"><h3>Verified dealers only</h3><p>Commission-tier dealers vetted by our team — real businesses, real stock.</p></article>
+        <article class="landing-trust-card landing-trust-card--brand"><h3>Reserve with confidence</h3><p>Request a reservation hold — our team follows up (no online deposit in v1).</p></article>
+        <article class="landing-trust-card landing-trust-card--light"><h3>Delivery &amp; document support</h3><p>Coordination and document preparation support for buyers through purchase.</p></article>
+        <article class="landing-trust-card landing-trust-card--brand"><h3>Quality-checked listings</h3><p>Every listing passes the ACJ quality review — not random classifieds.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section class="mp-filters" id="mpFilters">
+    <div class="wrap">
+      <div class="mp-filters-grid">
+        <div><label for="mpFilterMake">Make</label><select id="mpFilterMake"><option value="">All makes</option></select></div>
+        <div><label for="mpFilterModel">Model</label><input id="mpFilterModel" type="text" placeholder="e.g. Corolla" /></div>
+        <div><label for="mpFilterMinPrice">Min price (J$)</label><input id="mpFilterMinPrice" type="number" min="0" /></div>
+        <div><label for="mpFilterMaxPrice">Max price (J$)</label><input id="mpFilterMaxPrice" type="number" min="0" /></div>
+        <div><label for="mpFilterFuel">Fuel</label><select id="mpFilterFuel"><option value="">Any</option><option>Gas</option><option>Diesel</option><option>Hybrid</option><option>Electric</option></select></div>
+        <div><label for="mpFilterTransmission">Transmission</label><select id="mpFilterTransmission"><option value="">Any</option><option>Automatic</option><option>Manual</option><option>CVT</option></select></div>
+        <div><label for="mpFilterSort">Sort</label><select id="mpFilterSort"><option value="newest">Newest</option><option value="price_asc">Price ↑</option><option value="price_desc">Price ↓</option></select></div>
+      </div>
+      <div class="mp-filters-actions">
+        <label style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:800"><input type="checkbox" id="mpFilterFinancing" /> Financing only</label>
+        <button type="button" class="btn btn-primary btn-gloss" id="mpApplyFilters">Apply filters</button>
+        <button type="button" class="btn btn-ghost" id="mpClearFilters">Clear</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="control-bar control-bar--dealer">
     <div class="wrap">
       <div class="control-wrap">
         <div class="control-title">Dealer ID</div>
         <div class="chip" style="flex:1 1 280px">
           <span>Dealer ID</span>
-          <input id="dealerIdInput" placeholder="DEALER-0001" />
+          <input id="dealerIdInput" placeholder="DEALER-0001 or Marketplace" />
         </div>
         <div class="search" style="flex:1 1 240px">
           <span>⌕</span>
@@ -1128,6 +1167,70 @@
   </div>
 </div>
 
+<button type="button" class="btn btn-primary mp-fab-sell" id="sellFab">Sell your car</button>
+
+<div class="overlay" id="reserveModalOverlay" aria-hidden="true" style="display:none;place-items:center">
+  <div class="modal" id="reserveModal" role="dialog" aria-modal="true" style="max-width:480px">
+    <div class="modal-head">
+      <div class="modal-title">Reserve this vehicle</div>
+      <button class="btn btn-ghost" type="button" id="reserveModalClose">Close</button>
+    </div>
+    <div class="modal-body">
+      <p id="reserveVehicleLabel" style="font-weight:900;margin:0 0 8px"></p>
+      <p id="reserveDepositLabel" style="font-size:13px;color:var(--muted);line-height:1.5;margin:0 0 14px"></p>
+      <form id="reserveForm">
+        <div class="form-field"><label for="reserveName">Your name</label><input class="input" id="reserveName" required /></div>
+        <div class="form-field"><label for="reservePhone">Phone</label><input class="input" id="reservePhone" required /></div>
+        <div class="form-field"><label for="reserveEmail">Email (optional)</label><input class="input" id="reserveEmail" type="email" /></div>
+        <div class="form-field"><label for="reserveNotes">Notes</label><textarea class="textarea" id="reserveNotes" rows="3"></textarea></div>
+        <button class="btn btn-primary btn-gloss" type="submit" id="reserveSubmitBtn">Submit reservation request</button>
+        <div class="success-box" id="reserveSuccess" style="display:none;margin-top:10px">Request sent. ACJ will contact you shortly.</div>
+        <div id="reserveError" style="font-size:12px;color:#991b1b;margin-top:8px"></div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="calcModalOverlay" aria-hidden="true" style="display:none;place-items:center">
+  <div class="modal" role="dialog" style="max-width:440px">
+    <div class="modal-head"><div class="modal-title">Loan calculator</div><button class="btn btn-ghost" type="button" id="calcModalClose">Close</button></div>
+    <div class="modal-body mp-calc-panel" style="border:0;background:transparent;padding:0">
+      <div class="calc-row"><div><label for="calcPrice">Vehicle price (J$)</label><input class="input" id="calcPrice" type="number" /></div><div><label for="calcDown">Down payment</label><input class="input" id="calcDown" type="number" value="0" /></div></div>
+      <div class="calc-row"><div><label for="calcTerm">Term (months)</label><input class="input" id="calcTerm" type="number" value="60" /></div><div><label for="calcRate">Annual rate %</label><input class="input" id="calcRate" type="number" value="12" step="0.1" /></div></div>
+      <button type="button" class="btn btn-outline" id="calcRun">Calculate</button>
+      <div class="calc-result" id="calcPayment">J$ 0 / month</div>
+      <p class="mp-calc-disclaimer">Estimate only — not a financing offer. Contact ACJ or the dealer for approved terms.</p>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="sellModalOverlay" aria-hidden="true" style="display:none;place-items:center">
+  <div class="modal" role="dialog" style="max-width:480px">
+    <div class="modal-head"><div class="modal-title">Sell your car</div><button class="btn btn-ghost" type="button" id="sellModalClose">Close</button></div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--muted);margin:0 0 12px">Tell us about your vehicle. We review submissions in 3–7 business days.</p>
+      <form id="sellForm">
+        <div class="calc-row">
+          <div><label for="sellYear">Year</label><input class="input" name="year" id="sellYear" type="number" required /></div>
+          <div><label for="sellMake">Make</label><input class="input" name="make" id="sellMake" required /></div>
+        </div>
+        <div class="form-field"><label for="sellModel">Model</label><input class="input" name="model" id="sellModel" required /></div>
+        <div class="calc-row">
+          <div><label for="sellMileage">Mileage (km)</label><input class="input" name="mileage" id="sellMileage" type="number" /></div>
+          <div><label for="sellPrice">Price hope (J$)</label><input class="input" name="priceHope" id="sellPrice" type="number" /></div>
+        </div>
+        <div class="form-field"><label for="sellContactName">Your name</label><input class="input" name="contactName" id="sellContactName" required /></div>
+        <div class="form-field"><label for="sellContactPhone">Phone</label><input class="input" name="contactPhone" id="sellContactPhone" required /></div>
+        <div class="form-field"><label for="sellContactEmail">Email</label><input class="input" name="contactEmail" id="sellContactEmail" type="email" /></div>
+        <div class="form-field"><label for="sellNotes">Notes</label><textarea class="textarea" name="notes" id="sellNotes" rows="3"></textarea></div>
+        <button class="btn btn-primary btn-gloss" type="submit">Submit</button>
+        <div class="success-box" id="sellSuccess" style="display:none;margin-top:10px">Thanks — we will review your vehicle within 3–7 business days.</div>
+        <div id="sellError" style="font-size:12px;color:#991b1b;margin-top:8px"></div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="modalOverlay" aria-hidden="true">
   <div class="modal" id="requestModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <div class="modal-head">
@@ -1217,6 +1320,8 @@
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/ScrollTrigger.min.js"></script>
 <script src="/assets/js/acj-loader.js"></script>
 <script src="/assets/js/acj-motion.js"></script>
+<script src="/assets/js/acj-storefront-marketplace.js"></script>
+<script src="/assets/js/acj-status-ribbon.js"></script>
 <script>
   const API_BASE = "";
   const $ = (id) => document.getElementById(id);
@@ -1337,6 +1442,7 @@
   };
 
   const state = {
+    viewMode: "dealer",
     dealerIds: [],
     dealers: [],
     dealerProfiles: {},
@@ -1428,7 +1534,9 @@
     const v = String(s || "").trim().toLowerCase();
     if(!v) return { label:"Available", cls:"available" };
     if(["available","in stock","instock","in_stock"].includes(v)) return { label:"Available", cls:"available" };
-    if(["pending","reserved"].includes(v)) return { label:"Pending", cls:"pending" };
+    if(v.includes("transit")) return { label:"IN TRANSIT", cls:"status-in-transit" };
+    if(["reserved"].includes(v)) return { label:"RESERVED", cls:"status-reserved" };
+    if(["pending"].includes(v)) return { label:"Pending", cls:"pending" };
     if(["sold","archived"].includes(v)) return { label:(v === "archived" ? "Archived" : "Sold"), cls:"sold" };
     if(v.includes("sale") || v.includes("deal")) return { label:"On Sale", cls:"sale" };
     if(v.includes("negotiable")) return { label:"Negotiable", cls:"negotiable" };
@@ -1498,6 +1606,14 @@
       fuel: v.fuel || v.fuelType || v["Fuel Type"] || "",
       color: v.color || v.Color || "",
       bodyType: v.bodyType || v.body_type || v["Body Type"] || "",
+      financingAvailable: v.financingAvailable === true,
+      listedAt: v.listedAt || v.listed_at || "",
+      reservationDeposit: v.reservationDeposit || 0,
+      reservationDepositPct: v.reservationDepositPct || 3.3,
+      dealerName: v.dealerName || "",
+      dealerLogoUrl: v.dealerLogoUrl || "",
+      expectedArrivalAt: v.expectedArrivalAt || v.expected_arrival_at || "",
+      reservedUntil: v.reservedUntil || v.reserved_until || "",
       raw: v,
     };
   }
@@ -2056,11 +2172,13 @@
 
       const card = document.createElement("div");
       card.className = "card";
-      card.style.transitionDelay = (index * 40) + "ms";
+      card.style.transitionDelay = (index * 16) + "ms";
+      const ribbon = window.ACJStatusRibbon?.usesStatusRibbon?.(v);
+      const ribbonHtml = window.ACJStatusRibbon?.statusRibbonHtml?.(v, esc) || "";
       card.innerHTML = `
-        <div class="media">
+        <div class="media${ribbon ? " has-status-ribbon" : ""}">
           ${img ? `<img src="${esc(img)}" alt="${esc(title)}" loading="lazy" />` : ``}
-          <div class="badge ${esc(st.cls)}">${esc(st.label)}</div>
+          ${ribbonHtml || `<div class="badge ${esc(st.cls)}">${esc(st.label)}</div>`}
         </div>
         <div class="card-body">
           <div>
@@ -2106,9 +2224,16 @@
     if(window.ACJMotion){
       ACJMotion.staggerChildren("#grid", ".card");
     }
+    if(window.ACJStatusRibbon){
+      ACJStatusRibbon.startReservedCountdownTimer();
+    }
   }
 
   function applySearch(){
+    if(state.viewMode === "marketplace" && window.__mpApplyFilters){
+      window.__mpApplyFilters();
+      return;
+    }
     const q = String(ui.searchInput.value || "").trim().toLowerCase();
     if(!q){
       state.filtered = [...state.vehicles];
@@ -2430,8 +2555,14 @@
   }
 
   async function doLoad(){
-    const dealerIds = parseDealerIds(ui.dealerIdInput.value);
     const rawIds = String(ui.dealerIdInput.value || "").trim();
+    const alias = rawIds.split(",")[0].trim();
+    if(window.__mpResolve && window.__mpResolve(alias)?.marketplace){
+      if(window.__mpLoad) window.__mpLoad();
+      return;
+    }
+
+    const dealerIds = parseDealerIds(ui.dealerIdInput.value);
 
     if(!rawIds){
       toast("Enter at least one dealer ID.", "error");
@@ -2500,11 +2631,20 @@
       const msg = e?.message || "Unknown error";
       const paidOnly = /paid plan|storefront/i.test(msg);
       renderEmptyState({
-        title: paidOnly ? "Branded storefront is on the paid plan" : "Could not load inventory",
+        title: paidOnly ? "Browse the ACJ Marketplace" : "Could not load inventory",
         body: paidOnly
-          ? "This dealer is on the free commission program. Ask them for inventory directly, or search paid dealers below."
+          ? "This dealer is on the free commission program. Their vehicles are listed in the ACJ Marketplace — verified dealers and quality-checked stock."
           : msg,
       });
+      if(paidOnly && ui.grid){
+        const cta = document.createElement("div");
+        cta.className = "mp-free-cta";
+        cta.style.gridColumn = "1 / -1";
+        cta.innerHTML = `<p style="margin:0 0 8px">Free-plan inventory lives in the ACJ Marketplace.</p><button type="button" class="btn btn-primary btn-gloss" id="mpCtaBtn">Open ACJ Marketplace</button>`;
+        ui.grid.innerHTML = "";
+        ui.grid.appendChild(cta);
+        cta.querySelector("#mpCtaBtn")?.addEventListener("click", () => { if(window.__mpLoad) window.__mpLoad(); });
+      }
       toast(paidOnly ? "This dealer storefront requires the paid plan." : "Unable to load inventory. Try again.", paidOnly ? "info" : "error");
     }
   }
@@ -2624,7 +2764,21 @@
     });
   });
 
+  if(window.ACJMarketplaceInit){
+    const mpApi = {
+      ui, state, esc, money, fetchOk, toast, normalizeVehicle, isPublicVehicle, parseImageUrls,
+      setBranding, updateDealerBar, scrollToInventory, normalizeStatus, openDetailDrawer,
+    };
+    ACJMarketplaceInit(mpApi);
+    window.__mpLoad = mpApi.loadMarketplace;
+    window.__mpResolve = mpApi.resolveDealerInput;
+    window.__mpApplyFilters = mpApi.applyMpFilters;
+  }
+
   (function boot(){
+    if(location.pathname.replace(/\/+$/,"") === "/marketplace"){
+      if(window.__mpLoad) { window.__mpLoad(); return; }
+    }
     const fromPath = parseDealerFromPath() || parseDealerFromQuery();
     if(fromPath){
       ui.dealerIdInput.value = fromPath;
@@ -2644,6 +2798,7 @@
       });
     }
   })();
+
 </script>
 
 </body>

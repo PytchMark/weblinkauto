@@ -33,6 +33,7 @@ const {
   sendDealerAdminNotice,
   sendAdminPasscodeEmail,
   sendDealerReportAlert,
+  sendSellSubmissionNotification,
 } = require("./services/email");
 const {
   getProfileByDealerId,
@@ -60,6 +61,10 @@ const {
   createDealerReview,
   createDealerReport,
   listDealerReports,
+  getMarketplaceVehicles,
+  insertSellSubmission,
+  listSellSubmissions,
+  updateSellSubmissionById,
 } = require("./services/supabase");
 const { getDealerMetrics, getDealersSummary } = require("./services/analytics");
 const { stripe } = require("./lib/stripe");
@@ -159,8 +164,13 @@ app.use("/landing", express.static(path.join(APPS_DIR, "landing")));
 /** Root */
 app.get("/", (_req, res) => res.redirect("/storefront"));
 
+/** ACJ Marketplace (aggregated free-plan inventory) */
+app.get("/marketplace", (_req, res) => {
+  res.sendFile(path.join(APPS_DIR, "storefront", "index.html"));
+});
+
 /** Dealer storefront deep link (e.g. /DEALER-0001) */
-app.get(/^\/(?!api|dealer|admin|landing|storefront|health)([A-Za-z0-9_-]{3,40})$/, (req, res) => {
+app.get(/^\/(?!api|dealer|admin|landing|storefront|health|marketplace)([A-Za-z0-9_-]{3,40})$/, (req, res) => {
   res.sendFile(path.join(APPS_DIR, "storefront", "index.html"));
 });
 
@@ -198,8 +208,82 @@ function mapRequestTypeToEnum(type) {
     t === "in person"
   )
     return "walk_in";
+  if (
+    t === "vehicle_reservation" ||
+    t === "reservation" ||
+    t === "reserve" ||
+    t === "vehicle reservation"
+  )
+    return "vehicle_reservation";
 
   return null;
+}
+
+function defaultMarketplaceReservationPct() {
+  const n = Number(process.env.MARKETPLACE_RESERVATION_DEPOSIT_PCT);
+  return Number.isFinite(n) && n > 0 ? n : 3.3;
+}
+
+function dealerReservationPct(dealer) {
+  if (dealer?.reservation_deposit_pct != null && dealer.reservation_deposit_pct !== "") {
+    const n = Number(dealer.reservation_deposit_pct);
+    if (Number.isFinite(n) && n > 0) return n;
+  }
+  return defaultMarketplaceReservationPct();
+}
+
+function computeReservationDeposit(price, pct) {
+  const p = Number(price);
+  if (!Number.isFinite(p) || p <= 0) return 0;
+  const rate = Number(pct);
+  if (!Number.isFinite(rate) || rate <= 0) return 0;
+  return Math.round((p * rate) / 100);
+}
+
+function enrichVehicleRow(vehicle, dealer) {
+  const row = mapVehicleRow(vehicle);
+  if (!row) return null;
+  const pct = dealer ? dealerReservationPct(dealer) : defaultMarketplaceReservationPct();
+  const price = Number(vehicle.price) || 0;
+  return {
+    ...row,
+    financingAvailable: vehicle.financing_available === true,
+    acjQualityVerified: vehicle.acj_quality_verified === true,
+    listedAt: vehicle.listed_at || vehicle.created_at || "",
+    reservationDepositPct: pct,
+    reservationDeposit: computeReservationDeposit(price, pct),
+    expectedArrivalAt: vehicle.expected_arrival_at || "",
+    reservedUntil: vehicle.reserved_until || "",
+  };
+}
+
+function mapMarketplaceVehicleRow(vehicle, dealer) {
+  const row = enrichVehicleRow(vehicle, dealer);
+  if (!row) return null;
+  return {
+    ...row,
+    dealerName: dealer?.name || "",
+    dealerLogoUrl: dealer?.logo_url || "",
+  };
+}
+
+function mapSellSubmissionRow(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    year: row.year,
+    make: row.make || "",
+    model: row.model || "",
+    mileage: row.mileage,
+    priceHope: row.price_hope,
+    contactName: row.contact_name || "",
+    contactPhone: row.contact_phone || "",
+    contactEmail: row.contact_email || "",
+    notes: row.notes || "",
+    status: row.status || "pending",
+    createdAt: row.created_at || "",
+    updatedAt: row.updated_at || "",
+  };
 }
 
 function toBool(value) {
@@ -217,6 +301,8 @@ function normalizeVehicleStatus(value) {
   if (s === "sold") return "sold";
   if (s === "archived") return "archived";
   if (s === "ready_for_import" || s === "readyforimport") return "ready_for_import";
+  if (s === "in_transit" || s === "intransit" || s === "in-transit") return "in_transit";
+  if (s === "reserved") return "reserved";
   return "";
 }
 
@@ -227,8 +313,63 @@ function vehicleStatusLabel(status) {
     sold: "Sold",
     archived: "Archived",
     ready_for_import: "Ready for Import",
+    in_transit: "In Transit",
+    reserved: "Reserved",
   };
   return map[status] || status;
+}
+
+function parseIsoDateTime(value) {
+  const raw = cleanStr(value, 60);
+  if (!raw) return null;
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toISOString();
+}
+
+function applyPaidVehicleStatusScheduling(body, mapped, dealer, existing) {
+  const status = mapped.status || "";
+  const paid = hasPublicStorefront(dealer);
+
+  if ((status === "in_transit" || status === "reserved") && !paid) {
+    return "In Transit and Reserved statuses are available on the paid plan.";
+  }
+
+  if (status === "in_transit") {
+    let arrival = parseIsoDateTime(body.expectedArrivalAt || body.expected_arrival_at);
+    if (!arrival && existing?.status === "in_transit" && existing.expected_arrival_at) {
+      arrival = existing.expected_arrival_at;
+    }
+    if (!arrival) return "Expected arrival date is required for In Transit status.";
+    mapped.expected_arrival_at = arrival;
+    mapped.reserved_until = null;
+    return null;
+  }
+
+  if (status === "reserved") {
+    let until = parseIsoDateTime(body.reservedUntil || body.reserved_until);
+    const durationDays = Number(body.reservedDurationDays || body.reserved_duration_days || 0);
+    if (!until && Number.isFinite(durationDays) && durationDays > 0) {
+      until = new Date(Date.now() + durationDays * 86400000).toISOString();
+    }
+    if (!until && existing?.status === "reserved" && existing.reserved_until) {
+      until = existing.reserved_until;
+    }
+    if (!until) return "Reservation end time or duration is required for Reserved status.";
+    if (new Date(until).getTime() <= Date.now()) {
+      return "Reservation end must be in the future.";
+    }
+    mapped.reserved_until = until;
+    mapped.expected_arrival_at = null;
+    return null;
+  }
+
+  if (status && status !== "in_transit" && status !== "reserved") {
+    mapped.expected_arrival_at = null;
+    mapped.reserved_until = null;
+  }
+
+  return null;
 }
 
 async function generateNextVehicleId(dealerId) {
@@ -647,6 +788,7 @@ function buildGoogleMapsEmbedUrl(rawUrl) {
 
 function mapProfileFields(profile) {
   const googleMapsUrl = profile.google_maps_url || "";
+  const reservationPct = dealerReservationPct(profile);
   return {
     description: profile.description || "",
     locationLabel: profile.location_label || "",
@@ -655,6 +797,8 @@ function mapProfileFields(profile) {
     heroVideoUrl: profile.hero_video_url || "",
     reviewsHighlight: profile.reviews_highlight || "",
     socials: mapSocialLinks(profile),
+    reservationDepositPct: reservationPct,
+    marketplaceDefaultReservationPct: defaultMarketplaceReservationPct(),
   };
 }
 
@@ -793,6 +937,19 @@ function mapVehicleInput(body) {
     cloudinary_video_url: cleanStr(body.cloudinaryVideoUrl, 2000),
     hero_image_url: cleanStr(body.heroImageUrl || body.hero_image_url, 2000),
     hero_video_url: cleanStr(body.heroVideoUrl || body.hero_video_url, 2000),
+    financing_available:
+      body.financingAvailable !== undefined ? toBool(body.financingAvailable) : undefined,
+    acj_quality_verified:
+      body.acjQualityVerified !== undefined ? toBool(body.acjQualityVerified) : undefined,
+    listed_at: body.listedAt !== undefined ? cleanStr(body.listedAt, 40) || null : undefined,
+    expected_arrival_at:
+      body.expectedArrivalAt !== undefined
+        ? parseIsoDateTime(body.expectedArrivalAt || body.expected_arrival_at)
+        : undefined,
+    reserved_until:
+      body.reservedUntil !== undefined
+        ? parseIsoDateTime(body.reservedUntil || body.reserved_until)
+        : undefined,
   });
 }
 
@@ -1074,7 +1231,7 @@ app.get("/api/public/dealer/:dealerId/vehicles", async (req, res) => {
     return res.json({
       ok: true,
       dealer: mapPublicDealerProfile(dealer),
-      vehicles: vehicles.map(mapVehicleRow),
+      vehicles: vehicles.map((v) => enrichVehicleRow(v, dealer)),
     });
   } catch (err) {
     console.error("GET /api/public/dealer/:dealerId/vehicles error:", err);
@@ -1113,14 +1270,121 @@ app.get("/api/public/vehicles", async (req, res) => {
       publicOnly: true,
     });
 
+    const dealerById = new Map(activeDealers.map((d) => [d.dealer_id, d]));
     return res.json({
       ok: true,
       dealers: activeDealers.map(mapPublicDealerProfile),
-      vehicles: vehicles.map(mapVehicleRow),
+      vehicles: vehicles.map((v) => enrichVehicleRow(v, dealerById.get(v.dealer_id))),
     });
   } catch (err) {
     console.error("GET /api/public/vehicles error:", err);
     return res.status(500).json({ ok: false, error: "Internal Server Error" });
+  }
+});
+
+app.get("/api/public/marketplace/config", (_req, res) => {
+  return res.json({
+    ok: true,
+    config: {
+      reservationDepositPct: defaultMarketplaceReservationPct(),
+      qualityPolicy:
+        "Listings from verified free-plan dealers. Every vehicle is reviewed by the ACJ team before buyers see it in the marketplace.",
+      marketplacePath: "/marketplace",
+    },
+  });
+});
+
+app.get("/api/public/marketplace/vehicles", async (_req, res) => {
+  try {
+    const requireQuality =
+      cleanStr(process.env.MARKETPLACE_REQUIRE_QUALITY, 10).toLowerCase() === "1" ||
+      cleanStr(process.env.MARKETPLACE_REQUIRE_QUALITY, 10).toLowerCase() === "true";
+    const { vehicles, dealers } = await getMarketplaceVehicles({ requireQuality });
+    const dealerById = new Map(dealers.map((d) => [d.dealer_id, d]));
+    const activeStatuses = new Set(["available", "active", "in_transit", "in transit", "reserved", "pending"]);
+
+    const rows = vehicles
+      .filter((v) => {
+        const st = cleanStr(v.status, 40).toLowerCase();
+        if (st === "archived") return false;
+        return !st || activeStatuses.has(st) || st.includes("transit") || st.includes("reserv");
+      })
+      .map((v) => mapMarketplaceVehicleRow(v, dealerById.get(v.dealer_id)))
+      .filter(Boolean);
+
+    return res.json({
+      ok: true,
+      vehicles: rows,
+      meta: {
+        count: rows.length,
+        qualityPolicy: requireQuality
+          ? "Only ACJ quality-verified listings are shown."
+          : "Verified free-plan dealer inventory — quality review in progress for new listings.",
+        reservationDepositPct: defaultMarketplaceReservationPct(),
+      },
+    });
+  } catch (err) {
+    console.error("GET /api/public/marketplace/vehicles error:", err);
+    return res.status(500).json({ ok: false, error: "Internal Server Error" });
+  }
+});
+
+const sellSubmissionLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 6,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { ok: false, error: "Too many submissions. Please try again later." },
+});
+
+app.post("/api/public/sell-submissions", sellSubmissionLimiter, async (req, res) => {
+  try {
+    const contactName = cleanStr(req.body.contactName || req.body.name, 120);
+    const contactPhone = normalizePhone(req.body.contactPhone || req.body.phone);
+    const contactEmail = cleanStr(req.body.contactEmail || req.body.email, 120);
+    const make = cleanStr(req.body.make, 80);
+    const model = cleanStr(req.body.model, 80);
+    const year = Number(req.body.year || 0) || null;
+    const mileage = Number(req.body.mileage || 0) || null;
+    const priceHope = Number(req.body.priceHope || req.body.price || 0) || null;
+    const notes = cleanStr(req.body.notes, 2000);
+
+    if (!contactName) return res.status(400).json({ ok: false, error: "contactName is required" });
+    if (!contactPhone || contactPhone.length < 7) {
+      return res.status(400).json({ ok: false, error: "contactPhone is required" });
+    }
+    if (!make || !model) {
+      return res.status(400).json({ ok: false, error: "make and model are required" });
+    }
+
+    const created = await insertSellSubmission({
+      year,
+      make,
+      model,
+      mileage,
+      price_hope: priceHope,
+      contact_name: contactName,
+      contact_phone: contactPhone,
+      contact_email: contactEmail || null,
+      notes: notes || null,
+      status: "pending",
+    });
+
+    const inbox = salesTeamInboxEmail();
+    if (inbox) {
+      sendSellSubmissionNotification({ salesTeamEmail: inbox, submission: created }).catch((e) =>
+        console.error("sell submission email error:", e)
+      );
+    }
+
+    return res.json({
+      ok: true,
+      submission: mapSellSubmissionRow(created),
+      message: "Thanks — we review sell-your-car submissions within 3–7 business days.",
+    });
+  } catch (err) {
+    console.error("POST /api/public/sell-submissions error:", err);
+    return res.status(500).json({ ok: false, error: "Could not submit your vehicle" });
   }
 });
 
@@ -1136,7 +1400,7 @@ app.post("/api/public/dealer/:dealerId/requests", async (req, res) => {
     if (!typeEnum) {
       return res.status(400).json({
         ok: false,
-        error: "Invalid requestType. Use whatsapp, live_video, or walk_in.",
+        error: "Invalid requestType. Use whatsapp, live_video, walk_in, or vehicle_reservation.",
       });
     }
 
@@ -1145,7 +1409,7 @@ app.post("/api/public/dealer/:dealerId/requests", async (req, res) => {
     const email = cleanStr(req.body.email, 120);
     const preferredDate = cleanStr(req.body.preferredDate, 40);
     const preferredTime = cleanStr(req.body.preferredTime, 60);
-    const notes = cleanStr(req.body.notes, 1200);
+    let notes = cleanStr(req.body.notes, 1200);
     const vehicleId = cleanStr(req.body.vehicleId, 60);
 
     if (!name) return res.status(400).json({ ok: false, error: "customerName is required" });
@@ -1157,16 +1421,34 @@ app.post("/api/public/dealer/:dealerId/requests", async (req, res) => {
     if (isPausedDealer(dealer)) {
       return res.status(403).json({ ok: false, error: "Dealer storefront is paused" });
     }
-    if (!hasPublicStorefront(dealer)) {
+
+    const isReservation = typeEnum === "vehicle_reservation";
+    if (!isReservation && !hasPublicStorefront(dealer)) {
       return res.status(403).json(storefrontAccessError());
+    }
+    if (isReservation && !hasPublicStorefront(dealer) && !isFreeTierPlan(dealer)) {
+      return res.status(403).json({ ok: false, error: "Reservations are not available for this dealer." });
     }
 
     let safeVehicleId = "";
+    let vehicle = null;
     if (vehicleId) {
       const v = await getVehicleByVehicleId(vehicleId);
       if (v && cleanStr(v.dealer_id, 60) === dealerId) {
         safeVehicleId = vehicleId;
+        vehicle = v;
       }
+    }
+
+    if (isReservation && !safeVehicleId) {
+      return res.status(400).json({ ok: false, error: "vehicleId is required for reservation requests" });
+    }
+
+    if (isReservation && vehicle) {
+      const price = Number(vehicle.price) || 0;
+      const deposit = computeReservationDeposit(price, dealerReservationPct(dealer));
+      const depositLine = `Reservation hold (estimate): J$${deposit.toLocaleString()} (${dealerReservationPct(dealer)}% of J$${price.toLocaleString()}). ACJ will follow up — no payment collected online in v1.`;
+      notes = notes ? `${depositLine}\n\n${notes}` : depositLine;
     }
 
     const fields = {
@@ -1176,7 +1458,7 @@ app.post("/api/public/dealer/:dealerId/requests", async (req, res) => {
       status: "new",
       name,
       phone,
-      source: "storefront",
+      source: isReservation ? "marketplace" : "storefront",
     };
 
     if (safeVehicleId) fields.vehicle_id = safeVehicleId;
@@ -1186,11 +1468,6 @@ app.post("/api/public/dealer/:dealerId/requests", async (req, res) => {
     if (notes) fields.notes = notes;
 
     const created = await createViewingRequest(fields);
-
-    let vehicle = null;
-    if (safeVehicleId) {
-      vehicle = await getVehicleByVehicleId(safeVehicleId);
-    }
 
     const requestPayload = {
       type: typeEnum,
@@ -1654,6 +1931,10 @@ app.patch("/api/dealer/profile", requireActiveDealer, async (req, res) => {
       social_tiktok:
         req.body.socialTiktok !== undefined ? cleanStr(req.body.socialTiktok, 200) : undefined,
       whatsapp: req.body.whatsapp !== undefined ? normalizePhone(req.body.whatsapp) : undefined,
+      reservation_deposit_pct:
+        req.body.reservationDepositPct !== undefined
+          ? Number(req.body.reservationDepositPct) || null
+          : undefined,
     });
 
     if (!Object.keys(fields).length) {
@@ -1815,11 +2096,23 @@ app.post("/api/dealer/vehicles", requireActiveDealer, async (req, res) => {
     const mapped = mapVehicleInput(req.body);
     if (!mapped.status) mapped.status = "available";
 
+    const statusErr = applyPaidVehicleStatusScheduling(req.body, mapped, dealer, existing);
+    if (statusErr) {
+      return res.status(400).json({ ok: false, error: statusErr });
+    }
+
     const fields = {
       ...mapped,
       dealer_id: dealerId,
       vehicle_id: vehicleId,
     };
+
+    if (!existing && !fields.listed_at && fields.availability !== false) {
+      fields.listed_at = new Date().toISOString();
+    }
+    if (existing && fields.availability === true && !existing.listed_at && !fields.listed_at) {
+      fields.listed_at = new Date().toISOString();
+    }
 
     const vehicle = existing
       ? await updateVehicleByVehicleId(vehicleId, fields)
@@ -1829,7 +2122,7 @@ app.post("/api/dealer/vehicles", requireActiveDealer, async (req, res) => {
       return res.status(500).json({ ok: false, error: "Failed to save vehicle" });
     }
 
-    return res.json({ ok: true, vehicle: mapVehicleRow(vehicle), vehicleId });
+    return res.json({ ok: true, vehicle: enrichVehicleRow(vehicle, dealer), vehicleId });
   } catch (err) {
     console.error("POST /api/dealer/vehicles error:", err);
     const mapped = mapVehicleSaveError(err);
@@ -2151,6 +2444,53 @@ app.patch("/api/admin/dealer-applications/:id", requireAdmin, async (req, res) =
   } catch (err) {
     console.error("PATCH /api/admin/dealer-applications/:id error:", err);
     return res.status(500).json({ ok: false, error: "Internal Server Error" });
+  }
+});
+
+app.get("/api/admin/sell-submissions", requireAdmin, async (req, res) => {
+  try {
+    const status = cleanStr(req.query.status, 20).toLowerCase();
+    const filter =
+      status && ["pending", "approved", "rejected"].includes(status) ? { status } : {};
+    const rows = await listSellSubmissions(filter);
+    return res.json({ ok: true, submissions: rows.map(mapSellSubmissionRow) });
+  } catch (err) {
+    console.error("GET /api/admin/sell-submissions error:", err);
+    return res.status(500).json({ ok: false, error: "Internal Server Error" });
+  }
+});
+
+app.patch("/api/admin/sell-submissions/:id", requireAdmin, async (req, res) => {
+  try {
+    const id = cleanStr(req.params.id, 50);
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) {
+      return res.status(400).json({ ok: false, error: "Invalid submission id" });
+    }
+    const status = cleanStr(req.body.status, 20).toLowerCase();
+    if (!["pending", "approved", "rejected"].includes(status)) {
+      return res.status(400).json({ ok: false, error: "Invalid status" });
+    }
+    const updated = await updateSellSubmissionById(id, { status });
+    return res.json({ ok: true, submission: mapSellSubmissionRow(updated) });
+  } catch (err) {
+    console.error("PATCH /api/admin/sell-submissions/:id error:", err);
+    return res.status(500).json({ ok: false, error: "Internal Server Error" });
+  }
+});
+
+app.patch("/api/admin/vehicles/:vehicleId/quality", requireAdmin, async (req, res) => {
+  try {
+    const vehicleId = cleanStr(req.params.vehicleId, 60);
+    if (!vehicleId) return res.status(400).json({ ok: false, error: "vehicleId is required" });
+    const existing = await getVehicleByVehicleId(vehicleId);
+    if (!existing) return res.status(404).json({ ok: false, error: "Vehicle not found" });
+    const verified = toBool(req.body.acjQualityVerified ?? req.body.verified);
+    const vehicle = await updateVehicleByVehicleId(vehicleId, { acj_quality_verified: verified });
+    const dealer = await getProfileByDealerId(vehicle.dealer_id);
+    return res.json({ ok: true, vehicle: enrichVehicleRow(vehicle, dealer) });
+  } catch (err) {
+    console.error("PATCH /api/admin/vehicles/:vehicleId/quality error:", err);
+    return res.status(500).json({ ok: false, error: "Vehicle quality update failed" });
   }
 });
 

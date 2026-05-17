@@ -179,6 +179,7 @@ async function sendNewRequestAlert({ dealerEmail, dealerName, dealerId, request,
     whatsapp: "WhatsApp Chat",
     live_video: "Live Video Viewing",
     walk_in: "Walk-In Booking",
+    vehicle_reservation: "Vehicle reservation request",
   }[request.type] || request.type;
   
   const content = `
@@ -228,6 +229,7 @@ async function sendFreeTierLeadToSalesTeam({
     whatsapp: "WhatsApp Chat",
     live_video: "Live Video Viewing",
     walk_in: "Walk-In Booking",
+    vehicle_reservation: "Vehicle reservation request",
   }[request.type] || request.type;
 
   const subject = `🔔 Commission-tier lead — ${dealerName} (${dealerId})`;
@@ -552,11 +554,36 @@ async function sendDealerReportAlert({
   });
 }
 
+async function sendSellSubmissionNotification({ salesTeamEmail, submission }) {
+  const subject = `🚗 Sell your car — ${submission.make || ""} ${submission.model || ""}`.trim();
+  const content = `
+    <h1>New sell-your-car submission</h1>
+    <p>A buyer wants ACJ to review their vehicle for the marketplace pipeline.</p>
+    <div class="info-box">
+      <p><strong>Vehicle:</strong> ${submission.year || "—"} ${submission.make || ""} ${submission.model || ""}</p>
+      <p><strong>Mileage:</strong> ${submission.mileage != null ? submission.mileage.toLocaleString() + " km" : "—"}</p>
+      <p><strong>Price hope:</strong> ${submission.price_hope != null ? "J$ " + Number(submission.price_hope).toLocaleString() : "—"}</p>
+      <p><strong>Contact:</strong> ${submission.contact_name} · ${submission.contact_phone}</p>
+      <p><strong>Email:</strong> ${submission.contact_email || "—"}</p>
+      ${submission.notes ? `<p><strong>Notes:</strong> ${submission.notes}</p>` : ""}
+    </div>
+    <a href="${APP_BASE_URL}/admin" class="button">Review in admin →</a>
+    <p style="font-size:13px;color:#666">Target review window: 3–7 business days.</p>
+  `;
+  return sendEmail({
+    to: salesTeamEmail,
+    subject,
+    html: wrapEmail(content, subject),
+    text: `Sell submission: ${submission.year} ${submission.make} ${submission.model}. ${submission.contact_name} ${submission.contact_phone}`,
+  });
+}
+
 module.exports = {
   sendEmail,
   sendWelcomeEmail,
   sendNewRequestAlert,
   sendFreeTierLeadToSalesTeam,
+  sendSellSubmissionNotification,
   sendDealerApplicationNotification,
   sendLowInventoryAlert,
   sendFailedPaymentEmail,

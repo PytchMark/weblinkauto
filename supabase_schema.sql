@@ -43,6 +43,13 @@ alter table profiles add column if not exists hero_video_url text;
 
 alter table vehicles add column if not exists hero_image_url text;
 alter table vehicles add column if not exists hero_video_url text;
+alter table vehicles add column if not exists financing_available boolean default false;
+alter table vehicles add column if not exists acj_quality_verified boolean default false;
+alter table vehicles add column if not exists listed_at timestamptz;
+alter table vehicles add column if not exists expected_arrival_at timestamptz;
+alter table vehicles add column if not exists reserved_until timestamptz;
+
+alter table profiles add column if not exists reservation_deposit_pct numeric;
 alter table profiles add column if not exists reviews_highlight text;
 alter table profiles add column if not exists social_website text;
 alter table profiles add column if not exists social_instagram text;
@@ -167,6 +174,34 @@ create index if not exists idx_dealer_reports_created_at on dealer_reports (crea
 
 alter table dealer_reviews disable row level security;
 alter table dealer_reports disable row level security;
+
+-- Sell-your-car intake (marketplace buyers)
+create table if not exists sell_submissions (
+  id uuid primary key default gen_random_uuid(),
+  year int,
+  make text,
+  model text,
+  mileage int,
+  price_hope numeric,
+  contact_name text not null,
+  contact_phone text not null,
+  contact_email text,
+  notes text,
+  status text not null default 'pending' check (status in ('pending', 'approved', 'rejected')),
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+create index if not exists idx_sell_submissions_status on sell_submissions (status);
+create index if not exists idx_sell_submissions_created_at on sell_submissions (created_at desc);
+create index if not exists idx_vehicles_listed_at on vehicles (listed_at desc nulls last);
+
+drop trigger if exists trg_sell_submissions_updated_at on sell_submissions;
+create trigger trg_sell_submissions_updated_at
+before update on sell_submissions
+for each row execute function set_updated_at();
+
+alter table sell_submissions disable row level security;
 
 drop trigger if exists trg_profiles_updated_at on profiles;
 create trigger trg_profiles_updated_at

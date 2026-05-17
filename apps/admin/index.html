@@ -387,6 +387,7 @@
           <div class="tabs" role="tablist" aria-label="Admin tabs">
             <button class="tab active" id="tabDealers" data-tab="dealers" type="button">Dealers</button>
             <button class="tab" id="tabApplications" data-tab="applications" type="button">Applications</button>
+            <button class="tab" id="tabSellSubmissions" data-tab="sellSubmissions" type="button">Sell cars</button>
             <button class="tab" id="tabSummary" data-tab="summary" type="button">Summary</button>
             <button class="tab" id="tabInventory" data-tab="inventory" type="button">Inventory</button>
             <button class="tab" id="tabRequests" data-tab="requests" type="button">Requests</button>
@@ -751,7 +752,11 @@
       resetPass: () => "/api/admin/reset-passcode",
       inventory: () => "/api/admin/inventory",
       requests: () => "/api/admin/requests",
-      summary: (month) => `/api/admin/dealers/summary?month=${encodeURIComponent(month)}`
+      summary: (month) => `/api/admin/dealers/summary?month=${encodeURIComponent(month)}`,
+      sellSubmissions: (status) => {
+        const s = (status || "").trim();
+        return s ? `/api/admin/sell-submissions?status=${encodeURIComponent(s)}` : "/api/admin/sell-submissions";
+      },
     };
 
     const el = (id) => document.getElementById(id);
@@ -773,6 +778,7 @@
 
       tabDealers: el("tabDealers"),
       tabApplications: el("tabApplications"),
+      tabSellSubmissions: el("tabSellSubmissions"),
       tabSummary: el("tabSummary"),
       tabInventory: el("tabInventory"),
       tabRequests: el("tabRequests"),
@@ -880,6 +886,7 @@
       vehicles: [],
       requests: [],
       applications: [],
+      sellSubmissions: [],
 
       selectedDealer: null,
       demoPasscodes: {}
@@ -912,13 +919,13 @@
       ui.btnLogout.addEventListener("click", logout);
       ui.btnRefresh.addEventListener("click", () => refresh().catch(()=>{}));
 
-      [ui.tabDealers, ui.tabApplications, ui.tabSummary, ui.tabInventory, ui.tabRequests, ui.tabSettings].forEach(btn=>{
+      [ui.tabDealers, ui.tabApplications, ui.tabSellSubmissions, ui.tabSummary, ui.tabInventory, ui.tabRequests, ui.tabSettings].forEach(btn=>{
         btn.addEventListener("click", ()=> setTab(btn.dataset.tab));
       });
 
       ui.q.addEventListener("keydown", (e)=>{ if(e.key==="Enter") render(); });
       ui.statusFilter.addEventListener("change", () => {
-        if (state.tab === "applications") refresh().catch(() => {});
+        if (state.tab === "applications" || state.tab === "sellSubmissions") refresh().catch(() => {});
         else render();
       });
 
@@ -1107,6 +1114,7 @@
       state.vehicles = [];
       state.requests = [];
       state.applications = [];
+      state.sellSubmissions = [];
       state.selectedDealer = null;
       clearTimeout(adminSessionTimeout); // #11 Clear session timeout
 
@@ -1149,6 +1157,7 @@
 
       ui.tabDealers?.classList.toggle("active", tab==="dealers");
       ui.tabApplications?.classList.toggle("active", tab==="applications");
+      ui.tabSellSubmissions?.classList.toggle("active", tab==="sellSubmissions");
       ui.tabSummary?.classList.toggle("active", tab==="summary");
       ui.tabInventory?.classList.toggle("active", tab==="inventory");
       ui.tabRequests?.classList.toggle("active", tab==="requests");
@@ -1157,6 +1166,7 @@
       ui.tableTitle.textContent =
         tab==="dealers" ? "Dealers"
         : tab==="applications" ? "Dealer applications"
+        : tab==="sellSubmissions" ? "Sell your car submissions"
         : tab==="inventory" ? "Inventory"
         : tab==="requests" ? "Viewing requests"
         : tab==="settings" ? "Platform settings"
@@ -1165,6 +1175,7 @@
       ui.hint.textContent =
         tab==="dealers" ? "Create and manage dealer accounts. Click a row to edit."
         : tab==="applications" ? "Waitlist from landing. Approve or reject, then create a dealer with plan “free”."
+        : tab==="sellSubmissions" ? "Buyer sell-your-car intake from the marketplace. Approve or reject after review."
         : tab==="summary" ? "Loads KPIs for all dealers in one request."
         : tab==="inventory" ? "View all vehicles."
         : tab==="requests" ? "View all viewing requests."
@@ -1187,7 +1198,7 @@
       add("", "All");
 
       if(tab==="dealers"){ add("active","Active"); add("paused","Paused"); }
-      else if(tab==="applications"){ add("pending","Pending"); add("approved","Approved"); add("rejected","Rejected"); }
+      else if(tab==="applications" || tab==="sellSubmissions"){ add("pending","Pending"); add("approved","Approved"); add("rejected","Rejected"); }
       else if(tab==="inventory"){ add("available","Available"); add("pending","Pending"); add("sold","Sold"); }
       else if(tab==="requests"){ add("new","New"); add("booked","Booked"); add("closed","Closed"); }
 
@@ -1199,6 +1210,7 @@
       const cols =
         tab==="dealers" ? ["Dealer", "Dealer ID", "Status", "Plan", "WhatsApp", "Logo", "Actions"]
         : tab==="applications" ? ["Business", "Email", "WhatsApp", "Status", "Received", "Actions"]
+        : tab==="sellSubmissions" ? ["Vehicle", "Contact", "Price hope", "Status", "Received", "Actions"]
         : tab==="inventory" ? ["Vehicle", "Dealer", "Status", "Price", "Updated"]
         : tab==="requests" ? ["Customer", "Vehicle", "Dealer", "Type", "Status", "Requested"]
         : ["Item", "Value", "Hint"];
@@ -1226,12 +1238,42 @@
           state.dealers = Array.isArray(data.dealers) ? data.dealers : [];
         }
 
+
+        if(state.tab==="sellSubmissions"){
+          const veh = [r.year, r.make, r.model].filter(Boolean).join(" ");
+          tr.appendChild(cell(`<div style="font-weight:900">${esc(veh||"—")}</div>`));
+          tr.appendChild(cell(`<span class="mono">${esc(r.contactName||"")}</span><br><span style="color:var(--muted);font-size:12px">${esc(r.contactPhone||"")}</span>`));
+          tr.appendChild(cell(r.priceHope ? `J$ ${Number(r.priceHope).toLocaleString()}` : "—"));
+          tr.appendChild(cell(statusPill(r.status)));
+          tr.appendChild(cell(`<span class="mono">${esc((r.createdAt||"").slice(0,19))}</span>`));
+          const tdAct = document.createElement("td");
+          tdAct.style.whiteSpace = "nowrap";
+          const wrap = document.createElement("div");
+          wrap.style.display = "flex"; wrap.style.gap = "6px";
+          const bOk = document.createElement("button");
+          bOk.className = "btn btn-primary"; bOk.type = "button"; bOk.textContent = "Approve";
+          bOk.disabled = (r.status||"").toLowerCase() !== "pending";
+          bOk.addEventListener("click", (e) => { e.stopPropagation(); patchSellSubmissionStatus(r.id, "approved"); });
+          const bNo = document.createElement("button");
+          bNo.className = "btn btn-danger"; bNo.type = "button"; bNo.textContent = "Reject";
+          bNo.disabled = (r.status||"").toLowerCase() !== "pending";
+          bNo.addEventListener("click", (e) => { e.stopPropagation(); patchSellSubmissionStatus(r.id, "rejected"); });
+          wrap.appendChild(bOk); wrap.appendChild(bNo); tdAct.appendChild(wrap); tr.appendChild(tdAct);
+        }
+
         if(state.tab==="applications"){
           const res = await fetch(API.dealerApplications(ui.statusFilter.value), { headers: authHeaders() });
           const data = await safeJson(res);
           if(!res.ok || !data?.ok) throw new Error(data?.error || "Failed to load applications");
           state.applications = Array.isArray(data.applications) ? data.applications : [];
         }
+        if(state.tab==="sellSubmissions"){
+          const res = await fetch(API.sellSubmissions(ui.statusFilter.value), { headers: authHeaders() });
+          const data = await safeJson(res);
+          if(!res.ok || !data?.ok) throw new Error(data?.error || "Failed to load sell submissions");
+          state.sellSubmissions = Array.isArray(data.submissions) ? data.submissions : [];
+        }
+
 
         // These two are optional — if you haven't built them yet, UI won't break.
         if(state.tab==="inventory"){
@@ -1402,6 +1444,7 @@
       let rows = [];
       if(state.tab==="dealers") rows = [...state.dealers];
       if(state.tab==="applications") rows = [...state.applications];
+      if(state.tab==="sellSubmissions") rows = [...(state.sellSubmissions||[])];
       if(state.tab==="inventory") rows = [...state.vehicles];
       if(state.tab==="requests") rows = [...state.requests];
       if(state.tab==="settings") rows = settingsRows();
@@ -1422,6 +1465,7 @@
         const colSpan =
           state.tab==="dealers" ? 7
           : state.tab==="applications" ? 6
+          : state.tab==="sellSubmissions" ? 6
           : state.tab==="requests" ? 6
           : 5;
         td.colSpan = colSpan;
