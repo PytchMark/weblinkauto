@@ -886,7 +886,7 @@
 
         <div class="media-upload-block">
           <label>Photos (up to 7)</label>
-          <div class="help">Add clear photos buyers can trust.</div>
+          <div class="help">Add clear photos buyers can trust. Click Add photos, then Upload selected files. Save the vehicle when done.</div>
           <input type="file" id="imageFiles" accept="image/*" multiple class="file-hidden" />
           <button class="btn btn-primary acj-btn-luxe" type="button" id="pickImagesBtn">Add photos</button>
           <span class="file-pick-label" id="imageFilesLabel"></span>
@@ -1052,8 +1052,12 @@
   const archiveVehicleBtn = $('#archiveVehicleBtn');
   const uploadStatus = $('#uploadStatus');
   const uploadMediaBtn = $('#uploadMediaBtn');
+  const pickImagesBtn = $('#pickImagesBtn');
+  const pickVideosBtn = $('#pickVideosBtn');
   const imageFiles = $('#imageFiles');
   const videoFiles = $('#videoFiles');
+  const imageFilesLabel = $('#imageFilesLabel');
+  const videoFilesLabel = $('#videoFilesLabel');
   const cloudinaryImageUrls = $('#cloudinaryImageUrls');
   const cloudinaryVideoUrl = $('#cloudinaryVideoUrl');
   const heroImageUrl = $('#heroImageUrl');
@@ -2044,6 +2048,7 @@
       uploadStatus.textContent = "Upload complete. Remember to save the vehicle.";
       imageFiles.value = "";
       videoFiles.value = "";
+      updateFilePickLabels();
     }catch(err){
       uploadStatus.textContent = err.message || "Upload failed.";
     }finally{
@@ -2117,6 +2122,26 @@
   $$('.nav button').forEach(btn => {
     btn.addEventListener('click', () => setTab(btn.getAttribute('data-tab')));
   });
+
+  function updateFilePickLabels(){
+    const imgN = (imageFiles?.files?.length || 0);
+    const vidN = (videoFiles?.files?.length || 0);
+    if(imageFilesLabel){
+      imageFilesLabel.textContent = imgN
+        ? `${imgN} photo${imgN === 1 ? '' : 's'} selected`
+        : '';
+    }
+    if(videoFilesLabel){
+      videoFilesLabel.textContent = vidN
+        ? `${vidN} video${vidN === 1 ? '' : 's'} selected`
+        : '';
+    }
+  }
+
+  pickImagesBtn?.addEventListener('click', () => imageFiles?.click());
+  pickVideosBtn?.addEventListener('click', () => videoFiles?.click());
+  imageFiles?.addEventListener('change', updateFilePickLabels);
+  videoFiles?.addEventListener('change', updateFilePickLabels);
 
   uploadMediaBtn.addEventListener('click', handleMediaUpload);
   saveProfileBtn?.addEventListener('click', saveProfile);

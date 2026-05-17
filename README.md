@@ -84,12 +84,75 @@ Copy [`.env.example`](.env.example) to `.env` for local dev. Set the same keys o
 
 ## Supabase setup
 
-There is no `supabase/migrations/` folder. Apply schema in the Supabase SQL editor:
+There is no `supabase/migrations/` folder. Schema changes are applied manually in the **Supabase Dashboard → SQL Editor**.
 
-1. Run the full script: [`supabase_schema.sql`](supabase_schema.sql)
-2. For existing projects, re-run the `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` blocks and the new tables at the bottom:
-   - `dealer_reviews` — buyer star ratings on storefront
-   - `dealer_reports` — buyer “Report Dealer” submissions
+### New project (empty database)
+
+1. Open your Supabase project → **SQL** → **New query**.
+2. Paste and run the full script: [`supabase_schema.sql`](supabase_schema.sql).
+3. Confirm tables exist under **Table Editor**: `profiles`, `vehicles`, `viewing_requests`, `dealer_applications`, `dealer_reviews`, `dealer_reports`.
+
+### Existing project (already running on Cloud Run)
+
+Run migrations in this order so the app and database stay aligned.
+
+#### Step 1 — Vehicle hero columns (required for dealer “Save Vehicle”)
+
+If dealers see `Could not find the 'hero_image_url' column` or a 500 on `POST /api/dealer/vehicles`, run:
+
+```sql
+-- scripts/migrate-vehicles-hero-columns.sql
+alter table vehicles add column if not exists hero_image_url text;
+alter table vehicles add column if not exists hero_video_url text;
+```
+
+Or run the file directly: [`scripts/migrate-vehicles-hero-columns.sql`](scripts/migrate-vehicles-hero-columns.sql).
+
+**Verify:**
+
+```sql
+select column_name, data_type
+from information_schema.columns
+where table_name = 'vehicles'
+  and column_name in ('hero_image_url', 'hero_video_url');
+```
+
+You should see two rows. If not, re-run the migration and wait ~30 seconds for Supabase’s schema cache to refresh.
+
+#### Step 2 — Other incremental updates (if not already applied)
+
+Re-run the `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` blocks at the top of [`supabase_schema.sql`](supabase_schema.sql) (profiles, storefront fields, etc.) and ensure these tables exist:
+
+- `dealer_reviews` — buyer star ratings on storefront
+- `dealer_reports` — buyer “Report Dealer” submissions
+
+#### Step 3 — Match Cloud Run environment
+
+In **Google Cloud Run** (or your host), confirm the service uses the **same** Supabase project as the SQL editor:
+
+| Variable | Must match |
+|----------|------------|
+| `SUPABASE_URL` | Project URL in Supabase → Settings → API |
+| `SUPABASE_SERVICE_ROLE_KEY` | `service_role` key (server only; never expose in the browser) |
+
+Redeploy Cloud Run after changing env vars.
+
+#### Step 4 — Smoke test after migration
+
+1. Deploy the latest `main` branch to Cloud Run.
+2. Dealer portal → **Inventory** → **Add Vehicle** → fill title and save → should succeed (no `hero_image_url` error).
+3. **Add photos** → pick files → **Upload selected files** → gallery fills → **Save Vehicle** again.
+4. Storefront → confirm the vehicle and hero image appear.
+
+### Coordination checklist (deploy day)
+
+| Order | Action | Where |
+|-------|--------|--------|
+| 1 | Merge/pull latest `main` | GitHub |
+| 2 | Run `migrate-vehicles-hero-columns.sql` | Supabase SQL Editor |
+| 3 | Verify `hero_image_url` / `hero_video_url` columns | Supabase Table Editor or verify query above |
+| 4 | Deploy / redeploy API + static apps | Cloud Run |
+| 5 | Hard-refresh `/landing` and test dealer save + upload | Browser |
 
 Tables: `profiles`, `vehicles`, `viewing_requests`, `dealer_applications`, `dealer_reviews`, `dealer_reports`.
 
@@ -113,7 +176,7 @@ Tables: `profiles`, `vehicles`, `viewing_requests`, `dealer_applications`, `deal
 
 - **Stock number** auto-generated if left blank when saving a vehicle.
 - Status **Ready for Import** plus On the lot, Pending, Sold, Archived.
-- **Photos** via upload buttons only (no URL paste fields).
+- **Photos:** **Add photos** → choose files → **Upload selected files** → **Save Vehicle** (stock number is pre-filled for new units).
 - **Videos** on listings: **paid plan only** (upload + save blocked on free tier).
 - Plain-language labels throughout.
 
@@ -142,7 +205,9 @@ Open `http://localhost:8080/landing`, `/dealer`, `/admin`, `/storefront`.
 
 ## Post-deploy smoke test
 
+- [ ] Supabase: `vehicles.hero_image_url` and `vehicles.hero_video_url` columns exist
 - [ ] Free dealer: add vehicle with empty stock number → saves successfully
+- [ ] Dealer: Add photos → Upload selected files → Save Vehicle → images on storefront
 - [ ] Admin: create dealer with email → welcome email received
 - [ ] Admin: reveal / custom / generate passcode
 - [ ] Landing: hero video plays; feature blocks and red step cards work
