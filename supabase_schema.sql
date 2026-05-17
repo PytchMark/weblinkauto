@@ -48,6 +48,7 @@ alter table vehicles add column if not exists acj_quality_verified boolean defau
 alter table vehicles add column if not exists listed_at timestamptz;
 alter table vehicles add column if not exists expected_arrival_at timestamptz;
 alter table vehicles add column if not exists reserved_until timestamptz;
+alter table vehicles add column if not exists show_in_marketplace boolean default false;
 
 alter table profiles add column if not exists reservation_deposit_pct numeric;
 alter table profiles add column if not exists reviews_highlight text;

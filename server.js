@@ -249,6 +249,9 @@ function enrichVehicleRow(vehicle, dealer) {
     ...row,
     financingAvailable: vehicle.financing_available === true,
     acjQualityVerified: vehicle.acj_quality_verified === true,
+    showInMarketplace: vehicle.show_in_marketplace === true,
+    marketplaceLive: isVehicleMarketplaceLive(vehicle, marketplaceQualityRequired()),
+    marketplaceStatus: marketplaceStatusForVehicle(vehicle, dealer),
     listedAt: vehicle.listed_at || vehicle.created_at || "",
     reservationDepositPct: pct,
     reservationDeposit: computeReservationDeposit(price, pct),
@@ -325,6 +328,51 @@ function parseIsoDateTime(value) {
   const d = new Date(raw);
   if (Number.isNaN(d.getTime())) return null;
   return d.toISOString();
+}
+
+function marketplaceQualityRequired() {
+  return (
+    cleanStr(process.env.MARKETPLACE_REQUIRE_QUALITY, 10).toLowerCase() === "1" ||
+    cleanStr(process.env.MARKETPLACE_REQUIRE_QUALITY, 10).toLowerCase() === "true"
+  );
+}
+
+function isMarketplaceEligibleDealer(dealer) {
+  if (!dealer || isPausedDealer(dealer)) return false;
+  return isFreeTierPlan(dealer) && cleanStr(dealer.status, 30).toLowerCase() === "active";
+}
+
+function isVehicleMarketplaceLive(vehicle, requireQuality) {
+  if (!vehicle || vehicle.show_in_marketplace !== true) return false;
+  if (requireQuality && vehicle.acj_quality_verified !== true) return false;
+  return true;
+}
+
+function marketplaceStatusForVehicle(vehicle, dealer) {
+  if (!isMarketplaceEligibleDealer(dealer)) {
+    return { key: "ineligible", label: "Use your paid storefront" };
+  }
+  if (vehicle?.show_in_marketplace !== true) {
+    return { key: "off", label: "Not listed" };
+  }
+  if (marketplaceQualityRequired() && vehicle.acj_quality_verified !== true) {
+    return { key: "pending", label: "Pending ACJ review" };
+  }
+  return { key: "live", label: "Live on marketplace" };
+}
+
+function applyDealerMarketplaceOptIn(body, mapped, dealer) {
+  if (!isMarketplaceEligibleDealer(dealer)) {
+    if (body.showInMarketplace !== undefined || body.show_in_marketplace !== undefined) {
+      mapped.show_in_marketplace = false;
+    }
+    return null;
+  }
+  if (body.showInMarketplace === undefined && body.show_in_marketplace === undefined) {
+    return null;
+  }
+  mapped.show_in_marketplace = toBool(body.showInMarketplace ?? body.show_in_marketplace);
+  return null;
 }
 
 function applyPaidVehicleStatusScheduling(body, mapped, dealer, existing) {
@@ -855,6 +903,8 @@ function mapDealerPortalProfile(profile) {
     ...row,
     storefrontEnabled: hasPublicStorefront(profile),
     requestsRestricted: isFreeTierPlan(profile),
+    marketplaceEligible: isMarketplaceEligibleDealer(profile),
+    marketplaceQualityRequired: marketplaceQualityRequired(),
   };
 }
 
@@ -910,6 +960,8 @@ function mapVehicleRow(vehicle) {
     Mileage: vehicle.mileage || "",
     Color: vehicle.color || "",
     Status: vehicle.status || "",
+    showInMarketplace: vehicle.show_in_marketplace === true,
+    acjQualityVerified: vehicle.acj_quality_verified === true,
   };
 }
 
@@ -941,6 +993,8 @@ function mapVehicleInput(body) {
       body.financingAvailable !== undefined ? toBool(body.financingAvailable) : undefined,
     acj_quality_verified:
       body.acjQualityVerified !== undefined ? toBool(body.acjQualityVerified) : undefined,
+    show_in_marketplace:
+      body.showInMarketplace !== undefined ? toBool(body.showInMarketplace ?? body.show_in_marketplace) : undefined,
     listed_at: body.listedAt !== undefined ? cleanStr(body.listedAt, 40) || null : undefined,
     expected_arrival_at:
       body.expectedArrivalAt !== undefined
@@ -1296,9 +1350,7 @@ app.get("/api/public/marketplace/config", (_req, res) => {
 
 app.get("/api/public/marketplace/vehicles", async (_req, res) => {
   try {
-    const requireQuality =
-      cleanStr(process.env.MARKETPLACE_REQUIRE_QUALITY, 10).toLowerCase() === "1" ||
-      cleanStr(process.env.MARKETPLACE_REQUIRE_QUALITY, 10).toLowerCase() === "true";
+    const requireQuality = marketplaceQualityRequired();
     const { vehicles, dealers } = await getMarketplaceVehicles({ requireQuality });
     const dealerById = new Map(dealers.map((d) => [d.dealer_id, d]));
     const activeStatuses = new Set(["available", "active", "in_transit", "in transit", "reserved", "pending"]);
@@ -1318,8 +1370,8 @@ app.get("/api/public/marketplace/vehicles", async (_req, res) => {
       meta: {
         count: rows.length,
         qualityPolicy: requireQuality
-          ? "Only ACJ quality-verified listings are shown."
-          : "Verified free-plan dealer inventory — quality review in progress for new listings.",
+          ? "Dealer opted in and ACJ quality-verified listings only."
+          : "Dealer opted-in listings from verified free-plan dealers.",
         reservationDepositPct: defaultMarketplaceReservationPct(),
       },
     });
@@ -2063,7 +2115,11 @@ app.get("/api/dealer/vehicles", requireActiveDealer, async (req, res) => {
       publicOnly: false,
     });
 
-    return res.json({ ok: true, vehicles: vehicles.map(mapVehicleRow) });
+    const dealer = await getProfileByDealerId(dealerId);
+    return res.json({
+      ok: true,
+      vehicles: vehicles.map((v) => enrichVehicleRow(v, dealer)).filter(Boolean),
+    });
   } catch (err) {
     console.error("GET /api/dealer/vehicles error:", err);
     return res.status(500).json({ ok: false, error: "Internal Server Error" });
@@ -2096,10 +2152,14 @@ app.post("/api/dealer/vehicles", requireActiveDealer, async (req, res) => {
     const mapped = mapVehicleInput(req.body);
     if (!mapped.status) mapped.status = "available";
 
+    delete mapped.acj_quality_verified;
+
     const statusErr = applyPaidVehicleStatusScheduling(req.body, mapped, dealer, existing);
     if (statusErr) {
       return res.status(400).json({ ok: false, error: statusErr });
     }
+
+    applyDealerMarketplaceOptIn(req.body, mapped, dealer);
 
     const fields = {
       ...mapped,

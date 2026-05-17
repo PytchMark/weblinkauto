@@ -212,7 +212,8 @@ async function getMarketplaceVehicles({ requireQuality = false } = {}) {
     .select("*")
     .in("dealer_id", dealerIds)
     .eq("archived", false)
-    .eq("availability", true);
+    .eq("availability", true)
+    .eq("show_in_marketplace", true);
 
   if (requireQuality) {
     query = query.eq("acj_quality_verified", true);

@@ -608,6 +608,7 @@
                     <th>VIN</th>
                     <th>Price</th>
                     <th>Status</th>
+                    <th id="invMarketplaceCol" style="display:none">Marketplace</th>
                     <th>Updated</th>
                     <th>Actions</th>
                   </tr>
@@ -971,6 +972,20 @@
           </div>
         </div>
 
+        <div class="row" id="marketplaceFieldsRow" style="display:none">
+          <div style="grid-column:1/-1">
+            <label for="showInMarketplace">ACJ Marketplace</label>
+            <select class="field" id="showInMarketplace">
+              <option value="false">Do not list on marketplace</option>
+              <option value="true">List on ACJ Marketplace</option>
+            </select>
+            <p class="help" id="marketplaceFieldHelp" style="margin-top:8px;max-width:56ch;line-height:1.45">
+              Available on the free verified plan. Opt in here; ACJ reviews each unit before buyers see it on the marketplace.
+            </p>
+            <p class="help" id="marketplaceStatusNote" style="margin-top:6px;font-weight:600"></p>
+          </div>
+        </div>
+
         <div class="row">
           <div>
             <label for="financingAvailable">Financing available</label>
@@ -1217,6 +1232,12 @@
     return '<span class="pill slate"><span class="d"></span>' + escapeHtml(s || '—') + '</span>';
   }
 
+  function marketplaceColumnHeader(){
+    return dealerMarketplaceEligible()
+      ? '<th>Marketplace</th>'
+      : '';
+  }
+
   function escapeHtml(str){
     return String(str || '')
       .replace(/&/g,'&amp;')
@@ -1363,6 +1384,7 @@
     if(profileTiktok) profileTiktok.value = socials.tiktok || '';
     if(profileHeroStatus) profileHeroStatus.textContent = d.heroVideoUrl ? 'Custom hero video uploaded.' : 'Using platform default until you upload one.';
     updatePaidStatusOptions();
+    updateMarketplaceVehicleFields(null);
     if(profileLogoPreview){
       const logo = d.logoUrl || '';
       profileLogoPreview.innerHTML = logo
@@ -1427,6 +1449,8 @@
   }
 
   function renderInventory(){
+    const mpCol = document.getElementById('invMarketplaceCol');
+    if(mpCol) mpCol.style.display = dealerMarketplaceEligible() ? '' : 'none';
     const q = STATE.invFilter.q;
     const status = STATE.invFilter.status;
 
@@ -1446,6 +1470,7 @@
       const vin = escapeHtml(v.VIN || '');
       const price = moneyJMD(v.Price || v.price);
       const st = statusPill(v.status || v.Status);
+      const mp = dealerMarketplaceEligible() ? marketplacePill(v) : '';
       const updated = escapeHtml((v.updatedAt || v['updatedAt'] || v['Updated At'] || '').toString().slice(0,10));
 
       const recordId = escapeHtml(v.airtableRecordId || v._recordId || '');
@@ -1465,6 +1490,7 @@
           <td>${vin || '—'}</td>
           <td>${escapeHtml(price)}</td>
           <td>${st}</td>
+          ${dealerMarketplaceEligible() ? `<td>${mp}</td>` : ''}
           <td>${updated || '—'}</td>
           <td>
             <button class="mini-btn" data-act="edit" data-id="${vid}" data-rid="${recordId}">Edit</button>
@@ -1732,6 +1758,45 @@
     return Boolean(STATE.dealer?.storefrontEnabled);
   }
 
+  function dealerMarketplaceEligible(){
+    return Boolean(STATE.dealer?.marketplaceEligible);
+  }
+
+  function marketplacePill(v){
+    const st = v.marketplaceStatus || {};
+    const key = st.key || (v.showInMarketplace ? 'pending' : 'off');
+    const label = st.label || (v.showInMarketplace ? 'Marketplace' : '—');
+    if(key === 'live') return '<span class="pill ok"><span class="d"></span>' + escapeHtml(label) + '</span>';
+    if(key === 'pending') return '<span class="pill warn"><span class="d"></span>' + escapeHtml(label) + '</span>';
+    if(key === 'off' && v.showInMarketplace) return '<span class="pill warn"><span class="d"></span>' + escapeHtml(label) + '</span>';
+    if(key === 'off') return '<span class="pill slate"><span class="d"></span>Not listed</span>';
+    return '<span class="pill slate"><span class="d"></span>' + escapeHtml(label) + '</span>';
+  }
+
+  function updateMarketplaceVehicleFields(vehicle){
+    const row = $('#marketplaceFieldsRow');
+    const note = $('#marketplaceStatusNote');
+    const eligible = dealerMarketplaceEligible();
+    if(row) row.style.display = eligible ? '' : 'none';
+    if(!eligible) return;
+    if(vehicle && $('#showInMarketplace')){
+      $('#showInMarketplace').value = vehicle.showInMarketplace === true ? 'true' : 'false';
+    }
+    if(note && vehicle?.marketplaceStatus){
+      const st = vehicle.marketplaceStatus;
+      note.textContent = st.key === 'live'
+        ? 'This unit is live on the ACJ Marketplace.'
+        : st.key === 'pending'
+          ? 'Submitted for marketplace — pending ACJ quality review.'
+          : vehicle.showInMarketplace
+            ? 'Opted in — awaiting review.'
+            : '';
+      note.style.color = st.key === 'live' ? '#166534' : st.key === 'pending' ? '#9a3412' : '';
+    } else if(note){
+      note.textContent = '';
+    }
+  }
+
   function toDateInputValue(iso){
     if(!iso) return '';
     const d = new Date(iso);
@@ -1800,6 +1865,8 @@
     if($('#reservedUntil')) $('#reservedUntil').value = '';
     if($('#reservedDurationDays')) $('#reservedDurationDays').value = '';
     syncStatusSchedulingFields();
+    updateMarketplaceVehicleFields(null);
+    if($('#showInMarketplace')) $('#showInMarketplace').value = 'false';
   }
 
   function openVehicleEditor(v=null){
@@ -1838,6 +1905,7 @@
       if($('#financingAvailable')){
         $('#financingAvailable').value = String(v.financingAvailable === true ? 'true' : 'false');
       }
+      updateMarketplaceVehicleFields(v);
 
       archiveVehicleBtn.style.display = 'inline-flex';
       archiveVehicleBtn.onclick = async () => {
@@ -1857,6 +1925,7 @@
     if(!v){
       $('#vehicleId').value = suggestNextStockNumber();
     }
+    updateMarketplaceVehicleFields(v);
     renderImageGallery();
     renderVideoGallery();
     updateVideoUploadVisibility();
@@ -1897,6 +1966,9 @@
       const days = Number($("#reservedDurationDays")?.value || 0);
       if (until) payload.reservedUntil = new Date(until).toISOString();
       else if (days > 0) payload.reservedDurationDays = days;
+    }
+    if (dealerMarketplaceEligible() && $("#showInMarketplace")) {
+      payload.showInMarketplace = $("#showInMarketplace").value === "true";
     }
     return payload;
   }
