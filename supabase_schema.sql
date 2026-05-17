@@ -40,6 +40,9 @@ alter table profiles add column if not exists description text;
 alter table profiles add column if not exists location_label text;
 alter table profiles add column if not exists google_maps_url text;
 alter table profiles add column if not exists hero_video_url text;
+
+alter table vehicles add column if not exists hero_image_url text;
+alter table vehicles add column if not exists hero_video_url text;
 alter table profiles add column if not exists reviews_highlight text;
 alter table profiles add column if not exists social_website text;
 alter table profiles add column if not exists social_instagram text;

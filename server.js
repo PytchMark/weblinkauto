@@ -254,6 +254,13 @@ function mapVehicleSaveError(err) {
   if (/vehicleid|vehicle_id|required/i.test(msg)) {
     return { status: 400, error: msg };
   }
+  if (/schema cache|could not find the .* column|column.*does not exist/i.test(msg)) {
+    return {
+      status: 500,
+      error:
+        "Database needs a migration: run scripts/migrate-vehicles-hero-columns.sql in Supabase, then try saving again.",
+    };
+  }
   return { status: 500, error: msg || "We could not save this vehicle. Please try again." };
 }
 
