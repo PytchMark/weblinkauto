@@ -15,10 +15,14 @@
   }
 
   function whenReady(callback) {
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", callback, { once: true });
-    } else {
+    const run = () => {
       callback();
+      global.setTimeout(revealStuckElements, 2500);
+    };
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", run, { once: true });
+    } else {
+      run();
     }
   }
 
@@ -43,7 +47,18 @@
   }
 
   function markVisible(nodes) {
-    nodes.forEach((node) => node.classList.add("is-visible"));
+    nodes.forEach((node) => {
+      node.classList.add("is-visible");
+      if (ensureGsap()) global.gsap.set(node, { autoAlpha: 1, y: 0, clearProps: "transform" });
+    });
+  }
+
+  /** Safety: elements left hidden by CSS .acj-reveal if GSAP did not run */
+  function revealStuckElements() {
+    document.querySelectorAll(".acj-reveal:not(.is-visible)").forEach((node) => {
+      const opacity = Number.parseFloat(global.getComputedStyle(node).opacity || "1");
+      if (opacity < 0.05) markVisible([node]);
+    });
   }
 
   function killAll() {
@@ -97,6 +112,7 @@
     const start = options?.start ?? MOTION.reveal.start;
 
     nodes.forEach((node) => {
+      global.gsap.set(node, { visibility: "visible" });
       global.gsap.fromTo(
         node,
         { autoAlpha: 0, y },
@@ -111,6 +127,7 @@
             once: true,
             toggleActions: "play none none none",
           },
+          onStart: () => node.classList.add("is-visible"),
           onComplete: () => node.classList.add("is-visible"),
         }
       );
@@ -137,6 +154,11 @@
       const children = Array.from(parent.querySelectorAll(childSelector));
       if (!children.length) return;
 
+      const revealRoot = parent.closest(".acj-reveal") || parent;
+      revealRoot.classList.add("is-visible");
+      global.gsap.set(revealRoot, { autoAlpha: 1 });
+      global.gsap.set(children, { visibility: "visible" });
+
       global.gsap.fromTo(
         children,
         { autoAlpha: 0, y },
@@ -151,6 +173,10 @@
             start,
             once: true,
             toggleActions: "play none none none",
+          },
+          onStart: () => {
+            revealRoot.classList.add("is-visible");
+            children.forEach((child) => child.classList.add("is-visible"));
           },
           onComplete: () => children.forEach((child) => child.classList.add("is-visible")),
         }
@@ -304,6 +330,11 @@
     global.gsap.to(overlay, { autoAlpha: 0, duration: 0.16, ease: "power2.in" });
   }
 
+  function refreshScroll() {
+    if (global.ScrollTrigger) global.ScrollTrigger.refresh();
+    revealStuckElements();
+  }
+
   const ACJMotion = {
     prefersReducedMotion,
     whenReady,
@@ -316,6 +347,8 @@
     heroIntro,
     pulseOnce,
     modalTimeline,
+    refreshScroll,
+    revealStuckElements,
     killAll,
   };
 

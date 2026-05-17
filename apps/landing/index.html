@@ -188,7 +188,7 @@
         <p class="landing-tier-lead">Both plans use the same inventory hub. Start free to get sales with zero monthly cost — upgrade when you want your own page, direct leads, and priority financing.</p>
       </div>
 
-      <div class="landing-compare-matrix acj-reveal" aria-label="Feature comparison">
+      <div class="landing-compare-matrix" aria-label="Feature comparison">
         <div class="landing-compare-matrix-head">
           <h3>See what each path includes</h3>
           <p>Side-by-side — no hidden details.</p>
@@ -646,14 +646,20 @@
       ACJMotion.whenReady(() => {
         ACJMotion.heroIntro([".landing-hero h1", ".landing-hero-lead", ".landing-hero-ctas"]);
         ACJMotion.revealOnScroll(
-          ".acj-reveal:not(.landing-benefit-point):not(.landing-compare-matrix), .landing-financing-inner > div:first-child, .landing-trust-intro, .landing-step"
+          ".acj-reveal:not(.landing-benefit-point), .landing-compare-matrix, .landing-financing-inner > div:first-child, .landing-trust-intro, .landing-step"
         );
-        ACJMotion.revealGroup(".landing-compare-matrix-grid", ".landing-compare-matrix-row", { stagger: 0.03, y: 8 });
+        ACJMotion.revealGroup(".landing-compare-matrix-grid", ".landing-compare-matrix-row", { stagger: 0.03, y: 6 });
         ACJMotion.revealGroup(".landing-benefit-points", ".landing-benefit-point");
         ACJMotion.revealGroup(".landing-pricing-grid", ".landing-price-card");
         if(!window.matchMedia("(prefers-reduced-motion: reduce)").matches){
           ACJMotion.parallaxLayer(".parallax-img", 10);
         }
+        const refreshMotion = () => {
+          if(window.ACJMotion?.refreshScroll) ACJMotion.refreshScroll();
+        };
+        window.addEventListener("load", () => setTimeout(refreshMotion, 120));
+        window.addEventListener("hashchange", () => setTimeout(refreshMotion, 80));
+        setTimeout(refreshMotion, 400);
       });
     }
   </script>
