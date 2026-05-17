@@ -1466,6 +1466,18 @@ body.acj-body.landing-page {
 }
 
 /* Trust marquee */
+.landing-trust-band--after-hero {
+  background: var(--landing-bg);
+  padding: clamp(22px, 3.5vw, 32px) 0;
+  overflow: hidden;
+  border-bottom: 1px solid var(--landing-border);
+}
+
+.landing-trust-marquee-track--hero {
+  animation-duration: 42s;
+  animation-direction: reverse;
+}
+
 .landing-section--trust {
   padding: clamp(36px, 4.5vw, 52px) 0 clamp(40px, 5vw, 56px);
   background: var(--landing-surface);
@@ -1746,6 +1758,7 @@ body.acj-body.landing-page {
 
   .landing-marquee-track,
   .landing-trust-marquee-track,
+  .landing-trust-marquee-track--hero,
   .landing-hero::before,
   .landing-page .acj-btn-luxe::after {
     animation: none;
