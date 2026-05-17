@@ -1,0 +1,634 @@
+/**
+ * ACJ Portal Luxe — dealer + admin
+ * Bold motion red canvas, elevated white cards, refined controls.
+ */
+
+.acj-portal-luxe.acj-premium-shell {
+  --portal-red-950: #2d0409;
+  --portal-red-900: #4a0610;
+  --portal-red-800: #6b0f1a;
+  --portal-red-700: #8b1024;
+  --portal-red-600: #b91c3c;
+  --portal-red-500: #dc143c;
+  --portal-gold: #c9a227;
+  --portal-ink: #0c0d10;
+  --portal-muted: #64748b;
+  --portal-line: rgba(15, 23, 42, 0.09);
+  --portal-card-bg: #ffffff;
+  --portal-card-shadow:
+    0 4px 0 rgba(255, 255, 255, 0.65) inset,
+    0 28px 70px rgba(0, 0, 0, 0.22),
+    0 8px 24px rgba(107, 15, 26, 0.18);
+  --portal-card-shadow-hover:
+    0 4px 0 rgba(255, 255, 255, 0.75) inset,
+    0 36px 90px rgba(0, 0, 0, 0.28),
+    0 12px 32px rgba(196, 30, 58, 0.22);
+  --portal-radius: 22px;
+  --portal-radius-lg: 28px;
+  --bg: transparent;
+  --surface: var(--portal-card-bg);
+  --surface-soft: #fafafa;
+  --surface2: #f8f9fc;
+  --ink: var(--portal-ink);
+  --muted: var(--portal-muted);
+  --muted-2: #94a3b8;
+  --muted2: #94a3b8;
+  --line: var(--portal-line);
+  --brand: var(--portal-red-500);
+  --brand-2: #e11d48;
+  --brand2: #e11d48;
+  --brand-soft: #fdecea;
+  --brandSoft: #fdecea;
+  --shadow: var(--portal-card-shadow);
+  --shadow-soft: 0 14px 36px rgba(0, 0, 0, 0.1);
+  --shadow2: var(--shadow-soft);
+  --radius: var(--portal-radius);
+  --radius-lg: var(--portal-radius-lg);
+  --radius2: var(--portal-radius-lg);
+  position: relative;
+  isolation: isolate;
+  min-height: 100vh;
+  color: var(--portal-ink);
+  font-family: var(--acj-font-body, "DM Sans", system-ui, sans-serif);
+  background: var(--portal-red-900);
+}
+
+/* Animated crimson mesh */
+.acj-portal-luxe.acj-premium-shell::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -3;
+  background:
+    radial-gradient(ellipse 90% 55% at 15% -5%, rgba(255, 120, 140, 0.42), transparent 52%),
+    radial-gradient(ellipse 70% 50% at 95% 15%, rgba(255, 200, 120, 0.12), transparent 45%),
+    radial-gradient(ellipse 80% 60% at 50% 110%, rgba(45, 4, 9, 0.85), transparent 55%),
+    linear-gradient(155deg, var(--portal-red-950) 0%, var(--portal-red-800) 32%, var(--portal-red-600) 58%, var(--portal-red-900) 100%);
+  background-size: 220% 220%;
+  animation: acjPortalMesh 22s ease-in-out infinite alternate;
+}
+
+/* Fine grain + vignette */
+.acj-portal-luxe.acj-premium-shell::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  opacity: 0.35;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+  mix-blend-mode: overlay;
+  animation: acjPortalGrain 10s steps(8) infinite;
+}
+
+.acj-portal-luxe .acj-portal-sheen {
+  position: fixed;
+  inset: -40%;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(
+    105deg,
+    transparent 42%,
+    rgba(255, 255, 255, 0.07) 48%,
+    rgba(255, 220, 180, 0.1) 50%,
+    transparent 56%
+  );
+  transform: translateX(-60%) rotate(8deg);
+  animation: acjPortalSheen 9s ease-in-out infinite;
+}
+
+@keyframes acjPortalMesh {
+  0% {
+    background-position: 0% 20%;
+  }
+  100% {
+    background-position: 100% 80%;
+  }
+}
+
+@keyframes acjPortalGrain {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(-2%, 1%);
+  }
+  50% {
+    transform: translate(1%, -2%);
+  }
+  75% {
+    transform: translate(2%, 2%);
+  }
+}
+
+@keyframes acjPortalSheen {
+  0%,
+  35% {
+    transform: translateX(-70%) rotate(8deg);
+    opacity: 0.4;
+  }
+  55% {
+    opacity: 0.85;
+  }
+  70%,
+  100% {
+    transform: translateX(70%) rotate(8deg);
+    opacity: 0.35;
+  }
+}
+
+@keyframes acjPortalCardIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Layout shells */
+.acj-portal-luxe > .wrap {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 clamp(16px, 4vw, 28px);
+}
+
+.acj-portal-luxe.acj-premium-shell > .wrap {
+  min-height: 100vh;
+  display: block;
+  padding: clamp(20px, 4vw, 36px) clamp(16px, 4vw, 28px) 48px;
+}
+
+/* Elevated white cards */
+.acj-portal-luxe .panel,
+.acj-portal-luxe .sidebar,
+.acj-portal-luxe .login-card,
+.acj-portal-luxe .shell,
+.acj-portal-luxe .drawer-panel,
+.acj-portal-luxe .modal,
+.acj-portal-luxe .table-shell {
+  background: var(--portal-card-bg) !important;
+  border: 1px solid rgba(255, 255, 255, 0.72) !important;
+  border-radius: var(--portal-radius-lg) !important;
+  box-shadow: var(--portal-card-shadow) !important;
+  backdrop-filter: none !important;
+  animation: acjPortalCardIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.acj-portal-luxe .shell {
+  padding: clamp(18px, 3vw, 26px) !important;
+}
+
+.acj-portal-luxe .sidebar {
+  animation-delay: 0.05s;
+}
+
+.acj-portal-luxe .panel {
+  animation-delay: 0.1s;
+}
+
+.acj-portal-luxe .kpi,
+.acj-portal-luxe .chart-card {
+  background: linear-gradient(180deg, #ffffff 0%, #fafafa 100%) !important;
+  border: 1px solid var(--portal-line) !important;
+  border-radius: var(--portal-radius) !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.06) !important;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.acj-portal-luxe .kpi::before,
+.acj-portal-luxe .chart-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--portal-red-600), var(--portal-gold), var(--portal-red-500));
+}
+
+.acj-portal-luxe .kpi:hover,
+.acj-portal-luxe .chart-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--portal-card-shadow-hover) !important;
+}
+
+/* Header — frosted ivory bar */
+.acj-portal-luxe header {
+  background: rgba(255, 255, 255, 0.94) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 0 10px 48px rgba(0, 0, 0, 0.2) !important;
+  backdrop-filter: blur(16px) saturate(1.2) !important;
+}
+
+.acj-portal-luxe .logo,
+.acj-portal-luxe .badge {
+  border: 1px solid rgba(196, 30, 58, 0.2) !important;
+  box-shadow: 0 8px 24px rgba(196, 30, 58, 0.15) !important;
+}
+
+.acj-portal-luxe .brand-meta .name,
+.acj-portal-luxe .title {
+  font-family: var(--acj-font-display, "Playfair Display", Georgia, serif);
+  letter-spacing: -0.02em;
+}
+
+.acj-portal-luxe .panel-head h1,
+.acj-portal-luxe .login-card h1 {
+  font-family: var(--acj-font-display, "Playfair Display", Georgia, serif);
+  letter-spacing: -0.02em;
+}
+
+/* —— Dark sidebar (dealer) —— */
+.acj-portal-luxe .sidebar {
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(168deg, #120408 0%, #1a060c 38%, #2a0a12 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow:
+    0 28px 70px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.acj-portal-luxe .sidebar .nav {
+  flex: 1;
+}
+
+.acj-portal-luxe .portal-sidebar-footer {
+  margin-top: auto;
+  padding: 12px 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.acj-portal-luxe .side-top {
+  background: linear-gradient(135deg, rgba(196, 30, 58, 0.22), rgba(201, 162, 39, 0.08)) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.acj-portal-luxe .side-top .hello,
+.acj-portal-luxe .side-top .id {
+  color: rgba(255, 255, 255, 0.55) !important;
+}
+
+.acj-portal-luxe .side-top .dealer {
+  color: #fff !important;
+}
+
+.acj-portal-luxe .side-top .id strong {
+  color: var(--portal-gold);
+}
+
+/* —— Dark controls rail (admin) —— */
+.acj-portal-luxe .portal-controls-panel {
+  background: linear-gradient(168deg, #120408 0%, #1a060c 38%, #2a0a12 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow:
+    0 28px 70px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.acj-portal-luxe .portal-controls-panel h3,
+.acj-portal-luxe .portal-controls-panel h4 {
+  color: #fff;
+  font-family: var(--acj-font-display, "Playfair Display", Georgia, serif);
+  letter-spacing: -0.02em;
+}
+
+.acj-portal-luxe .portal-controls-panel .hint,
+.acj-portal-luxe .portal-controls-panel .label,
+.acj-portal-luxe .portal-controls-panel label {
+  color: rgba(255, 255, 255, 0.55) !important;
+}
+
+.acj-portal-luxe .portal-controls-panel .field,
+.acj-portal-luxe .portal-controls-panel .input,
+.acj-portal-luxe .portal-controls-panel .select {
+  background: rgba(255, 255, 255, 0.96) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: var(--portal-ink) !important;
+}
+
+.acj-portal-luxe .portal-controls-panel .panel {
+  background: rgba(0, 0, 0, 0.22) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  box-shadow: none !important;
+}
+
+.acj-portal-luxe .portal-controls-panel .btn-ghost {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.14) !important;
+  color: #fff !important;
+}
+
+.acj-portal-luxe .portal-controls-panel .btn-primary {
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35) !important;
+}
+
+/* Navigation + icons */
+.acj-portal-luxe .nav button {
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-left: 3px solid transparent;
+  color: rgba(255, 255, 255, 0.72);
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.acj-portal-luxe .nav button:hover {
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: #fff !important;
+}
+
+.acj-portal-luxe .nav button[aria-current="page"] {
+  background: linear-gradient(90deg, rgba(196, 30, 58, 0.35), rgba(196, 30, 58, 0.06)) !important;
+  border-left-color: var(--portal-gold);
+  color: #fff !important;
+}
+
+.acj-portal-luxe .nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.acj-portal-luxe .nav-text {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.acj-portal-luxe .nav-icon,
+.acj-portal-luxe .tab-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.85);
+  transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+
+.acj-portal-luxe .nav-icon svg,
+.acj-portal-luxe .tab-icon svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.acj-portal-luxe .nav button[aria-current="page"] .nav-icon {
+  background: rgba(201, 162, 39, 0.22);
+  color: var(--portal-gold);
+  transform: scale(1.05);
+}
+
+.acj-portal-luxe .nav .hint {
+  color: rgba(255, 255, 255, 0.45) !important;
+  font-weight: 700;
+}
+
+.acj-portal-luxe .nav button[aria-current="page"] .hint {
+  color: rgba(255, 255, 255, 0.65) !important;
+}
+
+/* Admin top tabs with icons */
+.acj-portal-luxe .tabs {
+  border: 1px solid var(--portal-line) !important;
+  background: #fff !important;
+  padding: 5px !important;
+  gap: 4px;
+}
+
+.acj-portal-luxe .tabs .tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.acj-portal-luxe .tabs .tab-icon {
+  background: rgba(196, 30, 58, 0.08);
+  color: var(--portal-red-700);
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+}
+
+.acj-portal-luxe .tab.active {
+  background: linear-gradient(135deg, rgba(196, 30, 58, 0.14), rgba(201, 162, 39, 0.08)) !important;
+  color: var(--portal-red-700) !important;
+  box-shadow: 0 4px 14px rgba(196, 30, 58, 0.12);
+}
+
+.acj-portal-luxe .tab.active .tab-icon {
+  background: rgba(196, 30, 58, 0.18);
+  color: var(--portal-red-600);
+}
+
+/* Tab panel transition hook */
+.acj-portal-luxe .tab.acj-tab-panel {
+  will-change: transform, opacity;
+}
+
+.acj-portal-luxe .portal-workspace-target {
+  will-change: transform, opacity;
+}
+
+/* Buttons */
+.acj-portal-luxe .btn-primary {
+  background: linear-gradient(135deg, #e11d48 0%, #b91c3c 45%, #8b1024 100%) !important;
+  box-shadow: 0 14px 36px rgba(196, 30, 58, 0.38) !important;
+  letter-spacing: 0.02em;
+}
+
+.acj-portal-luxe .btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 44px rgba(196, 30, 58, 0.45) !important;
+}
+
+.acj-portal-luxe .btn-ghost,
+.acj-portal-luxe .btn-danger {
+  background: #fff !important;
+  border: 1px solid var(--portal-line) !important;
+}
+
+.acj-portal-luxe .chip,
+.acj-portal-luxe .pill {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid var(--portal-line) !important;
+  font-family: var(--acj-font-data, ui-monospace, monospace);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+/* Forms */
+.acj-portal-luxe .field,
+.acj-portal-luxe .input,
+.acj-portal-luxe .select,
+.acj-portal-luxe .textarea {
+  border-radius: 14px !important;
+  border-color: var(--portal-line) !important;
+  background: #fff !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.acj-portal-luxe .field:focus,
+.acj-portal-luxe .input:focus,
+.acj-portal-luxe .select:focus,
+.acj-portal-luxe .textarea:focus {
+  border-color: rgba(196, 30, 58, 0.45) !important;
+  box-shadow: 0 0 0 4px rgba(196, 30, 58, 0.12) !important;
+}
+
+.acj-portal-luxe label,
+.acj-portal-luxe .label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--portal-muted);
+}
+
+/* Tables */
+.acj-portal-luxe .table-wrap,
+.acj-portal-luxe .table-shell {
+  border-radius: var(--portal-radius) !important;
+  overflow: hidden;
+}
+
+.acj-portal-luxe thead th,
+.acj-portal-luxe .table-head {
+  background: linear-gradient(180deg, #f8f9fc 0%, #f1f3f8 100%) !important;
+}
+
+.acj-portal-luxe .table-head {
+  border-bottom: 1px solid var(--portal-line) !important;
+}
+
+.acj-portal-luxe tbody tr:hover td {
+  background: rgba(196, 30, 58, 0.05) !important;
+}
+
+.acj-portal-luxe .search,
+.acj-portal-luxe .seg {
+  background: #fff !important;
+  border: 1px solid var(--portal-line) !important;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Login */
+.acj-portal-luxe .login {
+  min-height: calc(100vh - 72px);
+}
+
+.acj-portal-luxe .login-card {
+  position: relative;
+  max-width: 480px;
+  overflow: hidden;
+}
+
+.acj-portal-luxe .login-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--portal-red-600), var(--portal-gold), var(--portal-red-500));
+}
+
+/* Drawer / modal overlays */
+.acj-portal-luxe .drawer,
+.acj-portal-luxe .backdrop {
+  background: rgba(45, 4, 9, 0.55) !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+.acj-portal-luxe .mhead {
+  background: linear-gradient(90deg, rgba(196, 30, 58, 0.08), #fff) !important;
+}
+
+/* Admin top bar */
+.acj-portal-luxe .top {
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--portal-line);
+}
+
+.acj-portal-luxe #toast {
+  background: #fff !important;
+  border: 1px solid var(--portal-line) !important;
+  box-shadow: var(--portal-card-shadow) !important;
+  font-weight: 600;
+}
+
+/* Section eyebrow utility */
+.acj-portal-luxe .acj-portal-eyebrow {
+  display: block;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--portal-red-600);
+  margin-bottom: 6px;
+}
+
+.acj-portal-luxe .acj-portal-eyebrow::before {
+  content: "◆ ";
+  color: var(--portal-gold);
+  font-size: 8px;
+}
+
+/* Stagger children */
+.acj-portal-luxe .grid > .sidebar {
+  animation-delay: 0.04s;
+}
+
+.acj-portal-luxe .grid > .panel,
+.acj-portal-luxe .grid > div:last-child .panel {
+  animation-delay: 0.1s;
+}
+
+@media (max-width: 980px) {
+  .acj-portal-luxe .sidebar {
+    position: relative !important;
+    top: auto !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .acj-portal-luxe.acj-premium-shell::before,
+  .acj-portal-luxe.acj-premium-shell::after,
+  .acj-portal-luxe .acj-portal-sheen {
+    animation: none !important;
+  }
+
+  .acj-portal-luxe .panel,
+  .acj-portal-luxe .sidebar,
+  .acj-portal-luxe .login-card,
+  .acj-portal-luxe .shell,
+  .acj-portal-luxe .kpi,
+  .acj-portal-luxe .chart-card {
+    animation: none !important;
+  }
+}

@@ -6,6 +6,8 @@
   <title>Carsales · Admin Console</title>
   <meta name="description" content="Admin console for dealers, inventory, and requests." />
   <link rel="stylesheet" href="/assets/css/acj-brand.css" />
+  <link rel="stylesheet" href="/assets/css/acj-portal-luxe.css" />
+  <link rel="stylesheet" href="/assets/css/acj-portal-ux.css" />
   <link rel="stylesheet" href="/assets/css/acj-loader.css" />
 
   <style>
@@ -41,12 +43,8 @@
     *{box-sizing:border-box}
     body{
       margin:0;
-      font-family:var(--sans);
       color:var(--ink);
-      background:
-        radial-gradient(circle at top left, rgba(220,38,38,.08), transparent 45%),
-        radial-gradient(circle at bottom right, rgba(239,68,68,.06), transparent 55%),
-        var(--bg);
+      background:transparent;
       -webkit-font-smoothing:antialiased;
     }
     a{color:inherit;text-decoration:none}
@@ -320,7 +318,7 @@
   </style>
 </head>
 
-<body class="acj-premium-shell">
+<body class="acj-premium-shell acj-portal-luxe">
   <div class="wrap">
 
     <!-- LOGIN -->
@@ -329,6 +327,7 @@
         <div class="brand">
           <div class="badge"><img src="https://res.cloudinary.com/dd8pjjxsm/image/upload/v1770298701/ChatGPT_Image_Sep_6_2025_08_27_53_AM_raorxf.png" alt="Admin logo" /></div>
           <div>
+            <span class="acj-portal-eyebrow">Command center</span>
             <div class="title">Admin Console</div>
             <div class="sub">Manage dealers, inventory, and viewing requests.</div>
           </div>
@@ -384,24 +383,35 @@
             <span id="apiStatus">Connecting…</span>
           </div>
 
-          <div class="tabs" role="tablist" aria-label="Admin tabs">
-            <button class="tab active" id="tabDealers" data-tab="dealers" type="button">Dealers</button>
-            <button class="tab" id="tabApplications" data-tab="applications" type="button">Applications</button>
-            <button class="tab" id="tabSellSubmissions" data-tab="sellSubmissions" type="button">Sell cars</button>
-            <button class="tab" id="tabSummary" data-tab="summary" type="button">Summary</button>
-            <button class="tab" id="tabInventory" data-tab="inventory" type="button">Inventory</button>
-            <button class="tab" id="tabRequests" data-tab="requests" type="button">Requests</button>
-            <button class="tab" id="tabSettings" data-tab="settings" type="button">Settings</button>
-          </div>
-
           <button class="btn btn-ghost" id="btnRefresh" type="button">Refresh</button>
           <button class="btn btn-ghost" id="btnLogout" type="button">Logout</button>
         </div>
       </div>
 
-      <div class="grid">
+
+      <div class="admin-app-grid">
+        <aside class="sidebar admin-rail" aria-label="Admin navigation">
+          <div class="side-top">
+            <div class="hello">Console</div>
+            <div class="dealer" id="railTitle">Carsales Admin</div>
+          </div>
+          <nav class="nav" role="tablist">
+            <button type="button" data-tab="dealers" id="tabDealers" class="tab">Dealers</button>
+            <button type="button" data-tab="quality" id="tabQuality" class="tab">Quality</button>
+            <button type="button" data-tab="applications" id="tabApplications" class="tab">Applications</button>
+            <button type="button" data-tab="sellSubmissions" id="tabSellSubmissions" class="tab">Sell cars</button>
+            <button type="button" data-tab="inventory" id="tabInventory" class="tab">Inventory</button>
+            <button type="button" data-tab="requests" id="tabRequests" class="tab">Requests</button>
+            <button type="button" data-tab="summary" id="tabSummary" class="tab">Summary</button>
+            <button type="button" data-tab="audit" id="tabAudit" class="tab">Audit log</button>
+            <button type="button" data-tab="settings" id="tabSettings" class="tab">Settings</button>
+          </nav>
+          <div class="portal-sidebar-footer">ACJ Admin</div>
+        </aside>
+
+
         <!-- LEFT -->
-        <div class="panel">
+        <div class="panel portal-controls-panel">
           <h3>Controls</h3>
           <div class="hint" id="hint">Search + filter across the current tab.</div>
 
@@ -528,7 +538,7 @@
           </div>
         </div>
 
-        <!-- RIGHT -->
+        <div class="portal-workspace-col">
         <div class="table-shell" id="mainTable">
           <div class="table-head">
             <div>
@@ -783,6 +793,8 @@
       tabInventory: el("tabInventory"),
       tabRequests: el("tabRequests"),
       tabSettings: el("tabSettings"),
+      tabQuality: el("tabQuality"),
+      tabAudit: el("tabAudit"),
 
       hint: el("hint"),
       q: el("q"),
@@ -1189,6 +1201,10 @@
       buildStatusFilterOptions(tab);
       buildTableHeaders(tab);
 
+      if (window.ACJPortal?.animateAdminWorkspace) {
+        requestAnimationFrame(() => window.ACJPortal.animateAdminWorkspace());
+      }
+
       refresh().catch(()=>{});
     }
 
@@ -1238,28 +1254,6 @@
           state.dealers = Array.isArray(data.dealers) ? data.dealers : [];
         }
 
-
-        if(state.tab==="sellSubmissions"){
-          const veh = [r.year, r.make, r.model].filter(Boolean).join(" ");
-          tr.appendChild(cell(`<div style="font-weight:900">${esc(veh||"—")}</div>`));
-          tr.appendChild(cell(`<span class="mono">${esc(r.contactName||"")}</span><br><span style="color:var(--muted);font-size:12px">${esc(r.contactPhone||"")}</span>`));
-          tr.appendChild(cell(r.priceHope ? `J$ ${Number(r.priceHope).toLocaleString()}` : "—"));
-          tr.appendChild(cell(statusPill(r.status)));
-          tr.appendChild(cell(`<span class="mono">${esc((r.createdAt||"").slice(0,19))}</span>`));
-          const tdAct = document.createElement("td");
-          tdAct.style.whiteSpace = "nowrap";
-          const wrap = document.createElement("div");
-          wrap.style.display = "flex"; wrap.style.gap = "6px";
-          const bOk = document.createElement("button");
-          bOk.className = "btn btn-primary"; bOk.type = "button"; bOk.textContent = "Approve";
-          bOk.disabled = (r.status||"").toLowerCase() !== "pending";
-          bOk.addEventListener("click", (e) => { e.stopPropagation(); patchSellSubmissionStatus(r.id, "approved"); });
-          const bNo = document.createElement("button");
-          bNo.className = "btn btn-danger"; bNo.type = "button"; bNo.textContent = "Reject";
-          bNo.disabled = (r.status||"").toLowerCase() !== "pending";
-          bNo.addEventListener("click", (e) => { e.stopPropagation(); patchSellSubmissionStatus(r.id, "rejected"); });
-          wrap.appendChild(bOk); wrap.appendChild(bNo); tdAct.appendChild(wrap); tr.appendChild(tdAct);
-        }
 
         if(state.tab==="applications"){
           const res = await fetch(API.dealerApplications(ui.statusFilter.value), { headers: authHeaders() });
@@ -1444,7 +1438,9 @@
       let rows = [];
       if(state.tab==="dealers") rows = [...state.dealers];
       if(state.tab==="applications") rows = [...state.applications];
-      if(state.tab==="sellSubmissions") rows = [...(state.sellSubmissions||[])];
+        if(state.tab==="sellSubmissions") rows = [...(state.sellSubmissions||[])];
+        if(state.tab==="quality") rows = [...(state.qualityQueue||[])];
+        if(state.tab==="audit") rows = [...(state.auditLog||[])];
       if(state.tab==="inventory") rows = [...state.vehicles];
       if(state.tab==="requests") rows = [...state.requests];
       if(state.tab==="settings") rows = settingsRows();
@@ -1533,6 +1529,7 @@
           tr.appendChild(cell(`<span class="mono">${esc(r.dealerId||"—")}</span>`));
           tr.appendChild(cell(statusPill(r.status)));
           tr.appendChild(cell(`<span class="badgeMini">${esc(r.plan||"—")}</span>`));
+          tr.appendChild(cell(window.ACJPortalUX ? window.ACJPortalUX.healthDotHtml(r, (state.vehicles||[]).filter(v=>v.dealerId===r.dealerId).length) : '—'));
           tr.appendChild(cell(r.whatsapp ? `<span class="badgeMini">+${esc(r.whatsapp)}</span>` : `<span style="color:var(--muted)">—</span>`));
           tr.appendChild(cell(r.logoUrl ? `<a class="mono" href="${escAttr(r.logoUrl)}" target="_blank" rel="noreferrer">logo</a>` : `<span style="color:var(--muted)">—</span>`));
 
@@ -2005,7 +2002,19 @@
         .replaceAll("'","&#39;");
     }
     function escAttr(s){ return esc(s).replaceAll('"',"&quot;"); }
+
+    window.__ADMIN_APP = {
+      state, setTab, refresh, render, toast, safeJson, authHeaders, API,
+      ui, buildTableHeaders, buildStatusFilterOptions, seedDemoIfNeeded,
+      cell, esc, money, statusPill, loadSummary, renderSummaryFromDemo,
+      patchApplicationStatus, fillCreateFromApplication, openDealerModal,
+      closeDealerModal, createDealer, clearCreateInputs
+    };
   </script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/gsap.min.js"></script>
 <script src="/assets/js/acj-loader.js"></script>
+<script src="/assets/js/acj-portal-ux.js"></script>
+<script src="/assets/js/acj-admin-ux.js"></script>
+<script src="/assets/js/acj-portal-luxe.js"></script>
 </body>
 </html>

@@ -48,7 +48,20 @@ alter table vehicles add column if not exists acj_quality_verified boolean defau
 alter table vehicles add column if not exists listed_at timestamptz;
 alter table vehicles add column if not exists expected_arrival_at timestamptz;
 alter table vehicles add column if not exists reserved_until timestamptz;
-alter table vehicles add column if not exists show_in_marketplace boolean default false;
+alter table vehicles add column if not exists show_in_marketplace boolean default true;
+
+create table if not exists audit_log (
+  id uuid primary key default gen_random_uuid(),
+  actor_role text not null,
+  actor_id text,
+  action text not null,
+  entity_type text,
+  entity_id text,
+  detail jsonb default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_audit_log_created_at on audit_log (created_at desc);
+alter table audit_log disable row level security;
 
 alter table profiles add column if not exists reservation_deposit_pct numeric;
 alter table profiles add column if not exists reviews_highlight text;

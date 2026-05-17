@@ -1,7 +1,7 @@
 -- Dealer opt-in: list individual vehicles on ACJ Marketplace
 -- Run after migrate-vehicle-status-scheduling.sql
 
-alter table vehicles add column if not exists show_in_marketplace boolean default false;
+alter table vehicles add column if not exists show_in_marketplace boolean default true;
 
 create index if not exists idx_vehicles_show_in_marketplace
   on vehicles (show_in_marketplace)

@@ -9,6 +9,8 @@
   <!-- Chart.js (light + fast) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <link rel="stylesheet" href="/assets/css/acj-brand.css" />
+  <link rel="stylesheet" href="/assets/css/acj-portal-luxe.css" />
+  <link rel="stylesheet" href="/assets/css/acj-portal-ux.css" />
   <link rel="stylesheet" href="/assets/css/acj-loader.css" />
 
   <style>
@@ -44,12 +46,8 @@
     html,body{height:100%}
     body{
       margin:0;
-      font-family: system-ui,-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,sans-serif;
       color:var(--ink);
-      background:
-        radial-gradient(circle at 0% 0%, rgba(220,38,38,.06), transparent 45%),
-        radial-gradient(circle at 85% 18%, rgba(239,68,68,.05), transparent 55%),
-        var(--bg);
+      background:transparent;
       -webkit-font-smoothing:antialiased;
     }
 
@@ -412,7 +410,7 @@
     }
   </style>
 </head>
-<body class="acj-premium-shell">
+<body class="acj-premium-shell acj-portal-luxe">
 
 <header>
   <div class="wrap">
@@ -438,6 +436,7 @@
 <!-- LOGIN -->
 <section class="login" id="loginSection">
   <div class="login-card">
+    <span class="acj-portal-eyebrow">Dealer portal</span>
     <h1>Dealer Login</h1>
     <p>
       Sign in to manage your inventory, review viewing requests, and track performance.
@@ -534,6 +533,7 @@
             <span class="hint">Branding</span>
           </button>
         </nav>
+        <div class="portal-sidebar-footer">Auto Concierge Jamaica</div>
       </aside>
 
       <!-- Content -->
@@ -543,6 +543,7 @@
         <div class="tab" id="tab-dashboard">
           <div class="panel-head">
             <div>
+              <span class="acj-portal-eyebrow">Overview</span>
               <h1>Operations Dashboard</h1>
               <p>Today’s snapshot — inventory health, incoming requests, and what needs attention.</p>
             </div>
@@ -553,6 +554,8 @@
           </div>
 
           <div class="panel-body">
+            <div id="onboardingBox" class="acj-onboarding" style="display:none"></div>
+            <div id="attentionGrid" class="acj-attention-grid"></div>
             <div class="kpis">
               <div class="kpi"><div class="t">Available</div><div class="v" id="kpiAvailable">–</div><div class="s">Live inventory</div></div>
               <div class="kpi"><div class="t">Pending</div><div class="v" id="kpiPending">–</div><div class="s">Awaiting action</div></div>
@@ -585,6 +588,13 @@
             </div>
           </div>
           <div class="panel-body">
+            <div id="bulkBar" class="acj-bulk-bar">
+              <span><strong id="bulkCount">0</strong> selected</span>
+              <button type="button" class="btn btn-ghost" id="bulkMarkSold">Mark sold</button>
+              <button type="button" class="btn btn-ghost" id="bulkMpOn">List on marketplace</button>
+              <button type="button" class="btn btn-ghost" id="bulkMpOff">Hide from marketplace</button>
+              <button type="button" class="btn btn-ghost" id="bulkExport">Export CSV</button>
+            </div>
             <div class="table-tools">
               <div class="search" role="search"><span style="opacity:.75">⌕</span><input id="invSearch" placeholder="Search title, make, model, VIN, id…" aria-label="Search inventory" /></div>
               <div class="seg" role="group" aria-label="Status filter">
@@ -603,6 +613,7 @@
               <table>
                 <thead>
                   <tr>
+                    <th style="width:36px"><span class="sr-only">Select</span></th>
                     <th>Vehicle</th>
                     <th>Vehicle ID</th>
                     <th>VIN</th>
@@ -976,11 +987,11 @@
           <div style="grid-column:1/-1">
             <label for="showInMarketplace">ACJ Marketplace</label>
             <select class="field" id="showInMarketplace">
-              <option value="false">Do not list on marketplace</option>
-              <option value="true">List on ACJ Marketplace</option>
+              <option value="true">Listed on ACJ Marketplace</option>
+              <option value="false">Hide from marketplace</option>
             </select>
             <p class="help" id="marketplaceFieldHelp" style="margin-top:8px;max-width:56ch;line-height:1.45">
-              Available on the free verified plan. Opt in here; ACJ reviews each unit before buyers see it on the marketplace.
+              Free-plan stock is listed on the marketplace automatically. Choose “Hide” only if this unit should not appear there.
             </p>
             <p class="help" id="marketplaceStatusNote" style="margin-top:6px;font-weight:600"></p>
           </div>
@@ -1181,8 +1192,12 @@
       const is = btn.getAttribute('data-tab') === key;
       btn.setAttribute('aria-current', is ? 'page' : 'false');
     });
-    $$('.tab').forEach(t => t.style.display = 'none');
-    $('#tab-' + key).style.display = 'block';
+    const next = $('#tab-' + key);
+    $$('.tab').forEach(t => {
+      if (t !== next) t.style.display = 'none';
+    });
+    if (window.ACJPortal?.switchDealerTab) window.ACJPortal.switchDealerTab(next);
+    else if (next) next.style.display = 'block';
   }
 
   function setDrawer(open){
@@ -1462,6 +1477,18 @@
       return true;
     });
 
+    if(!list.length && window.ACJPortalUX){
+      invBody.innerHTML = window.ACJPortalUX.emptyState({
+        icon: '🚗',
+        title: 'No vehicles yet',
+        message: 'Add your first listing to appear on the marketplace and track performance here.',
+        ctaLabel: '+ Add vehicle',
+        ctaId: 'acjEmptyAddVehicle'
+      });
+      document.getElementById('acjEmptyAddVehicle')?.addEventListener('click', () => newVehicleBtn?.click());
+      return;
+    }
+
     invBody.innerHTML = list.map(v => {
       const thumb = pickThumb(v);
       const title = escapeHtml(v.title || `${v.Year || ''} ${v.Make || ''} ${v.Model || ''}`.trim() || 'Vehicle');
@@ -1477,6 +1504,7 @@
 
       return `
         <tr>
+          <td><input type="checkbox" data-sel-vid="${vid}" aria-label="Select vehicle" /></td>
           <td>
             <div class="cell-main">
               ${thumb ? `<img class="thumb" src="${escapeHtml(thumb)}" alt="" />` : `<div class="thumb" aria-hidden="true"></div>`}
@@ -1515,10 +1543,18 @@
         if(!confirm('Archive this vehicle? It will be hidden from the storefront.')) return;
         try{
           await apiPost(`/api/dealer/vehicles/${encodeURIComponent(vid)}/archive`, {});
+          if(window.__dealerArchiveWithUndo) window.__dealerArchiveWithUndo(vid);
+          else if(window.ACJPortalUX) window.ACJPortalUX.toast('Vehicle archived.', 'success');
           await refreshAll();
         }catch(err){
-          alert(err.message || 'Archive failed');
+          if(window.ACJPortalUX) window.ACJPortalUX.toast(err.message || 'Archive failed', 'error');
+          else alert(err.message || 'Archive failed');
         }
+      });
+    });
+    document.querySelectorAll('input[data-sel-vid]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        if(window.__dealerToggleSelect) window.__dealerToggleSelect(cb.getAttribute('data-sel-vid'), cb.checked);
       });
     });
 
@@ -1780,7 +1816,7 @@
     if(row) row.style.display = eligible ? '' : 'none';
     if(!eligible) return;
     if(vehicle && $('#showInMarketplace')){
-      $('#showInMarketplace').value = vehicle.showInMarketplace === true ? 'true' : 'false';
+      $('#showInMarketplace').value = vehicle.showInMarketplace === false ? 'false' : 'true';
     }
     if(note && vehicle?.marketplaceStatus){
       const st = vehicle.marketplaceStatus;
@@ -1866,7 +1902,7 @@
     if($('#reservedDurationDays')) $('#reservedDurationDays').value = '';
     syncStatusSchedulingFields();
     updateMarketplaceVehicleFields(null);
-    if($('#showInMarketplace')) $('#showInMarketplace').value = 'false';
+    if($('#showInMarketplace')) $('#showInMarketplace').value = 'true';
   }
 
   function openVehicleEditor(v=null){
@@ -2262,6 +2298,7 @@
    * Data flow
    * --------------------------*/
   async function refreshAll(){
+    if(window.ACJPortalUX) window.ACJPortalUX.showTableSkeleton(invBody, 8, 5);
     // Dealer profile
     const me = await apiGet('/api/dealer/me');
     STATE.dealer = me.dealer;
@@ -2289,6 +2326,8 @@
     navInv.textContent = `${STATE.vehicles.length} total`;
     navReq.textContent = STATE.requestsRestricted ? 'Paid plan' : `${STATE.requests.length} total`;
 
+    STATE.dealerProfile = me.dealer;
+    if(window.__dealerAfterRender) window.__dealerAfterRender();
     // Render
     renderInventory();
     renderRequests();
@@ -2622,6 +2661,10 @@
   /** ---------------------------
    * Boot
    * --------------------------*/
+  window.__DEALER_STATE = STATE;
+  window.setTab = setTab;
+  window.__dealerRefreshAll = refreshAll;
+
   (function boot(){
     STATE.month = monthKey(new Date());
     monthLabel.textContent = STATE.month;
@@ -2643,6 +2686,10 @@
     }
   })();
 </script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/gsap.min.js"></script>
 <script src="/assets/js/acj-loader.js"></script>
+<script src="/assets/js/acj-portal-ux.js"></script>
+<script src="/assets/js/acj-dealer-ux.js"></script>
+<script src="/assets/js/acj-portal-luxe.js"></script>
 </body>
 </html>
