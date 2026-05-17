@@ -11,6 +11,27 @@ require("dotenv").config();
 
 const crypto = require("crypto");
 const path = require("path");
+const fs = require("fs");
+
+// #region agent log
+const DEBUG_LOG_PATH = path.join(__dirname, ".cursor/debug-10f3b0.log");
+function agentDebugLog(location, message, data, hypothesisId) {
+  try {
+    const line =
+      JSON.stringify({
+        sessionId: "10f3b0",
+        location,
+        message,
+        data,
+        hypothesisId,
+        timestamp: Date.now(),
+      }) + "\n";
+    fs.appendFileSync(DEBUG_LOG_PATH, line);
+  } catch (_e) {
+    /* ignore */
+  }
+}
+// #endregion
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
@@ -1348,10 +1369,21 @@ app.get("/api/public/marketplace/config", (_req, res) => {
   });
 });
 
-app.get("/api/public/marketplace/vehicles", async (_req, res) => {
+app.get("/api/public/marketplace/vehicles", async (req, res) => {
   try {
+    // #region agent log
+    agentDebugLog("server.js:marketplace/vehicles", "request start", { requireQualityEnv: marketplaceQualityRequired() }, "A");
+    // #endregion
     const requireQuality = marketplaceQualityRequired();
     const { vehicles, dealers } = await getMarketplaceVehicles({ requireQuality });
+    // #region agent log
+    agentDebugLog(
+      "server.js:marketplace/vehicles",
+      "getMarketplaceVehicles ok",
+      { vehicleCount: vehicles?.length, dealerCount: dealers?.length },
+      "A"
+    );
+    // #endregion
     const dealerById = new Map(dealers.map((d) => [d.dealer_id, d]));
     const activeStatuses = new Set(["available", "active", "in_transit", "in transit", "reserved", "pending"]);
 
@@ -1377,7 +1409,19 @@ app.get("/api/public/marketplace/vehicles", async (_req, res) => {
     });
   } catch (err) {
     console.error("GET /api/public/marketplace/vehicles error:", err);
-    return res.status(500).json({ ok: false, error: "Internal Server Error" });
+    // #region agent log
+    agentDebugLog(
+      "server.js:marketplace/vehicles",
+      "handler error",
+      { message: err?.message, name: err?.name },
+      "A"
+    );
+    // #endregion
+    const payload = { ok: false, error: "Internal Server Error" };
+    if (req.get("X-Debug-Session-Id") === "10f3b0") {
+      payload.detail = err?.message || String(err);
+    }
+    return res.status(500).json(payload);
   }
 });
 

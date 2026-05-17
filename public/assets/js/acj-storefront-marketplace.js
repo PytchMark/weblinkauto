@@ -296,10 +296,30 @@
       state.dealers = [];
       setLoadingMp();
       try {
-        const [configRes, dataRes] = await Promise.all([
-          fetchOk("/api/public/marketplace/config", { method: "GET" }),
-          fetchOk("/api/public/marketplace/vehicles", { method: "GET" }),
-        ]);
+        const debugHeaders = { "X-Debug-Session-Id": "10f3b0" };
+        const configRes = await fetchOk("/api/public/marketplace/config", { method: "GET" });
+        const vehRes = await fetch("/api/public/marketplace/vehicles", {
+          method: "GET",
+          headers: { Accept: "application/json", ...debugHeaders },
+        });
+        const dataRes = await vehRes.json().catch(() => ({}));
+        // #region agent log
+        fetch("http://127.0.0.1:7704/ingest/275b8acc-69ab-4955-a590-eb40b3dcbad0", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "10f3b0" },
+          body: JSON.stringify({
+            sessionId: "10f3b0",
+            location: "acj-storefront-marketplace.js:loadMarketplace",
+            message: "vehicles API response",
+            data: { status: vehRes.status, ok: dataRes?.ok, detail: dataRes?.detail, error: dataRes?.error },
+            hypothesisId: "A",
+            timestamp: Date.now(),
+          }),
+        }).catch(() => {});
+        // #endregion
+        if (!vehRes.ok || !dataRes?.ok) {
+          throw new Error(dataRes?.detail || dataRes?.error || "Request failed (" + vehRes.status + ")");
+        }
         state.marketplaceConfig = configRes.config || {};
         const rows = (dataRes.vehicles || []).map((v) => {
           const n = normalizeVehicle(v);
@@ -321,6 +341,20 @@
         scrollToInventory();
       } catch (e) {
         console.error(e);
+        // #region agent log
+        fetch("http://127.0.0.1:7704/ingest/275b8acc-69ab-4955-a590-eb40b3dcbad0", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "10f3b0" },
+          body: JSON.stringify({
+            sessionId: "10f3b0",
+            location: "acj-storefront-marketplace.js:loadMarketplace",
+            message: "loadMarketplace catch",
+            data: { errMessage: e?.message },
+            hypothesisId: "A",
+            timestamp: Date.now(),
+          }),
+        }).catch(() => {});
+        // #endregion
         state.vehicles = [];
         state.filtered = [];
         ui.grid.innerHTML = `<div class="empty-state"><strong>Could not load marketplace</strong><br>${esc(e.message || "Try again")}</div>`;

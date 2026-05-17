@@ -219,8 +219,73 @@ async function getMarketplaceVehicles({ requireQuality = false } = {}) {
     query = query.eq("acj_quality_verified", true);
   }
 
-  const result = await query.order("listed_at", { ascending: false, nullsFirst: false });
-  const vehicles = unwrap(result, "marketplace vehicles") || [];
+  let result = await query.order("listed_at", { ascending: false, nullsFirst: false });
+
+  const isMissingShowInMarketplaceColumn = (err) =>
+    err &&
+    /show_in_marketplace/i.test(String(err.message || "")) &&
+    /column|schema cache/i.test(String(err.message || ""));
+
+  // #region agent log
+  if (result.error) {
+    try {
+      const fs = require("fs");
+      const path = require("path");
+      fs.appendFileSync(
+        path.join(__dirname, "..", ".cursor/debug-10f3b0.log"),
+        JSON.stringify({
+          sessionId: "10f3b0",
+          location: "supabase.js:getMarketplaceVehicles",
+          message: "vehicles query error",
+          data: { code: result.error.code, message: result.error.message, hint: result.error.hint },
+          hypothesisId: "A",
+          timestamp: Date.now(),
+        }) + "\n"
+      );
+    } catch (_e) {
+      /* ignore */
+    }
+  }
+  // #endregion
+
+  if (result.error && isMissingShowInMarketplaceColumn(result.error)) {
+    // #region agent log
+    try {
+      const fs = require("fs");
+      const path = require("path");
+      fs.appendFileSync(
+        path.join(__dirname, "..", ".cursor/debug-10f3b0.log"),
+        JSON.stringify({
+          sessionId: "10f3b0",
+          location: "supabase.js:getMarketplaceVehicles",
+          message: "fallback query without show_in_marketplace",
+          data: { requireQuality },
+          hypothesisId: "A",
+          timestamp: Date.now(),
+        }) + "\n"
+      );
+    } catch (_e) {
+      /* ignore */
+    }
+    // #endregion
+    let fallback = supabase
+      .from("vehicles")
+      .select("*")
+      .in("dealer_id", dealerIds)
+      .eq("archived", false)
+      .eq("availability", true);
+    if (requireQuality) fallback = fallback.eq("acj_quality_verified", true);
+    result = await fallback.order("listed_at", { ascending: false, nullsFirst: false });
+  }
+
+  let vehicles = unwrap(result, "marketplace vehicles") || [];
+
+  const hasOptInColumn = vehicles.some((v) =>
+    Object.prototype.hasOwnProperty.call(v, "show_in_marketplace")
+  );
+  if (hasOptInColumn) {
+    vehicles = vehicles.filter((v) => v.show_in_marketplace === true);
+  }
 
   const profileResult = await supabase.from("profiles").select("*").in("dealer_id", dealerIds);
   const dealers = unwrap(profileResult, "marketplace dealer profiles") || [];
