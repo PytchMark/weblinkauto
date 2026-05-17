@@ -25,7 +25,7 @@
 
 html {
   scroll-behavior: smooth;
-  scroll-padding-top: 72px;
+  scroll-padding-top: 100px;
 }
 
 body.acj-body.landing-page {
@@ -33,6 +33,9 @@ body.acj-body.landing-page {
   font-family: "Plus Jakarta Sans", var(--acj-font-body);
   color: var(--landing-ink);
   background: var(--landing-surface);
+  --landing-marquee-h: 38px;
+  --landing-header-gap: 12px;
+  --landing-header-min-h: 56px;
 }
 
 .landing-page a {
@@ -55,16 +58,19 @@ body.acj-body.landing-page {
 .landing-marquee {
   background: var(--landing-dark);
   color: rgba(255, 255, 255, 0.7);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.22em;
   text-transform: uppercase;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  min-height: var(--landing-marquee-h);
+  display: flex;
+  align-items: center;
 }
 
 .landing-marquee-track {
   display: flex;
   gap: 28px;
-  padding: 8px 0;
+  padding: 10px 0;
   white-space: nowrap;
   animation: landingMarquee 18s linear infinite;
 }
@@ -75,14 +81,14 @@ body.acj-body.landing-page {
   }
 }
 
-/* Floating glass header — compact */
+/* Floating glass header — below top marquee strip */
 .landing-header-spacer {
-  height: 64px;
+  height: calc(var(--landing-header-gap) + var(--landing-header-min-h));
 }
 
 .landing-header {
   position: fixed;
-  top: 10px;
+  top: calc(var(--landing-marquee-h) + var(--landing-header-gap));
   left: 50%;
   transform: translateX(-50%);
   z-index: 100;
@@ -104,17 +110,17 @@ body.acj-body.landing-page {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 6px;
-  padding: 5px 8px 5px 10px;
-  min-height: 44px;
+  gap: 8px;
+  padding: 7px 12px 7px 14px;
+  min-height: var(--landing-header-min-h);
 }
 
 .landing-brand {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   font-weight: 800;
-  font-size: 12px;
+  font-size: 15px;
   color: var(--landing-ink);
   letter-spacing: -0.02em;
   min-width: 0;
@@ -129,10 +135,10 @@ body.acj-body.landing-page {
 }
 
 .landing-brand-badge {
-  width: 28px;
-  height: 28px;
+  width: 34px;
+  height: 34px;
   flex-shrink: 0;
-  border-radius: 8px;
+  border-radius: 10px;
   overflow: hidden;
   border: 1px solid var(--landing-border);
 }
@@ -151,10 +157,10 @@ body.acj-body.landing-page {
 }
 
 .landing-nav a {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--landing-muted);
-  padding: 6px 9px;
+  padding: 8px 12px;
   border-radius: 999px;
   transition: color 0.2s, background 0.2s;
   white-space: nowrap;
@@ -167,7 +173,7 @@ body.acj-body.landing-page {
 
 .landing-header-actions {
   display: flex;
-  gap: 5px;
+  gap: 7px;
   align-items: center;
   flex-shrink: 0;
 }
@@ -175,16 +181,16 @@ body.acj-body.landing-page {
 .landing-header-actions .landing-header-link.dealer-portal-link {
   color: var(--landing-muted);
   border-color: var(--landing-border-strong);
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
-  padding: 5px 8px;
-  gap: 5px;
+  padding: 7px 10px;
+  gap: 6px;
   min-height: 0;
 }
 
 .landing-header-actions .landing-header-link.dealer-portal-link svg {
-  width: 13px;
-  height: 13px;
+  width: 16px;
+  height: 16px;
 }
 
 .landing-header-actions .landing-header-link:hover {
@@ -193,11 +199,11 @@ body.acj-body.landing-page {
 }
 
 .landing-header-actions .landing-header-btn.acj-btn {
-  min-height: 32px;
-  padding: 0 11px;
-  font-size: 11px;
+  min-height: 40px;
+  padding: 0 14px;
+  font-size: 13px;
   font-weight: 700;
-  gap: 4px;
+  gap: 5px;
   box-shadow: none;
 }
 
@@ -209,7 +215,7 @@ body.acj-body.landing-page {
   display: none;
   background: none;
   border: none;
-  font-size: 18px;
+  font-size: 22px;
   line-height: 1;
   cursor: pointer;
   color: var(--landing-ink);
@@ -228,8 +234,8 @@ body.acj-body.landing-page {
   }
 
   .landing-nav a {
-    padding: 6px 7px;
-    font-size: 11px;
+    padding: 8px 9px;
+    font-size: 13px;
   }
 
   .landing-header-actions .landing-header-link-label {
