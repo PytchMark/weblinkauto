@@ -179,8 +179,8 @@
           : null,
       ].filter(Boolean);
 
-      const ribbon = global.ACJStatusRibbon?.usesStatusRibbon?.(v);
-      const ribbonHtml = global.ACJStatusRibbon?.statusRibbonHtml?.(v, esc) || "";
+      const ribbon = window.ACJStatusRibbon?.usesStatusRibbon?.(v);
+      const ribbonHtml = window.ACJStatusRibbon?.statusRibbonHtml?.(v, esc) || "";
       const card = document.createElement("div");
       card.className = "card card--mp";
       card.style.transitionDelay = index * 16 + "ms";
